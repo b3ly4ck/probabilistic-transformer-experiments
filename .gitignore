@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Данные и артефакты экспериментов
+data/
+checkpoints/
+runs/
+outputs/
+wandb/
+*.ckpt
+*.pt
+*.pth
+
+# Логи планировщика
+slurm-*.out
+*.log
+
+# Окружение
+.env
+.DS_Store
