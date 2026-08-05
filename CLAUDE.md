@@ -11,6 +11,9 @@ context, the three experiments, and the success criteria. This file holds the wo
 Re-read, do not work from memory. All of these live in `developer files/`:
 
 - `PROJECT.md` — research framing, experiments, success criteria, setup constraints.
+- `RESEARCH_PLAN.md` — the executable version of the above: Experiment 0 (implement and
+  validate) with its exit criteria, the shared setup held constant across Experiments 1–3,
+  and the cut order under time pressure. This is what to work from day to day.
 - `causalprobabilistictransformer_1.pdf` — the main document, Parts I–IV.
   Part III (§15–§18): output mechanism and MFVI update equations; §17.1 update schedule;
   §17.2 exact-readout variant. **§17.2 recommends MFVI as mainline, but §23.3 in Part IV
@@ -93,6 +96,7 @@ result. A finished process is not a result.
 ├── CLAUDE.md            # this file — stays at the root so Claude Code auto-loads it
 ├── developer files/     # all project documentation and reference papers
 │   ├── PROJECT.md
+│   ├── RESEARCH_PLAN.md
 │   ├── PROJECT_STATUS.md
 │   ├── VERSION
 │   └── *.pdf

@@ -7,8 +7,9 @@ structure are modelled jointly as a factor graph, with inference by mean field v
 inference. It is masked-LM only. This project builds the causal version that does not yet
 exist, and provides the empirical evidence that it trains.
 
-See [developer files/PROJECT.md](developer%20files/PROJECT.md) for the research context, the
-three planned experiments, and the success criteria. See [CLAUDE.md](CLAUDE.md) for the working
+See [developer files/PROJECT.md](developer%20files/PROJECT.md) for the research context and
+success criteria, and [developer files/RESEARCH_PLAN.md](developer%20files/RESEARCH_PLAN.md)
+for the experiment plan and its validation gates. See [CLAUDE.md](CLAUDE.md) for the working
 rules and modelling constraints.
 
 ## Layout
