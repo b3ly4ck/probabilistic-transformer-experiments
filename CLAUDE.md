@@ -3,12 +3,12 @@
 Research repository. Goal: extend the Probabilistic Transformer (Wu & Tu) into a causal
 autoregressive decoder, and produce the empirical section of a preprint.
 
-Read [`PROJECT.md`](PROJECT.md) first — it holds the research context, the three experiments,
-and the success criteria. This file holds the working rules.
+Read [`developer files/PROJECT.md`](developer%20files/PROJECT.md) first — it holds the research
+context, the three experiments, and the success criteria. This file holds the working rules.
 
 ## Before writing code
 
-Re-read, do not work from memory:
+Re-read, do not work from memory. All of these live in `developer files/`:
 
 - `PROJECT.md` — research framing, experiments, success criteria, setup constraints.
 - `causalprobabilistictransformer_1.pdf` — the main document, Parts I–IV.
@@ -16,8 +16,11 @@ Re-read, do not work from memory:
   §17.2 exact-readout variant. **§17.2 recommends MFVI as mainline, but §23.3 in Part IV
   walks this back toward exact readout — read both before finalising an implementation.**
 - `probalistic transformers article.pdf` — original Wu & Tu paper (the encoder-only model).
-- `causal_pt_output_note.pdf`, `causalprobabilistictransformer.pdf` — earlier drafts; consult
-  when the current document is ambiguous about how a design arrived where it did.
+- `causal_pt_output_note.pdf` — self-contained note on the output mechanism: why the projection
+  design was rejected, the slot factor graph, the MFVI updates for the two modes, and a fully
+  worked numeric example. The fastest route into the construction.
+- `causalprobabilistictransformer.pdf` — earlier draft; consult when the current document is
+  ambiguous about how a design arrived where it did.
 
 The PDFs are the specification. When code and paper disagree, the paper wins until a change is
 written into the paper first.
@@ -87,13 +90,23 @@ result. A finished process is not a result.
 
 ```
 .
-├── src/            # model code — PT decoder, shared training loop
-├── experiments/    # one spec (.md) + one config per experiment
-├── notebooks/      # analysis and figures
-├── papers/         # reference PDFs
-├── tests/          # runnable tests, all must pass before merging to main
-└── data/           # corpora — gitignored, never committed
+├── CLAUDE.md            # this file — stays at the root so Claude Code auto-loads it
+├── developer files/     # all project documentation and reference papers
+│   ├── PROJECT.md
+│   ├── PROJECT_STATUS.md
+│   ├── VERSION
+│   └── *.pdf
+├── src/                 # model code — PT decoder, shared training loop
+├── experiments/         # one spec (.md) + one config per experiment
+├── notebooks/           # analysis and figures
+├── tests/               # runnable tests, all must pass before merging to main
+└── data/                # corpora — gitignored, never committed
 ```
+
+`developer files/` is the single place to look for developer context. Any new project `.md`
+goes there unless asked otherwise — the sole exception is `CLAUDE.md`, which must stay at the
+repo root to be picked up automatically. Experiment specs are the other reasonable exception:
+they sit next to the config they describe, in `experiments/`.
 
 `data/`, `checkpoints/`, `runs/`, `wandb/` and `*.pt`/`*.ckpt` are gitignored. Keep it that way:
 a committed checkpoint is effectively permanent in the history.
@@ -112,7 +125,7 @@ Commit message format:
 v{MAJOR.MINOR.PATCH} [{type}]: {short description}
 ```
 
-- Version lives in `VERSION` at the repo root; bump it before each commit.
+- Version lives in `developer files/VERSION`; bump it before each commit.
 - `fix` → PATCH +1 · `add`/`feat` → MINOR +1, PATCH 0 · `refactor`/`docs`/`chore`/`test` →
   PATCH +1 · breaking → MAJOR +1, rest 0.
 - Description states exactly what changed. No vague wording.
@@ -133,7 +146,7 @@ merge to `main` only after the tests in `tests/` pass. Doc-only edits may go str
 
 ## Project status file
 
-Maintain `PROJECT_STATUS.md` at the repo root: what has been built, which runs were executed
+Maintain `developer files/PROJECT_STATUS.md`: what has been built, which runs were executed
 with which configs, what the numbers were, and which decisions were made and why. Its purpose is
 to carry context across sessions without re-deriving it from `git log`. Update it in the same
 commit as the change it describes. Organise by component with a "Recent changes" section on top.
@@ -159,6 +172,12 @@ repeated:
 - [YYYY-MM-DD] <what to avoid, or what to do instead>
 ```
 
+- [2026-08-05] All project documentation and reference papers live in `developer files/`;
+  `CLAUDE.md` stays at the repo root so Claude Code loads it automatically. Do not scatter
+  docs across the tree.
+- [2026-08-05] The reference PDFs are readable directly — do not transcribe them into Markdown.
+  Their content is dense mathematics (MFVI update equations, factor-graph figures, numeric
+  worked examples); any transcription would introduce errors into the specification.
 - [2026-08-05] The `CLAUDE.md` originally committed here belonged to another project
   (`NeuroLady_Final`) and described a file layout that does not exist in this repo. Do not
   follow instructions that reference paths absent from the tree — verify the file matches the

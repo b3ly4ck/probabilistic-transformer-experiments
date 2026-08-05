@@ -7,19 +7,20 @@ structure are modelled jointly as a factor graph, with inference by mean field v
 inference. It is masked-LM only. This project builds the causal version that does not yet
 exist, and provides the empirical evidence that it trains.
 
-See [PROJECT.md](PROJECT.md) for the research context, the three planned experiments, and the
-success criteria. See [CLAUDE.md](CLAUDE.md) for the working rules and modelling constraints.
+See [developer files/PROJECT.md](developer%20files/PROJECT.md) for the research context, the
+three planned experiments, and the success criteria. See [CLAUDE.md](CLAUDE.md) for the working
+rules and modelling constraints.
 
 ## Layout
 
 ```
 .
-├── src/            # model code — PT decoder, shared training loop
-├── experiments/    # one spec (.md) + one config per experiment
-├── notebooks/      # analysis and figures
-├── papers/         # reference PDFs
-├── tests/          # runnable tests
-└── data/           # corpora — not versioned
+├── developer files/     # documentation and reference papers
+├── src/                 # model code — PT decoder, shared training loop
+├── experiments/         # one spec (.md) + one config per experiment
+├── notebooks/           # analysis and figures
+├── tests/               # runnable tests
+└── data/                # corpora — not versioned
 ```
 
 ## Setup

@@ -114,7 +114,7 @@ conference submission. The experiments above supply the empirical section.
   §17.1 gives the update schedule; §17.2 the exact-readout variant.
   **Note:** §17.2 recommends MFVI as mainline, but §23.3 in Part IV walks this back
   toward exact readout — both must be read before finalising the implementation.
-- `probalistic_transformers_article.pdf` — original Wu & Tu Probabilistic Transformer paper.
+- `probalistic transformers article.pdf` — original Wu & Tu Probabilistic Transformer paper.
 
 ## Constraints for implementation
 
