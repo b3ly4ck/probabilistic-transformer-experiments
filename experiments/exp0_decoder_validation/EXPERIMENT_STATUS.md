@@ -87,8 +87,31 @@ chosen)*
 
 ## Open questions
 
-- §17.2 recommends MFVI as mainline; §23.3 in Part IV walks this back toward exact readout.
-  Both must be read before the implementation is frozen. Resolution: —
+- ~~§17.2 recommends MFVI as mainline; §23.3 walks this back toward exact readout.~~
+  **Resolved 2026-08-05.** §17.2 and §23.3 read. §23.3 states the verdict outright: *exact
+  readout mainline; mean-field two-stream as the ablation.* The query stream disappears
+  (§24.1), and the exact readout is a causal `logcumsumexp` prefix scan over
+  `B^(c)_{j,a}` seeded with `r^(c)_a` — `O(ndh)` and fully parallel, so the layer-parallel
+  schedule survives. MFVI is still implemented, as the ablation and as Experiment 3's
+  comparison object.
+
+- **Gradient flow through the content stream — corrected 2026-08-05.** An earlier design here
+  proposed running the filtering pass under `torch.no_grad()`, on the reading that "the prefix
+  is frozen" meant stop-gradient. **That reading is wrong.** §18 Check 4 describes the schedule
+  as layer-parallel two-stream attention in the XLNet sense, with both streams under one
+  triangular mask; §25.1 frames freezing as *dropped evidence*, an inference-level statement.
+  "Frozen" means `q̄_j` is a **conditioning constant of the variational problem at later slots**
+  — it is not re-optimised there — not that it is detached from autograd. Causality is enforced
+  by the strict lower-triangular mask, exactly as in a transformer, and gradients flow through
+  the content stream normally. Running it under `no_grad` would starve `S` and `T^(c)` of the
+  gradient that trains the representation.
+
+- **Should the Appendix B.3 global variables ship from day one?** §22.2 argues yes: adding a
+  global-head variable `G_t` per slot is the graph-faithful answer to "PT lacks an FFN", and
+  without it the experiment "confounds *causal construction* with the known encoder-side
+  capacity gap". It costs `O(md)` per position and stays inside the graph — `μ_t` simply gains
+  a multiplicative term. This is a scope decision for Experiments 1–2, not for the toy
+  validation. Resolution: —
 
 ## Reproduce
 

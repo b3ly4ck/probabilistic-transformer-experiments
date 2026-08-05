@@ -90,12 +90,30 @@ checks below are what actually test the equations, and they are cheap at toy sca
 
 Checks 1–9 pass. Loss on a single batch goes to ~0. Only then move to real data.
 
-### Note on readout
+### Note on readout — resolved 2026-08-05
 
-MFVI readout is the mainline implementation here. Exact readout is a single additional function
-over the same trained machinery — not a second model. It gets written in this experiment as the
-oracle for check 9; Experiment 3 then reuses it as a scientific comparison rather than
-implementing anything new.
+The §17.2 / §23.3 conflict flagged in `PROJECT.md` was read and settled. **§23.3 states the
+verdict explicitly: exact readout is the mainline, mean-field two-stream is the ablation.**
+§17.2's recommendation is superseded by its own document.
+
+Consequences, all from §23.3 and §24.1:
+
+- The **query stream disappears entirely** — no predictive inner loop, no `Q_Z^pred` iterations.
+  Per token the cost is one content-stream solve, an `O(dh)` μ-cache update, and the vocabulary
+  readout.
+- The exact readout is `log μ_t(a) = Σ_c LSE_{j ∈ D_t} B^(c)_{j,a}` seeded with `r^(c)_a`, which
+  along the sequence is a **causal prefix log-sum-exp — one `logcumsumexp` scan, `O(ndh)`,
+  fully parallel**. It does not break the layer-parallel schedule.
+- Check 3 of §18 must be restated from "every update is a softmax of a gradient" to "every step
+  is valid inference in the declared model" — MFVI where exactness is impossible (the chain),
+  exact sum-product where the subgraph is a tree (the slot).
+- Costs to watch: LSE-pooling gradients are untested at LM scale, and the `|V| × d` readout is an
+  LSE rather than a matmul — same FLOPs, worse hardware constants. Chunk it over the vocabulary
+  with a fused cross-entropy.
+
+So the exact readout is written in Experiment 0 as the mainline, and it doubles as the oracle
+for check 9. The MFVI readout is still implemented — it is the ablation and Experiment 3's
+comparison object — but it is no longer what the model is.
 (§17.2 recommends MFVI as mainline; §23.3 in Part IV walks this back toward exact readout.
 Both sections must be read before the implementation is frozen.)
 
@@ -212,6 +230,11 @@ for _ in range(self.T):
 ## Experiment 3 — Exact readout vs. MFVI readout
 
 **Question:** what does the mean-field approximation cost?
+
+**Note (2026-08-05):** the roles are inverted relative to the original framing. Following
+§23.3, the exact readout is the *mainline* and MFVI is the *ablation*, so this experiment
+measures what the mean-field version loses, not what the exact version gains. The comparison
+itself is unchanged; only which model is the reference point moves.
 
 ### Why this is available at all
 
