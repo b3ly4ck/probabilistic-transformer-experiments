@@ -62,10 +62,20 @@ the priority when time is short.
 
 ## Implementation discipline
 
-**Spec before code.** Every experiment gets a short spec in `experiments/<name>.md` — what is
-being compared, what is held fixed, parameter budget, data, the exact metric, and what result
-would falsify the claim — written *before* the run script. Update the spec when the design
-changes; never let the code define the experiment retroactively.
+**Spec before code.** Every experiment has an `EXPERIMENT_STATUS.md` in its own folder under
+`experiments/` — what is being compared, what is held fixed, parameter budget, data, the exact
+metric, and what result would falsify the claim. The question and the success criterion are
+written *before* the run script. Update them when the design changes; never let the code define
+the experiment retroactively.
+
+**Every run is logged where it happened, in the commit that produced it.** Append a row to the
+run log of that experiment's `EXPERIMENT_STATUS.md` — date, commit, config, seed, metric,
+wall-clock — and commit it together with whatever produced the run. A result living only in a
+terminal scrollback does not exist; a number without a commit cannot be reproduced or defended.
+Never delete a row: failed, abandoned and superseded runs stay with their reason, and a
+validation check that passed and later broke is the most valuable line in the file. Record
+negative and neutral results as found — the paper's framing does not require PT to win.
+See [`experiments/README.md`](experiments/README.md) for the full rules.
 
 **Only the PT decoder forward pass is written from scratch.** nanoGPT is used off the shelf;
 Looped is nanoGPT with one shared block applied `T` times. The training loop is written once
@@ -101,7 +111,11 @@ result. A finished process is not a result.
 │   ├── VERSION
 │   └── *.pdf
 ├── src/                 # model code — PT decoder, shared training loop
-├── experiments/         # one spec (.md) + one config per experiment
+├── experiments/         # one folder per experiment, each with EXPERIMENT_STATUS.md
+│   ├── exp0_decoder_validation/
+│   ├── exp1_pt_vs_gpt/
+│   ├── exp2_pt_vs_looped/
+│   └── exp3_exact_vs_mfvi/
 ├── notebooks/           # analysis and figures
 ├── tests/               # runnable tests, all must pass before merging to main
 └── data/                # corpora — gitignored, never committed
