@@ -36,8 +36,20 @@ length ~4–8, batch size 1–4, 2–3 MFVI iterations. The point is *correctnes
    **bitwise unchanged**. This is the single most important test — it is exactly what the
    model claims and exactly what is easy to break with an off-by-one in the mask.
 
+   Run this one on **CPU with a fixed seed**. If the implementation is genuinely independent
+   of future tokens, the arithmetic at positions `< t` is identical and bitwise equality must
+   hold. On GPU, non-deterministic kernels (atomics in reductions) can perturb the last bit on
+   *correct* code — which costs a day chasing a bug that does not exist. Keep bitwise equality
+   as the assertion; just do not assert it where the hardware is allowed to be non-reproducible.
+
 4. **Prefix is frozen.** No gradient flows from step `t` backwards into prefix posteriors.
-   Check by inspecting `.grad` on detached prefix quantities.
+
+   Do **not** test this by reading `.grad` on a detached tensor: a detached tensor has
+   `.grad is None` unconditionally, so that assertion passes whether or not the code is
+   correct — it is green by construction. Instead, make the prefix quantities **leaf tensors
+   with `requires_grad=True` and leave them attached**, run `backward()` from the loss at step
+   `t`, and assert their `.grad` is `None` or exactly zero. Written that way the test fails when
+   a real gradient path exists, which is the point.
 
 5. **Tying.** The word embedding matrix used on input is *the same tensor object* as the one
    used in the output factor. Not a copy — the same parameter.
@@ -48,16 +60,42 @@ length ~4–8, batch size 1–4, 2–3 MFVI iterations. The point is *correctnes
 
 7. **Worked example.** A 4-word sequence with hand-set numbers, all intermediate tensors
    printed. This doubles as the numerical example referenced in correspondence with the
-   supervisors, and is what to show if the derivation is probed.
+   supervisors, and is what to show if the derivation is probed. `causal_pt_output_note.pdf`
+   §5 already contains such an example end to end (`V = {the, cat, sat, mat}`, `d = 2`, one
+   channel, both modes, printed posteriors and logits) — reproduce **those numbers** rather
+   than inventing a fresh example, so the check is against an independently derived reference.
+
+Checks 1–7 catch errors in shapes, axes and masking. They do **not** catch an error in the
+update equations themselves: a model with a typo in (2)–(4) still has correct shapes,
+normalised posteriors, intact causality, and will happily overfit a single batch. The two
+checks below are what actually test the equations, and they are cheap at toy scale.
+
+8. **Free energy is non-increasing.** Evaluate the mean-field free energy after every MFVI
+   iteration on the toy graph; the sequence must be monotonically non-increasing (up to
+   floating-point noise) and must converge. MFVI updates *are* coordinate descent on that
+   functional — if the curve rises, the update rule is not the gradient of the energy that was
+   written down, which is precisely the failure mode checks 1–7 are blind to.
+
+9. **Exact readout vs. brute force.** The per-slot graph is a star centred on `Z_t`, hence a
+   tree, so sum-product is exact. At toy scale (vocabulary ~20, `d` ~8, one or two channels)
+   the marginal can also be obtained by explicit enumeration over the joint. The two must agree
+   to numerical precision. **This is the strongest correctness test available in the project**
+   — it validates the factorisation itself, not an approximation to it.
+
+   Note this is *not* Experiment 3 arriving early. Here the exact readout is used as an oracle
+   to verify the graph; there it is a scientific object compared against MFVI on real data. The
+   same function serves both, which is a reason to write it in Experiment 0 rather than later.
 
 ### Exit criterion
 
-Checks 1–7 pass. Loss on a single batch goes to ~0. Only then move to real data.
+Checks 1–9 pass. Loss on a single batch goes to ~0. Only then move to real data.
 
 ### Note on readout
 
-MFVI readout is the mainline implementation here. Exact readout is Experiment 3 and is a
-single additional function over the same trained machinery — not a second model.
+MFVI readout is the mainline implementation here. Exact readout is a single additional function
+over the same trained machinery — not a second model. It gets written in this experiment as the
+oracle for check 9; Experiment 3 then reuses it as a scientific comparison rather than
+implementing anything new.
 (§17.2 recommends MFVI as mainline; §23.3 in Part IV walks this back toward exact readout.
 Both sections must be read before the implementation is frozen.)
 
@@ -87,6 +125,16 @@ would test a known failure mode rather than the causal extension.
 **On matching budgets.** Report both parameter count *and* wall-clock / FLOPs. PT shares
 parameters across iterations, so equal parameter count does not mean equal compute; being
 explicit about both pre-empts the obvious reviewer objection.
+
+**Report embedding and non-embedding parameters separately — this matters more here than in a
+usual comparison.** With tied embeddings, PT's parameters sit almost entirely in the word–label
+matrix `S` (`|V| × d`); the arc scores `T^(c)`, the word unary `b` and the root key `r` are
+negligible beside it. In a GPT baseline a substantial share of the budget lives in the blocks
+instead. So at a matched 20–50M total, PT is close to *an embedding table plus a little*, while
+GPT is not — and a single total-parameter number hides that completely. Report the split in
+every table, and make the matching decision explicitly: whether models are matched on total
+parameters, on non-embedding parameters, or on both with vocabulary held fixed. Any of the
+three is defensible; leaving it unstated is what a reviewer will attack first.
 
 ---
 
