@@ -106,12 +106,18 @@ class TrainResult:
         )
 
 
+def _flushing_print(message: str) -> None:
+    """Slurm block-buffers redirected stdout, so an unflushed progress line is
+    invisible until the process exits -- which makes a running job look hung."""
+    print(message, flush=True)
+
+
 def train(
     model: nn.Module,
     corpus,
     cfg: TrainConfig,
     loss_fn: Callable[[nn.Module, Tensor], Tensor] = default_loss,
-    log: Callable[[str], None] | None = print,
+    log: Callable[[str], None] | None = _flushing_print,
 ) -> TrainResult:
     torch.manual_seed(cfg.seed)
     model.to(cfg.device).train()

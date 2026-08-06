@@ -78,10 +78,24 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--readout-chunk", type=int, default=250)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument(
+        "--allow-cpu",
+        action="store_true",
+        help="permit running on CPU. Without it a GPU job whose GPU is broken aborts "
+        "instead of silently producing meaningless wall-clock numbers.",
+    )
     ap.add_argument("--only", default=None, help="run a single model by name")
     ap.add_argument("--out", default=None)
     ap.add_argument("--save-ckpt", default=None, help="directory to write <model>.pt into")
     args = ap.parse_args()
+
+    if args.device == "cpu" and not args.allow_cpu:
+        raise SystemExit(
+            "ABORT: CUDA is not available and --allow-cpu was not given.\n"
+            "A GPU node with a broken GPU otherwise falls through to CPU silently, and the "
+            "timings recorded from such a run are meaningless. This happened on ai_gpu32 "
+            "(job 939158): nvidia-smi reported 'Unable to determine the device handle'."
+        )
 
     corpus = load_ptb()
     train_cfg = TrainConfig(

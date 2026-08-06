@@ -337,6 +337,8 @@ Never delete a row. Failed and abandoned runs stay, with the reason.
 | 939150 | 2026-08-06 | `74d4f71` | 1.2 | MFVI | PT + `G_t` | 64 | 0 | 2.85M / 2.56M / 0.29M | 1442.70 | 48 s | as above. Superseded by 939157 |
 | 939151 | 2026-08-06 | `74d4f71` | 1.1 | exact | PT `d=256 h=4` | — | 0 | — | — | 3 s | **failed** — bad GPU on the node, `nvidia-smi` errored and `set -e` killed the job. GPU check made non-fatal |
 | 939155 | 2026-08-06 | `cdd75e2` | 1.1 | exact | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | 7004.89 | 549 s | only **300 steps** — 1.83 s/step, **78× slower than MFVI**. Peak 4.28 GiB vs 0.70. Nowhere near converged |
+| 939158 | 2026-08-06 | `cdd75e2` | 1.1 | — | GPT `d=160 L=4` | — | 0 | 2.85M / 1.62M / 1.23M | — | 16 min, cancelled | **ran on CPU without saying so.** Landed on `ai_gpu32` after its GPU failed; `torch.cuda.is_available()` returned False and the runner fell through to CPU. Making the `nvidia-smi` check non-fatal (after 939151) removed the only thing that caught this. Runner now aborts unless `--allow-cpu` is passed |
+| 939170 | 2026-08-06 | `9c7ca4e` | 1.1 | — | GPT `d=160 L=4` | — | 0 | 2.85M / 1.62M / 1.23M | pending | — | resubmission of 939158 with `--exclude=ai_gpu32` |
 | 939156 | 2026-08-06 | `cdd75e2` | 1.1 | MFVI | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | **664.19** | 471 s | 20 000 steps, **converged** — flat from step 10 000. test 612.14 |
 | 939157 | 2026-08-06 | `cdd75e2` | 1.2 | MFVI | PT + `G_t` | 64 | 0 | 2.85M / 2.56M / 0.29M | **678.40** | 483 s | 20 000 steps, converged. test 621.29. **Worse than without `G_t`** |
 
@@ -371,6 +373,10 @@ expected at `|V| = 10 000`.
 **`G_t` makes it worse**, 678.40 against 664.19 — 14 ppl in the wrong direction, well outside
 the 1-ppl spread of the converged plateau. Not yet meaningful, since the base model is not
 learning; recorded so the sign is on file.
+
+**Device audit.** Every run in the table above was checked against the `device` field its
+runner logs. All six completed runs used CUDA on a TITAN RTX; only 939158, cancelled, fell back
+to CPU. The timings and the 78× figure below stand.
 
 ### Measured cost of the exact readout
 
