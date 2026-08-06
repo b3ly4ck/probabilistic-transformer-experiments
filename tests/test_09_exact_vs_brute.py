@@ -7,26 +7,34 @@ itself, not an approximation to it.  Under §23.3 the exact readout is the
 mainline, so this tests the model rather than an oracle for it.
 """
 
+import pytest
 import torch
 
 from src import exact, mfvi
 from src.pt_decoder import causal_key_mask
 
 
-def _small(seed=0, h=2, K=4, d=3, V=5):
+GLOBAL = [pytest.param(None, id="no_global"), pytest.param(4, id="global")]
+
+
+def _small(seed=0, h=2, K=4, d=3, V=5, m=None):
     g = torch.Generator()
     g.manual_seed(seed)
     Bkey = torch.randn(h, K, d, generator=g)
     S = torch.randn(V, d, generator=g)
     b = torch.randn(V, generator=g)
-    return Bkey, S, b
+    Bg = torch.randn(m, d, generator=g) if m else None
+    return Bkey, S, b, Bg
 
 
-def test_closed_form_equals_enumeration():
+@pytest.mark.parametrize("m", GLOBAL)
+def test_closed_form_equals_enumeration(m):
+    """With a global head the enumeration gains an explicit loop over k, so
+    agreement is evidence that the slot is still a tree once G_t is attached."""
     for seed in range(5):
-        Bkey, S, b = _small(seed)
-        closed = exact.exact_logits(exact.log_mu_slot(Bkey), S, b)
-        brute = exact.brute_force_logits(Bkey, S, b)
+        Bkey, S, b, Bg = _small(seed, m=m)
+        closed = exact.exact_logits(exact.log_mu_slot(Bkey, Bg), S, b)
+        brute = exact.brute_force_logits(Bkey, S, b, Bg)
         # both are unnormalised; compare the distributions they define
         assert torch.allclose(
             torch.softmax(closed, dim=-1), torch.softmax(brute, dim=-1), atol=1e-6
@@ -36,7 +44,8 @@ def test_closed_form_equals_enumeration():
         assert torch.allclose(offset, offset[0].expand_as(offset), atol=1e-5)
 
 
-def test_enumeration_is_independent_of_the_closed_form():
+@pytest.mark.parametrize("m", GLOBAL)
+def test_enumeration_is_independent_of_the_closed_form(m):
     """Guard: the oracle must disagree when the model is really perturbed.
 
     The perturbation has to break the *shape* of the score matrix, not shift it.
@@ -45,11 +54,11 @@ def test_enumeration_is_independent_of_the_closed_form():
     to that, so it makes a worthless guard.  Perturbing a single label does not
     cancel.
     """
-    Bkey, S, b = _small()
-    brute = exact.brute_force_logits(Bkey, S, b)
+    Bkey, S, b, Bg = _small(m=m)
+    brute = exact.brute_force_logits(Bkey, S, b, Bg)
     perturbed = Bkey.clone()
     perturbed[:, :, 0] += 0.5
-    closed_wrong = exact.exact_logits(exact.log_mu_slot(perturbed), S, b)
+    closed_wrong = exact.exact_logits(exact.log_mu_slot(perturbed, Bg), S, b)
     assert not torch.allclose(
         torch.softmax(closed_wrong, dim=-1), torch.softmax(brute, dim=-1), atol=1e-3
     )
@@ -57,7 +66,7 @@ def test_enumeration_is_independent_of_the_closed_form():
 
 def test_uniform_shift_of_arc_scores_is_a_no_op():
     """The invariance the guard above tripped over, asserted deliberately."""
-    Bkey, S, b = _small()
+    Bkey, S, b, _ = _small()
     base = torch.softmax(exact.exact_logits(exact.log_mu_slot(Bkey), S, b), dim=-1)
     shifted = torch.softmax(exact.exact_logits(exact.log_mu_slot(Bkey + 0.5), S, b), dim=-1)
     assert torch.allclose(base, shifted, atol=1e-6)
@@ -72,14 +81,15 @@ def test_prefix_scan_equals_per_slot_reduction(model, tokens):
     """
     qbar = model.content_stream(tokens)
     Bkey = mfvi.contract_prefix(qbar, model.T, model.r)
-    scanned = exact.log_mu_sequence(Bkey)
+    Bg = model.B_global
+    scanned = exact.log_mu_sequence(Bkey, Bg)
 
     n = tokens.shape[1]
     mask = causal_key_mask(n)
     for t in range(n):
         keys = Bkey[:, :, mask[t], :]  # exactly D_t = {ROOT} u {j < t}
         assert keys.shape[2] == t + 1
-        naive = exact.log_mu_slot(keys)
+        naive = exact.log_mu_slot(keys, Bg)
         assert torch.allclose(scanned[:, t], naive, atol=1e-6), f"slot {t}"
 
 

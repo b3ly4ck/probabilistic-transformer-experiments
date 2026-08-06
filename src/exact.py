@@ -22,24 +22,51 @@ import torch
 from torch import Tensor
 
 
-def log_mu_slot(Bkey: Tensor) -> Tensor:
-    """log mu(a) = sum_c LSE_j B^(c)[j, a] for a single slot.
+def log_global_term(B_global: Tensor) -> Tensor:
+    """LSE_k B'[k, a] -- the global head's contribution to log mu (§22.2).
+
+    G_t is a leaf attached only to Z_t, so it is summed out analytically: there
+    is no Q_G and no iteration in this path.
+
+    **This term is constant in t.**  It is identical at every position and for
+    every sentence, so in the exact readout the global head contributes a
+    context-free reweighting of the label prior -- m*d parameters collapsing to
+    d effective numbers.  Only the mean-field path turns G_t into the
+    input-dependent GFU operator that is the feed-forward analogue.  See
+    experiments/exp1_language_modeling/EXPERIMENT_STATUS.md.
+
+    Args:
+        B_global: (m, d)
+
+    Returns:
+        (d,)
+    """
+    return torch.logsumexp(B_global, dim=0)
+
+
+def log_mu_slot(Bkey: Tensor, B_global: Tensor | None = None) -> Tensor:
+    """log mu(a) = sum_c LSE_j B^(c)[j, a] ( + LSE_k B'[k, a] ) for a single slot.
 
     Args:
         Bkey: (..., h, K, d) with every key already inside D_t.
+        B_global: (m, d), or None when no global head is attached.
 
     Returns:
         (..., d)
     """
-    return torch.logsumexp(Bkey, dim=-2).sum(dim=-2)
+    out = torch.logsumexp(Bkey, dim=-2).sum(dim=-2)
+    if B_global is not None:
+        out = out + log_global_term(B_global)
+    return out
 
 
-def log_mu_sequence(Bkey: Tensor) -> Tensor:
+def log_mu_sequence(Bkey: Tensor, B_global: Tensor | None = None) -> Tensor:
     """The causal prefix scan of §23.3.
 
     Args:
         Bkey: (batch, h, n + 1, d) with index 0 holding ROOT and index ``j + 1``
             holding prefix position ``j``.
+        B_global: (m, d), or None.
 
     Returns:
         (batch, n, d) where entry ``t`` is ``log mu_t`` over
@@ -47,7 +74,10 @@ def log_mu_sequence(Bkey: Tensor) -> Tensor:
     """
     n = Bkey.shape[-2] - 1
     cum = torch.logcumsumexp(Bkey, dim=-2)  # (batch, h, n + 1, d)
-    return cum[..., :n, :].sum(dim=-3)
+    out = cum[..., :n, :].sum(dim=-3)
+    if B_global is not None:
+        out = out + log_global_term(B_global)
+    return out
 
 
 def exact_logits(log_mu: Tensor, S: Tensor, b: Tensor) -> Tensor:
@@ -69,7 +99,9 @@ def exact_logits(log_mu: Tensor, S: Tensor, b: Tensor) -> Tensor:
     return b + torch.logsumexp(scores, dim=-1)
 
 
-def brute_force_logits(Bkey: Tensor, S: Tensor, b: Tensor) -> Tensor:
+def brute_force_logits(
+    Bkey: Tensor, S: Tensor, b: Tensor, B_global: Tensor | None = None
+) -> Tensor:
     """Enumerate the slot's joint distribution explicitly and marginalise.
 
     Deliberately naive: nested Python loops over every label and every tuple of
@@ -79,12 +111,16 @@ def brute_force_logits(Bkey: Tensor, S: Tensor, b: Tensor) -> Tensor:
 
     The joint over one slot is
 
-        p(W = w, Z = a, H = (j_1, ..., j_h))
-            proportional to exp( b_w + S[w, a] + sum_c B^(c)[j_c, a] )
+        p(W = w, Z = a, H = (j_1, ..., j_h), G = k)
+            proportional to exp( b_w + S[w, a] + sum_c B^(c)[j_c, a] ( + B'[k, a] ) )
+
+    With a global head the enumeration gains an explicit loop over ``k``, so
+    agreement with the closed form is evidence that the slot is still a tree.
 
     Args:
         Bkey: (h, K, d) for a single slot, no batch dimension.
         S: (V, d), b: (V,)
+        B_global: (m, d), or None.
 
     Returns:
         (V,) unnormalised log-probabilities on the same scale as
@@ -94,12 +130,15 @@ def brute_force_logits(Bkey: Tensor, S: Tensor, b: Tensor) -> Tensor:
         raise ValueError("brute_force_logits takes a single slot: (h, K, d)")
     h, K, d = Bkey.shape
     V = S.shape[0]
+    globals_ = [None] if B_global is None else list(range(B_global.shape[0]))
     totals = torch.zeros(V, dtype=Bkey.dtype)
     for w in range(V):
         acc = 0.0
         for a in range(d):
             for heads in itertools.product(range(K), repeat=h):
                 arc = sum(Bkey[c, heads[c], a] for c in range(h))
-                acc = acc + torch.exp(b[w] + S[w, a] + arc)
+                for k in globals_:
+                    glob = 0.0 if k is None else B_global[k, a]
+                    acc = acc + torch.exp(b[w] + S[w, a] + arc + glob)
         totals[w] = torch.log(acc)
     return totals

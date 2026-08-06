@@ -9,6 +9,12 @@ rather than the layer-parallel content stream.
 Setup: V = {the, cat, sat, mat}, d = 2 with labels {N, V}, h = 1,
 lambda_Z = lambda_H = 1, tau = 1 observed and tau = 2 predictive.
 Sentence: "the cat sat []".
+
+The note's example has no global head, so this check runs with
+``use_global_head=False`` only.  With the flag on these numbers are not a
+reference for anything -- the energy is different.  What must hold in that arm
+is that turning the flag off reproduces exactly this; asserted in
+test_10_global_head.py.
 """
 
 import torch
@@ -41,7 +47,7 @@ def _observed_pass():
     qbars, qcs = [], []
     for w in SENTENCE:
         Bkey = torch.stack(cached).unsqueeze(0)  # (h=1, K, d)
-        Q_Z, Q_c = mfvi.run_slot_mfvi(S[w], Bkey, CFG, n_rounds=1)
+        Q_Z, Q_c, _ = mfvi.run_slot_mfvi(S[w], Bkey, CFG, n_rounds=1)
         qbars.append(Q_Z)
         qcs.append(Q_c[0])
         cached.append(torch.einsum("e,ae->a", Q_Z, T[0]))  # B_t = T qbar_t
@@ -67,7 +73,7 @@ def test_predictive_slot_four_matches_the_note():
     s_bar = mfvi.word_message(Q_W0, S)
     assert torch.allclose(s_bar, torch.tensor([1.063, -1.063]), atol=ATOL), s_bar
 
-    Q_Z, _, trace = mfvi.run_slot_mfvi(s_bar, Bkey, CFG, n_rounds=2, return_trace=True)
+    Q_Z, _, _, trace = mfvi.run_slot_mfvi(s_bar, Bkey, CFG, n_rounds=2, return_trace=True)
     for i, (want) in enumerate(EXPECTED_QZ_PRED):
         assert torch.allclose(trace[i][0], torch.tensor(want), atol=ATOL), (
             f"Q_Z after round {i + 1}: {trace[i][0]}"
@@ -85,7 +91,7 @@ def test_context_kills_the_verb():
     Bkey = torch.stack(cached).unsqueeze(0)
     Q_W0 = torch.softmax(B_UNARY, dim=-1)
     s_bar = mfvi.word_message(Q_W0, S)
-    Q_Z, _ = mfvi.run_slot_mfvi(s_bar, Bkey, CFG, n_rounds=2)
+    Q_Z, _, _ = mfvi.run_slot_mfvi(s_bar, Bkey, CFG, n_rounds=2)
     probs = torch.softmax(mfvi.mfvi_readout_logits(Q_Z, S, B_UNARY, CFG), dim=-1)
     assert probs[2] < 0.01  # "sat", the verb
     assert probs[0] > probs[1] and probs[0] > probs[3]  # the prior b favours "the"

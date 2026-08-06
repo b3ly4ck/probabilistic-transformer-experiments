@@ -23,8 +23,16 @@ from src.pt_decoder import CausalPTDecoder
 V, N = 12, 6
 
 
-def _train(readout, d, batch=1, steps=1200, lr=0.05, seed=0):
-    cfg = PTConfig(vocab_size=V, d=d, n_channels=2, n_rounds=3)
+def _train(readout, d, batch=1, steps=1200, lr=0.05, seed=0, use_global=False, lambda_G=5.0):
+    cfg = PTConfig(
+        vocab_size=V,
+        d=d,
+        n_channels=2,
+        n_rounds=3,
+        use_global_head=use_global,
+        n_global=5 if use_global else 0,
+        lambda_G=lambda_G,
+    )
     g = torch.Generator()
     g.manual_seed(seed)
     model = CausalPTDecoder(cfg, generator=g)
@@ -45,6 +53,40 @@ def test_overfits_a_single_sequence(readout, d):
     assert last < first
     assert last < 0.05, f"{readout} (d={d}) plateaued at {last}"
     assert torch.equal(model(tokens, readout=readout).argmax(dim=-1), tokens)
+
+
+def test_overfits_with_the_global_head_under_mfvi():
+    """Arm 1.2 memorises under the mean-field readout.
+
+    Needs 2400 steps rather than 1200 -- the global head slows convergence -- and
+    ``lambda_G = 5`` rather than the config default of 1, since at 1 the head
+    collapses the label posterior entirely (asserted separately below).
+    """
+    first, last, model, tokens = _train("mfvi", d=8, use_global=True, steps=2400)
+    assert last < first
+    assert last < 0.05, f"mfvi with the global head plateaued at {last}"
+    assert torch.equal(model(tokens, readout="mfvi").argmax(dim=-1), tokens)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason=(
+        "OPEN, blocking arm 1.2 under the exact readout: with the global head "
+        "attached the exact readout cannot memorise a single sequence. Measured "
+        "0.4536 against 0.0021 for the same model without it, unchanged by more "
+        "steps (1200 vs 2400) and unchanged by lambda_G at 5, 20 or 100 -- "
+        "identical to four decimals, because Q_G converges near-uniform "
+        "(max ~0.20 at m=5) and the GFU term degenerates to a constant vector "
+        "added to every slot's label logits. That compresses the spread of qbar "
+        "across positions (0.0535 -> 0.046), which the exact readout depends on "
+        "since it pools by LSE with no query. Recorded as a failing test rather "
+        "than tuned away; see experiments/exp1_language_modeling."
+    ),
+)
+def test_overfits_with_the_global_head_under_the_exact_readout():
+    _, last, model, tokens = _train("exact", d=32, use_global=True, steps=2400)
+    assert last < 0.05
+    assert torch.equal(model(tokens, readout="exact").argmax(dim=-1), tokens)
 
 
 def test_position_zero_carries_an_irreducible_floor():
@@ -74,3 +116,27 @@ def test_exact_readout_needs_more_label_width_than_mean_field():
     assert exact_narrow > 0.3, f"exact at d=8 unexpectedly memorised ({exact_narrow})"
     assert exact_wide < 0.05
     assert mfvi_narrow < 0.05
+
+
+def test_global_head_collapses_at_low_lambda_G():
+    """At lambda_G = 1 the global head prevents memorisation entirely.
+
+    Mechanism: the composed update is sigma(q B'^T) B'.  As B' grows the softmax
+    saturates onto one global feature k*, and the message becomes a large
+    constant vector B'[k*, :] added to every slot's label logits.  Q_Z is then
+    pinned regardless of the word or the prefix, and the loss stops at what a
+    context-free predictor achieves.  Measured: |B'| reaches ~10-20 within 300
+    Adam steps and the loss plateaus near 0.48 where the same model without the
+    global head reaches 0.005.
+
+    lambda_G is not pinned by the source (see PTConfig.lambda_G), so this is a
+    live open question for Experiment 1, recorded as an executable fact rather
+    than a note.
+    """
+    _, collapsed, _, _ = _train("mfvi", d=8, use_global=True, lambda_G=1.0)
+    _, healthy, _, _ = _train("mfvi", d=8, use_global=True, lambda_G=5.0)
+    _, baseline, _, _ = _train("mfvi", d=8, use_global=False)
+
+    assert collapsed > 0.3, f"the collapse at lambda_G=1 has changed ({collapsed})"
+    assert healthy < 0.1
+    assert baseline < 0.05

@@ -114,8 +114,6 @@ Consequences, all from §23.3 and §24.1:
 So the exact readout is written in Experiment 0 as the mainline, and it doubles as the oracle
 for check 9. The MFVI readout is still implemented — it is the ablation and Experiment 3's
 comparison object — but it is no longer what the model is.
-(§17.2 recommends MFVI as mainline; §23.3 in Part IV walks this back toward exact readout.
-Both sections must be read before the implementation is frozen.)
 
 ---
 

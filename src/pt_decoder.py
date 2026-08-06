@@ -64,6 +64,15 @@ class CausalPTDecoder(nn.Module):
         else:
             self.register_buffer("b", torch.zeros(cfg.vocab_size))
 
+        if cfg.use_global_head:
+            self.B_global = nn.Parameter(randn(cfg.n_global, cfg.d))
+            """Global-head factor B' of Wu & Tu Eq. (46), single-split form
+            (Appendix B.3.3): one score matrix (m, d) shared across channels,
+            scoring global feature k against label a.  A factor between two
+            variables, trained like S, T, r and b -- not a map."""
+        else:
+            self.B_global = None
+
     # -- content stream ---------------------------------------------------
 
     def content_stream(self, tokens: Tensor, n_rounds: int | None = None) -> Tensor:
@@ -91,6 +100,10 @@ class CausalPTDecoder(nn.Module):
             scores = scores.masked_fill(~mask, mfvi.NEG_INF)
             Q_c = torch.softmax(scores, dim=-1)
             message = torch.einsum("bctk,bcka->bta", Q_c, Bkey)
+            if self.B_global is not None:
+                # G_t is position-local: it reads q at t only, never the prefix,
+                # so it opens no path to the future.
+                message = message + mfvi.gfu(q, self.B_global, cfg)
             q = torch.softmax((m_W + message) / cfg.lambda_Z, dim=-1)
         return q
 
@@ -99,7 +112,7 @@ class CausalPTDecoder(nn.Module):
     def exact_logits(self, qbar: Tensor) -> Tensor:
         """Mainline readout (§17.2, §23.3): (batch, n, V) logits for ``w_t``."""
         Bkey = mfvi.contract_prefix(qbar, self.T, self.r)
-        log_mu = exact.log_mu_sequence(Bkey)  # (batch, n, d)
+        log_mu = exact.log_mu_sequence(Bkey, self.B_global)  # (batch, n, d)
         return exact.exact_logits(log_mu, self.S, self.b)
 
     def mfvi_logits(self, qbar: Tensor, n_rounds: int | None = None) -> Tensor:
@@ -125,6 +138,8 @@ class CausalPTDecoder(nn.Module):
             scores = scores.masked_fill(~mask, mfvi.NEG_INF)
             Q_c = torch.softmax(scores, dim=-1)
             message = torch.einsum("bctk,bcka->bta", Q_c, Bkey)
+            if self.B_global is not None:
+                message = message + mfvi.gfu(Q_Z, self.B_global, cfg)
             Q_Z = torch.softmax((s_bar + message) / cfg.lambda_Z, dim=-1)
 
         return mfvi.mfvi_readout_logits(Q_Z, self.S, self.b, cfg)

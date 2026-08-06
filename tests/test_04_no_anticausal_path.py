@@ -14,7 +14,7 @@ and check the gradient of the logits at t is exactly zero at every j >= t.
 
 import torch
 
-from tests.conftest import SEQ, TOY
+from tests.conftest import SEQ
 
 
 def _qbar_leaf(model, tokens):

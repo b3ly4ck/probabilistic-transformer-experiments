@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | specified, not started |
+| **Status** | flag implemented; validation passes in both arms **except** one open failure blocking arm 1.2 under the exact readout — see below. No training runs yet. |
 | **Priority** | mandatory — without it there is no paper |
 | **Blocked by** | [Experiment 0](../exp0_decoder_validation/EXPERIMENT_STATUS.md) — **complete**, checks 1–9 pass at `ab7c082` |
 | **Supersedes** | [`exp1_pt_vs_gpt/`](../exp1_pt_vs_gpt/EXPERIMENT_STATUS.md), kept for the record |
@@ -152,17 +152,56 @@ bug.**
 
 | Check | With `use_global_head=True` | Status |
 |---|---|---|
-| 1 shapes | parameter set becomes `{S, T, r, b, B_global}`; check 1 updated to expect exactly that | ☐ |
-| 2 normalisation | `Q_G` sums to 1 over `{1..m}` | ☐ |
-| 3 causality | `G_t` is position-local and must open no path to the future — bitwise, CPU | ☐ |
-| 4 no anti-causal path | unchanged in form, re-run | ☐ |
-| 5 tying | still **no** `(d, |V|)` parameter anywhere | ☐ |
-| 6 overfit | re-run both flag states | ☐ |
-| 7 worked example | §5 has no `G_t`; must be unchanged with the flag **off**, and is not a reference with it on | ☐ |
-| 8 free energy | re-run — the `Q_G` update must be an exact **argmin**, not a descent step | ☐ |
-| 9 exact vs. brute force | re-run with `G_t` included in the enumeration; agreement confirms the slot is still a tree | ☐ |
-| new | composed MFVI update equals the GFU operator `σ(qB'^⊤)B'` | ☐ |
-| new | with the flag on, `LSE_k B'[k,a]` is identical at every position — the context-free property above, asserted so it cannot be misread later | ☐ |
+| 1 shapes | parameter set becomes `{S, T, r, b, B_global}`, asserted exactly; `B_global` is `(m, d)` | ☑ |
+| 2 normalisation | `Q_G` sums to 1 over `{1..m}` | ☑ |
+| 3 causality | bitwise, CPU — `G_t` reads `q` at `t` only, never the prefix | ☑ |
+| 4 no anti-causal path | unchanged in form, re-run | ☑ |
+| 5 tying | still no `(d, |V|)` parameter anywhere | ☑ |
+| 6 overfit | **partial — see the open failure below** | ☒ |
+| 7 worked example | §5 has no `G_t`; unchanged with the flag off, bitwise | ☑ |
+| 8 free energy | non-increasing; the `Q_G` update is an exact **argmin** under perturbation | ☑ |
+| 9 exact vs. brute force | enumeration gains an explicit loop over `k`; agreement holds, so the slot is still a tree | ☑ |
+| new | composed MFVI update equals `σ(qB'^⊤)B'`, and is bitwise the composition of the two updates | ☑ |
+| new | `LSE_k B'[k,a]` identical at every position and every sentence | ☑ |
+| new | the GFU term is genuinely nonlinear in `q` | ☑ |
+| new | `B_global` receives gradient under both readouts | ☑ |
+| new | flag off leaves no `B_global` parameter and reproduces arm 1.1 | ☑ |
+
+Suite: 67 tests, 66 pass and 1 `xfail(strict=True)`, at commit `HEAD`.
+
+### Open failure — blocks arm 1.2 under the exact readout
+
+**With `G_t` attached, the exact readout cannot memorise a single sequence.** Measured 0.4536
+against 0.0021 for the identical model without it. It is not a step budget (1200 and 2400 steps
+give 0.4537 and 0.4535) and it is not `λ_G`: at 5, 20 and 100 the final loss is identical *to
+four decimals* and `‖B'‖` lands on 21.9 in all three.
+
+Diagnosis: `Q_G` converges near-uniform — `max Q_G ≈ 0.20` at `m = 5` — so `σ(qB'^⊤)B'`
+degenerates to a near-constant vector added to every slot's label logits, which is exactly why
+`λ_G` stops mattering. That constant compresses the spread of `q̄` across positions
+(0.0535 → 0.046), and the exact readout depends on that spread because it pools by LSE with no
+query. The mean-field readout, which has a query, survives it.
+
+This is the *second* mechanism pushing the same way as the context-free finding above: under the
+exact readout the global head contributes nothing that varies with position, and here it
+actively costs. Recorded as a failing test (`xfail(strict=True)`, so it fails if it ever starts
+passing) rather than tuned away.
+
+Not yet ruled out: that this is an artefact of memorising one sequence at toy width, where `q̄`
+spread is the only signal. Arm 1.2's premise does not survive a null result here, so this must
+be resolved before the arm is run.
+
+### Second finding — `λ_G` at 1 collapses the model entirely
+
+At the config default `λ_G = 1` the global head prevents memorisation under **both** readouts:
+`‖B'‖` reaches 10–20 within 300 Adam steps and the loss stops near 0.48 where the same model
+without the head reaches 0.005. Raising `λ_G` to 5 fixes the mean-field arm (needs 2400 steps
+rather than 1200); it does not fix the exact arm, for the separate reason above.
+
+The source does not pin `λ_G`. Wu & Tu's calibration for `λ_H = 1/d` is about the message being
+a sum over `d` labels; the message to `G` has the same form, so the principled analogue is
+**`1/d`, not `1/m`** — which would be sharper still, and worse at toy scale. At realistic `d`
+the calibration may matter more and the collapse less. Every run must record the value used.
 
 ## Configuration
 
@@ -254,6 +293,9 @@ write-up says so.
   which was used. Resolution: —
 - **Value of `m`.** Not specified anywhere. It trades against `d` under the fixed-budget
   convention. Resolution: —
+- **Why does `Q_G` converge near-uniform?** If it stays uniform at scale, `G_t` is a bias and
+  the FFN claim fails by degeneracy rather than by measurement. Check whether it is an artefact
+  of single-sequence memorisation before running the arm. Resolution: —
 - **Dataset: PTB or WikiText-2.** Resolution: —
 - **Budget-matching convention.** Resolution: —
 
