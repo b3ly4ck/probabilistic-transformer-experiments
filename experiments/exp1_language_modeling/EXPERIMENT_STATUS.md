@@ -147,6 +147,22 @@ Q_Z(a) <- softmax_a ( (1/λ_Z) [ ...existing terms... + Σ_k Q_G(k) B'[k,a] ] )
 **Correctness anchor.** Composing the two MFVI updates must reproduce `σ(Q_Z B'^⊤) B'`, the GFU
 operator of Appendix B Eq. 62. Assert this directly against a hand-written GFU.
 
+### Baseline alignment — the two families must score the same token set
+
+The PT decoder scores position `t` on predicting `w_t` from `D_t = {ROOT, 0, …, t−1}`. A standard
+GPT scores position `t` on predicting `w_{t+1}` from `w_{≤t}`. Left alone, the two compute
+perplexity over **different token sets**, and a results table comparing them is meaningless.
+
+The baseline is therefore given a **learned BOS vector, prepended internally, with the last
+position dropped**, so both expose `logits(tokens) -> (B, n, |V|)` where entry `t` predicts
+`tokens[t]` from `tokens[:t]`. This is the direct analogue of PT's root key `r`: in both models
+position 0 is predicted from a learned constant and no context at all. Asserted in
+`tests/test_11_data_and_baseline.py` — causality under the shared convention, and that position 0
+is invariant to the input.
+
+**Embeddings are tied in the baseline.** In PT tying is forced by the construction (§16(b));
+untying the baseline would hand it free parameters PT cannot have. Asserted by test.
+
 **Forbidden, and asserted against in tests.** Expressivity is bought by adding variables and
 factors, never maps: no MLP from `Q_Z` to logits, no context-dependent `S`, no nonlinearity on
 `q̄` between steps outside the update equations, no per-iteration untied parameters. `B'` is
@@ -250,18 +266,59 @@ Against `GPT d=512, L=6` (24.1M), matching on **total** puts PT at `d ≈ 1500`;
 **non-embedding** puts it at `d ≈ 2180`. Either way the label set runs to well over a thousand
 values.
 
-> **Convention chosen: —** (state it before the first run; leaving it unstated is what a
-> reviewer attacks first.)
+> **Convention chosen: neither — sweep `d` and report the curve.** The two conventions disagree
+> (`d ≈ 1500` vs `d ≈ 2180`), and picking one is arbitrary in a way that invites *"did you tune
+> this?"*. Instead `d` is swept over at least three values (256, 512, 1024) and the GPT baseline
+> is marked on the curve under **both** conventions. Every table reports total **and**
+> non-embedding parameters for every model.
+>
+> This is what §22.3 already asks for — *"report the trade curve, not a single point"* — and it
+> answers the interpretability objection head on: rather than sitting silently at `d ≈ 2000`
+> while claiming a small interpretable label set, the curve shows where that claim holds and
+> where it breaks.
+>
+> **The 20–50M figure is provisional.** It came from Penghao before the `|V|·d` coupling was
+> understood; the sweep shows what is actually reachable. It is not a constraint on this
+> experiment.
 
-**Flagged: the 20–50M budget forces `d` into the thousands, and §22.2 names that as a cost.**
+**Why the sweep, concretely: the 20–50M budget forces `d` into the thousands, and §22.2 names
+that as a cost.**
 "Raise `d`… this is the default lever; its real price is the one Defect 1(c) names: a `d` in the
 thousands erodes *small interpretable label set*." At a matched 24M on PTB the erosion is not
 hypothetical — `d ≈ 1500–2200` is a hidden dimension, not a syntactic label set, and the
 interpretability half of the paper's framing weakens accordingly. Options, none of them free:
-run at a smaller matched budget where `d` stays in the hundreds and accept that it is below the
-range Penghao specified; keep the budget and drop the interpretability claim to a measured trade
-curve over `(d, K)` as §22.3 already proposes; or raise `h`, which buys non-embedding parameters
-at `h·d²` without touching `d`. Decide before the first run and record which.
+run at a smaller matched budget where `d` stays in the hundreds; keep the budget and drop the
+interpretability claim to a measured trade curve; or buy non-embedding parameters through `h`
+rather than `d`. The sweep subsumes the first two. On the third, see the correction below.
+
+### Correction — how `T` is parameterised, and what `h` actually buys
+
+An earlier note here claimed raising `h` buys non-embedding parameters at `h·d²`. **That is true
+of the current implementation and false of the parameterisation the paper prices.**
+
+Verified in the code: `src/pt_decoder.py` has `self.T = nn.Parameter(randn(cfg.n_channels,
+cfg.d, cfg.d))` — a full `d × d` matrix per channel, hence `h·d²`.
+
+Verified against the source: §22.2 states *"decomposed `T` is **linear in `d`**"* and *"attention
+flops are governed by `r·h`"*; §18 Check 4 writes the decomposition explicitly, `T^(c) =
+U^(c)V^(c)⊤`, with the logits becoming `F_c(j) = (Q_Z U^(c))(q̄_j V^(c))⊤` — queries and keys of
+rank `r`. Under that form the count is `2·h·d·r`, not `h·d²`.
+
+The gap is not small. At `d = 2048`, `h = 4`: full-rank `T` is 16.8M parameters; factored at
+`r = 64` it is 1.05M — a factor of 16. Every budget-matching number computed so far assumes the
+full-rank form.
+
+Consequences, not yet acted on:
+
+- The full-rank form is a strict superset in expressivity, so it is not *wrong* — but it is not
+  what the paper costs, and a reviewer comparing parameter counts against Wu & Tu will be
+  reading the factored numbers.
+- Factoring changes which lever is cheap. Under `2·h·d·r`, buying non-embedding capacity through
+  `h` or `r` is far cheaper than through `d`, which weakens the argument that the budget forces
+  `d` into the thousands.
+- **Decision required before the full sweep:** implement `T = U V⊤` with a rank parameter, or
+  keep full-rank and state the deviation in the write-up. The calibration run uses the current
+  full-rank form; it does not depend on this.
 
 Report **both** parameter count and wall-clock / FLOPs for every run — PT shares parameters
 across iterations, so equal parameter count does not imply equal compute. Report the

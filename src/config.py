@@ -34,6 +34,14 @@ class PTConfig:
     lambda_W: float = 1.0
     """Entropic weight on the word variable, used only by the MFVI readout (§17)."""
 
+    readout_chunk: int = 0
+    """Vocabulary chunk size for the exact readout. 0 computes in one shot.
+
+    The exact readout materialises a ``(batch, n, |V|, d)`` tensor, which is the
+    binding memory constraint at LM scale -- 10.5 GB at ``d=256, |V|=10k``, batch
+    16, context 64. Chunking trades a second forward pass for bounded memory and
+    is numerically exact."""
+
     use_word_unary: bool = True
     """The word unary ``b`` is the LM-head bias as a factor (§16(c)). Optional but
     principled; setting this False sets ``b ≡ 0``."""

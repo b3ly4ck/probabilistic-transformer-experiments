@@ -19,6 +19,7 @@ from __future__ import annotations
 import itertools
 
 import torch
+import torch.utils.checkpoint  # not auto-imported on torch 2.0
 from torch import Tensor
 
 
@@ -80,23 +81,49 @@ def log_mu_sequence(Bkey: Tensor, B_global: Tensor | None = None) -> Tensor:
     return out
 
 
-def exact_logits(log_mu: Tensor, S: Tensor, b: Tensor) -> Tensor:
+def _logits_chunk(log_mu: Tensor, S_chunk: Tensor, b_chunk: Tensor) -> Tensor:
+    scores = S_chunk + log_mu.unsqueeze(-2)  # (..., chunk, d)
+    return b_chunk + torch.logsumexp(scores, dim=-1)
+
+
+def exact_logits(log_mu: Tensor, S: Tensor, b: Tensor, chunk: int = 0) -> Tensor:
     """log p_hat(W = w) up to an additive constant: b_w + LSE_a( S[w,a] + log mu(a) ).
 
     Args:
         log_mu: (..., d)
         S: (V, d), b: (V,)
+        chunk: vocabulary chunk size.  0 or >= V computes in one shot.
 
     Returns:
         (..., V) unnormalised log-probabilities.
 
-    Note on cost (§23.3): this materialises a ``(..., V, d)`` tensor.  It is an
-    LSE rather than a matmul -- the same FLOPs with worse hardware constants.  At
-    LM scale it must be chunked over the vocabulary with a fused cross-entropy.
-    At toy scale it is written plainly on purpose.
+    Cost (§23.3): this is an LSE rather than a matmul -- the same FLOPs with
+    worse hardware constants -- and it materialises a ``(..., V, d)`` tensor,
+    which the matmul form never does.  That tensor is the binding constraint at
+    LM scale, not the FLOPs: at ``d = 256``, ``|V| = 10,000``, batch 16 and
+    context 64 it is 10.5 GB in fp32 for the forward pass alone.
+
+    Chunking recomputes each vocabulary slice in the backward pass
+    (``torch.utils.checkpoint``), which bounds peak memory to one chunk at the
+    cost of a second forward.  §23.3 calls for a fused cross-entropy; this is the
+    cheap version of the same idea and is exact -- the chunked and unchunked
+    paths agree to floating-point precision, asserted in the tests.
     """
-    scores = S + log_mu.unsqueeze(-2)  # (..., V, d)
-    return b + torch.logsumexp(scores, dim=-1)
+    V = S.shape[0]
+    if not chunk or chunk >= V:
+        return _logits_chunk(log_mu, S, b)
+
+    parts = []
+    for start in range(0, V, chunk):
+        S_c, b_c = S[start : start + chunk], b[start : start + chunk]
+        if torch.is_grad_enabled() and (S.requires_grad or log_mu.requires_grad):
+            part = torch.utils.checkpoint.checkpoint(
+                _logits_chunk, log_mu, S_c, b_c, use_reentrant=False
+            )
+        else:
+            part = _logits_chunk(log_mu, S_c, b_c)
+        parts.append(part)
+    return torch.cat(parts, dim=-1)
 
 
 def brute_force_logits(

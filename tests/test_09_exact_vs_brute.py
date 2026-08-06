@@ -116,3 +116,23 @@ def test_exact_readout_beats_the_rank_bound_that_binds_mfvi():
 
     assert torch.linalg.matrix_rank(mf, tol=1e-5).item() <= d + 1
     assert torch.linalg.matrix_rank(ex, tol=1e-5).item() > d + 1
+
+
+@pytest.mark.parametrize("chunk", [0, 1, 3, 5, 1000])
+def test_chunked_readout_is_exact(chunk):
+    """Chunking bounds memory; it must not change a number."""
+    Bkey, S, b, _ = _small(d=4, V=11)
+    log_mu = exact.log_mu_slot(Bkey)
+    reference = exact.exact_logits(log_mu, S, b)
+    assert torch.allclose(exact.exact_logits(log_mu, S, b, chunk=chunk), reference, atol=1e-6)
+
+
+def test_chunked_readout_gives_the_same_gradients():
+    Bkey, S, b, _ = _small(d=4, V=11)
+    log_mu = exact.log_mu_slot(Bkey)
+    grads = []
+    for chunk in (0, 3):
+        S_ = S.clone().requires_grad_(True)
+        exact.exact_logits(log_mu, S_, b, chunk=chunk).sum().backward()
+        grads.append(S_.grad)
+    assert torch.allclose(grads[0], grads[1], atol=1e-6)

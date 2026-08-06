@@ -113,7 +113,7 @@ class CausalPTDecoder(nn.Module):
         """Mainline readout (§17.2, §23.3): (batch, n, V) logits for ``w_t``."""
         Bkey = mfvi.contract_prefix(qbar, self.T, self.r)
         log_mu = exact.log_mu_sequence(Bkey, self.B_global)  # (batch, n, d)
-        return exact.exact_logits(log_mu, self.S, self.b)
+        return exact.exact_logits(log_mu, self.S, self.b, chunk=self.cfg.readout_chunk)
 
     def mfvi_logits(self, qbar: Tensor, n_rounds: int | None = None) -> Tensor:
         """Ablation readout: the query stream of §17.1.
