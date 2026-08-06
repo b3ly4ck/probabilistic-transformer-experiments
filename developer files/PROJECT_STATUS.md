@@ -7,7 +7,9 @@ file covers what spans experiments.
 **Overall state as of 2026-08-05: Experiment 0 complete — checks 1–9 pass.** The causal PT
 decoder forward pass exists, reproduces the note's §5 worked example digit for digit, and its
 exact readout agrees with brute-force enumeration to 7.5e-08. Experiment 1 is unblocked, with
-two things to settle first: the B.3 globals decision and the flat-`log μ` finding below.
+two things settled since: the B.3 globals are now a measured variable (arms 1.1/1.2 of
+Experiment 1), and the flat-`log μ` finding below has a second instance — see the `G_t` entry
+in the decisions table.
 
 ## Recent changes
 
@@ -37,15 +39,18 @@ two things to settle first: the B.3 globals decision and the flat-`log μ` findi
 │   ├── PROJECT_STATUS.md     # this file
 │   ├── VERSION
 │   └── *.pdf                 # four reference papers
+├── src/                      # model code
+├── tests/                    # nine checks, one file each
 └── experiments/
     ├── README.md             # index + logging rules
-    ├── exp0_decoder_validation/
-    ├── exp1_pt_vs_gpt/
+    ├── exp0_decoder_validation/   # complete, checks 1-9 pass
+    ├── exp1_language_modeling/    # arms 1.1 and 1.2, specified
+    ├── exp1_pt_vs_gpt/            # superseded by the above, kept
     ├── exp2_pt_vs_looped/
     └── exp3_exact_vs_mfvi/
 ```
 
-`src/`, `tests/`, `notebooks/` and `data/` are declared in the layout but do not exist yet.
+`notebooks/` and `data/` are declared in the layout but do not exist yet.
 
 ## Code
 
@@ -66,8 +71,8 @@ one shared block applied `T` times. Neither is written yet.
 
 ## Runtime environment
 
-Surveyed 2026-08-05 on the login node. **Nothing is installed yet** — this is the first
-blocker for Experiment 0.
+Surveyed 2026-08-05 on the login node. The environment was empty at survey time; what was
+installed since is recorded below the table.
 
 | Item | State |
 |---|---|
@@ -104,7 +109,8 @@ Experiment 1, after checking the driver version on the GPU partitions.
 | Which readout is mainline | **decided 2026-08-05: exact** | §23.3 states it outright — exact readout mainline, mean-field two-stream as the ablation. The query stream disappears entirely (§24.1); the readout is a causal `logcumsumexp` scan, `O(ndh)`, fully parallel |
 | Exact readout written in Exp 0 | decided | It is now the mainline *and* the oracle for check 9; Exp 3 reuses it rather than implementing anything new |
 | Gradient through the content stream | **decided 2026-08-05: flows normally** | "Frozen prefix" is variational (`q̄_j` is not re-optimised at later slots), not stop-gradient. Causality comes from the triangular mask, as in a transformer. Running the filtering pass under `no_grad` would starve `S` and `T^(c)` |
-| Appendix B.3 globals (`G_t`) from day one | **resolved 2026-08-05: neither — measured** | Not an assumption. Experiment 1 splits into arm 1.1 (without) and arm 1.2 (with); the delta is the result. Wu & Tu propose the globals as an FFN substitute but never test them | §22.2: the graph-faithful answer to "PT lacks an FFN". Without it, Experiments 1–2 confound the causal construction with the known encoder-side capacity gap. `O(md)` per position, stays inside the graph |
+| Appendix B.3 globals (`G_t`) from day one | **resolved 2026-08-05: measured, not assumed** | Experiment 1 splits into arm 1.1 (without) and arm 1.2 (with); the delta is the result. §22.2 calls `G_t` the graph-faithful answer to "PT lacks an FFN", but Wu & Tu never test it — B.3 is a derivation with no experiments. Construction is **B.3.3 single-split**, `B' ∈ R^{m×d}`, cost `O(md)` per position |
+| `G_t` under the exact readout | **decided 2026-08-05: run both readouts in arm 1.2** | `G_t` is a leaf on `Z_t`, so exact marginalisation gives `log μ_t(a) += LSE_k B'[k,a]` — identical at every position, hence context-free. Only the MFVI path yields the GFU operator `σ(qB'^⊤)B'` that is the FFN analogue, so that path carries the claim |
 | Dataset | open | PTB or WikiText-2. Not WikiText-103 — that is the regime where the original PT is reported to fail |
 | Parameter matching basis | open | total / non-embedding / both at fixed vocabulary. Must be stated explicitly; with tied embeddings PT's budget is almost entirely the `\|V\| × d` matrix `S` |
 | Shared training loop | decided | One implementation across PT, GPT and Looped. A loop change that helps one model and not the others voids the comparison |
