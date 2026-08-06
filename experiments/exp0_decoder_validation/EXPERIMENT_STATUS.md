@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | **checks 1–9 pass** — exit criterion met |
+| **Status** | checks 1–9 pass, **but check 6 is seed-fragile and the model does not train at scale** — diagnosis below |
 | **Priority** | mandatory — nothing else exists until this passes |
 | **Last updated** | 2026-08-05 |
 | **Plan reference** | [RESEARCH_PLAN.md](../../developer%20files/RESEARCH_PLAN.md) § Experiment 0 |
@@ -184,4 +184,150 @@ to raise now rather than after Experiment 1.
 
 ```bash
 ./.venv/bin/python experiments/exp0_decoder_validation/worked_example.py
+```
+
+
+---
+
+# Diagnosis, 2026-08-06 — why context does not reach the output
+
+Opened because PT reaches train ppl 611 on PTB against a unigram baseline of 687, at 88 epochs,
+with the curve flat for the last half of training. GPT on the identical pipeline reaches train
+ppl 5.4, so data, tokenisation and the training loop are not at fault. Per `RESEARCH_PLAN.md`
+this is a return to validation, not a language-modelling result.
+
+## Mechanism
+
+**Training drives the MFVI inner loop into a saturated fixed point in which the head message
+dominates the word unary, and every additional round compounds it.** Once there, attention is
+near-deterministic, `q̄` is nearly the same at every position, and nothing downstream can
+recover context that the content stream no longer carries.
+
+It is a self-reinforcing loop: `T` grows → attention sharpens → the message becomes one
+full-magnitude `B` row instead of an average over the prefix → the message grows → it swamps the
+word unary in the `Z`-update → `q̄` loses its positional spread → attention has nothing left to
+discriminate on and stays saturated.
+
+## Evidence
+
+### 1. Prefix ablation on trained checkpoints (`diagnose_context.py`)
+
+Logits at the last position, prefix zeroed and prefix shuffled:
+
+| Model | shuffled: max Δlogit | KL | argmax agrees |
+|---|---:|---:|---:|
+| PT MFVI (val ppl 664) | 1.85 | **0.0115** | 0.75 |
+| GPT (val ppl 131) | 28.67 | **12.26** | 0.00 |
+| PT untrained | ~0 | ~0 | 1.00 |
+
+Context moves PT's output about **a thousand times less** than GPT's. Shuffling the prefix leaves
+three quarters of PT's predictions unchanged.
+
+### 2. Logit decomposition — the unary does *not* dominate the readout
+
+`logit_w = b_w + Σ_a Q_Z(a) S[w,a]`, on trained weights:
+
+| Term | std over vocabulary | range |
+|---|---:|---:|
+| `b_w` | 0.774 | 6.45 |
+| `Σ_a Q_Z(a) S[w,a]` | 0.676 | 6.46 |
+
+Ratio 1.14 — the two terms are comparable, so the obvious hypothesis is **wrong**: the readout is
+not drowned by the word unary. The problem is one level up. The same context term varies across
+*positions* by only 0.193, and `Q_Z` itself has a spread across positions of **0.0022**. The
+context term is large but nearly constant — it is a second bias, not a signal.
+
+### 3. Trained posteriors, and where the collapse happens
+
+Content-stream trace, PTB validation batch, per MFVI round:
+
+| Round | ‖word unary‖ | ‖message‖ | msg/word | `q̄` std over t | `q̄` entropy | `Q_c` entropy |
+|---:|---:|---:|---:|---:|---:|---:|
+| init | 16.10 | — | — | 0.00072 | 5.520 | — |
+| 1 | 16.10 | 18.18 | 1.13 | 0.00153 | 4.501 | 1.869 |
+| 2 | 16.10 | 28.23 | 1.75 | 0.00206 | 3.822 | 0.726 |
+| 3 | 16.10 | 67.18 | **4.17** | 0.00310 | **2.031** | **0.353** |
+
+Untrained, same shape: msg/word reaches only 0.62 and both entropies stay flat (5.54, ~2.9).
+**Training creates the domination**; it is not there at initialisation.
+
+`Q_c` entropy 0.353 nats against a maximum of 4.159 — attention is effectively hard. 39.9 % of
+its mass sits on ROOT, which is a constant. This also corrects an earlier note in the report:
+attention entropy was checked *at initialisation* (3.1 nats, not saturated) and a conclusion
+drawn from it; after training it is 0.35.
+
+`q̄` still identifies its own word — variation between word types 0.285 against 0.102 within a
+word type — so the word is not erased. What is destroyed is the *positional* dynamic range.
+
+### 4. `λ_H` is not the mechanism
+
+`λ_H = 1/d` multiplies attention logits by `d`, so it was the leading suspect. Decoupled and
+pinned to `1/8` across the toy memorisation task at `d = 8 … 256`, it changes nothing: the task
+fails at `d ≥ 16` with both the coupled and the pinned value. Ruled out.
+
+### 5. The number of MFVI rounds is the driver
+
+Toy memorisation (check 6's task), fit rate over five seeds, 1200 Adam steps, fit = final loss
+below 0.05:
+
+| `d` \ rounds | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| 8 | 2/5 | 3/5 | 1/5 | **0/5** |
+| 16 | 3/5 | 3/5 | 2/5 | **0/5** |
+| 64 | 1/5 | 1/5 | 1/5 | 1/5 |
+| 256 | 2/5 | 0/5 | 0/5 | **0/5** |
+| **total** | **8/20** | **7/20** | **4/20** | **1/20** |
+
+Monotone in rounds; at four rounds nothing fits at any `d`. The `d` dependence is weak and noisy
+by comparison — the apparent cliff between `d=8` and `d=16` in the first pass was seed noise.
+
+**More steps do not help.** At `d=16`, 6000 steps give 1.1102 against 1200 steps' 1.1103 — a hard
+plateau, not slow convergence. The same is true on PTB, where the curve is flat over the last
+10 000 steps.
+
+## Correction to the validation suite
+
+**Check 6 passes on one seed and is not representative.** Its configuration — `d=8`,
+`n_rounds=3`, seed 0 — has a fit rate of **1/5**. The suite reported a healthy model because it
+happened to sit on the seed that works. Any future claim from check 6 must be over several
+seeds; a single-seed memorisation test cannot distinguish a model that fits from one that fits
+sometimes.
+
+## What remains ambiguous, and the experiment that separates it
+
+Two readings survive the evidence:
+
+- **(a) The fixed point is degenerate.** Iterating the updates converges to a state where the
+  message dominates by construction, so no parameter setting reachable by gradient descent
+  avoids it.
+- **(b) The fixed point is fine and the optimisation cannot reach it.** Saturated softmaxes kill
+  the gradient early, and the model is trapped before it can arrange a useful message.
+
+Both predict everything measured above. **The separating experiment:** take a seed that fits at
+`n_rounds=1`, freeze those weights, and evaluate at 2, 3 and 4 rounds without retraining. If the
+fit survives more rounds, the fixed point is sound and the failure is optimisation — (b). If
+adding rounds destroys the fit at fixed weights, the iteration itself is degenerate — (a). Under
+(b) the remedies are annealing `λ_H`, warm-starting, or damping the update (Appendix B.1/B.2 of
+Wu & Tu give step size and damping); under (a) the update schedule has to change.
+
+## Not done, deliberately
+
+No sweep, no hyperparameter tuning to improve perplexity, no change to the parameterisation of
+`T` — the capacity question (0.27M non-embedding for PT against 1.23M for GPT, and the
+full-rank versus factored `T`) is real but distinct, and changing it mid-diagnosis would destroy
+the comparison. Evidence above says context is *present but crushed*, not absent, which is the
+reading that argues against reaching for capacity first.
+
+## Reproduce
+
+```bash
+./.venv/bin/python experiments/exp0_decoder_validation/diagnose_context.py
+```
+
+```bash
+./.venv/bin/python experiments/exp0_decoder_validation/diagnose_content_stream.py
+```
+
+```bash
+./.venv/bin/python experiments/exp0_decoder_validation/bisect_d.py
 ```
