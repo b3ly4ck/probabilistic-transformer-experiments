@@ -13,6 +13,7 @@ two things to settle first: the B.3 globals decision and the flat-`log μ` findi
 
 | Date | Version | Change |
 |---|---|---|
+| 2026-08-05 | 0.4.0 | Experiment 1 split into arms 1.1 (no `G_t`) and 1.2 (with `G_t`); `exp1_language_modeling/` specified, `exp1_pt_vs_gpt/` superseded. Source check found B.3.3 single-split and the context-free degeneracy of `G_t` under the exact readout. |
 | 2026-08-05 | 0.3.1 | Experiment 0 results recorded: overfit sweep, the `D_0` floor, and the finding that the exact readout is nearly flat on the note's §5 example. |
 | 2026-08-05 | 0.3.0 | Causal PT decoder implemented: content stream, exact and mean-field readouts, nine checks. All pass. |
 | 2026-08-05 | 0.2.2 | §17.1 / §23.3 read: exact readout becomes the mainline, the query stream disappears, the no_grad filtering design is retracted. |
@@ -103,7 +104,7 @@ Experiment 1, after checking the driver version on the GPU partitions.
 | Which readout is mainline | **decided 2026-08-05: exact** | §23.3 states it outright — exact readout mainline, mean-field two-stream as the ablation. The query stream disappears entirely (§24.1); the readout is a causal `logcumsumexp` scan, `O(ndh)`, fully parallel |
 | Exact readout written in Exp 0 | decided | It is now the mainline *and* the oracle for check 9; Exp 3 reuses it rather than implementing anything new |
 | Gradient through the content stream | **decided 2026-08-05: flows normally** | "Frozen prefix" is variational (`q̄_j` is not re-optimised at later slots), not stop-gradient. Causality comes from the triangular mask, as in a transformer. Running the filtering pass under `no_grad` would starve `S` and `T^(c)` |
-| Appendix B.3 globals (`G_t`) from day one | **open** — decided to defer past Exp 0, settle before Exp 1 | §22.2: the graph-faithful answer to "PT lacks an FFN". Without it, Experiments 1–2 confound the causal construction with the known encoder-side capacity gap. `O(md)` per position, stays inside the graph |
+| Appendix B.3 globals (`G_t`) from day one | **resolved 2026-08-05: neither — measured** | Not an assumption. Experiment 1 splits into arm 1.1 (without) and arm 1.2 (with); the delta is the result. Wu & Tu propose the globals as an FFN substitute but never test them | §22.2: the graph-faithful answer to "PT lacks an FFN". Without it, Experiments 1–2 confound the causal construction with the known encoder-side capacity gap. `O(md)` per position, stays inside the graph |
 | Dataset | open | PTB or WikiText-2. Not WikiText-103 — that is the regime where the original PT is reported to fail |
 | Parameter matching basis | open | total / non-embedding / both at fixed vocabulary. Must be stated explicitly; with tied embeddings PT's budget is almost entirely the `\|V\| × d` matrix `S` |
 | Shared training loop | decided | One implementation across PT, GPT and Looped. A loop change that helps one model and not the others voids the comparison |

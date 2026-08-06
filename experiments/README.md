@@ -6,8 +6,9 @@ and run scripts for that experiment.
 
 | Experiment | Question | Status |
 |---|---|---|
-| [exp0_decoder_validation](exp0_decoder_validation/EXPERIMENT_STATUS.md) | Does the causal PT decoder implement the equations it claims to? | not started |
-| [exp1_pt_vs_gpt](exp1_pt_vs_gpt/EXPERIMENT_STATUS.md) | Does it train on real data, in a reasonable corridor? | not started |
+| [exp0_decoder_validation](exp0_decoder_validation/EXPERIMENT_STATUS.md) | Does the causal PT decoder implement the equations it claims to? | **checks 1-9 pass** |
+| [exp1_language_modeling](exp1_language_modeling/EXPERIMENT_STATUS.md) | Does it train on real data, and does the in-graph FFN analogue `G_t` close the gap? | specified |
+| [exp1_pt_vs_gpt](exp1_pt_vs_gpt/EXPERIMENT_STATUS.md) | *superseded by the above, kept for the record* | never run |
 | [exp2_pt_vs_looped](exp2_pt_vs_looped/EXPERIMENT_STATUS.md) ★ | Does structure contribute beyond weight sharing? | not started |
 | [exp3_exact_vs_mfvi](exp3_exact_vs_mfvi/EXPERIMENT_STATUS.md) | What does the mean-field approximation cost? | not started |
 

@@ -158,6 +158,14 @@ three is defensible; leaving it unstated is what a reviewer will attack first.
 
 ## Experiment 1 — Causal PT vs. GPT-style decoder
 
+**Split into arms 1.1 and 1.2, 2026-08-05.** The Appendix B.3 global variables `G_t` are a
+**measured variable, not an assumption**: arm 1.1 runs without them, arm 1.2 with them, and the
+delta is itself a result. Wu & Tu propose the globals as an in-graph substitute for the missing
+feed-forward structure but never test them — Appendix B.3 is a derivation with no experiments.
+Baking `G_t` in would assume the answer. Full specification in
+[`experiments/exp1_language_modeling/`](../experiments/exp1_language_modeling/EXPERIMENT_STATUS.md);
+this section is superseded where the two disagree.
+
 **Question:** does the causal PT train, and is its perplexity in a reasonable corridor?
 
 **Models:** causal PT decoder; standard GPT-style decoder (nanoGPT), matched budget.

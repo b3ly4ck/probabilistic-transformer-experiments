@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | not started |
+| **Status** | **SUPERSEDED 2026-08-05** — never run. Replaced by [`exp1_language_modeling/`](../exp1_language_modeling/EXPERIMENT_STATUS.md), which splits this into arms 1.1 (no `G_t`) and 1.2 (with `G_t`). Kept because rows are never deleted; the question below is unchanged, it is arm 1.1. |
 | **Priority** | mandatory — without it there is no paper |
 | **Blocked by** | [Experiment 0](../exp0_decoder_validation/EXPERIMENT_STATUS.md) |
 | **Last updated** | 2026-08-05 |
