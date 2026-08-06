@@ -15,6 +15,7 @@ in the decisions table.
 
 | Date | Version | Change |
 |---|---|---|
+| 2026-08-06 | 0.8.0 | Calibration on PTB. PT converges to the unigram baseline and cannot fit its training data; GPT overfits. Session report in `REPORT_2026-08-06.md`. |
 | 2026-08-05 | 0.4.0 | Experiment 1 split into arms 1.1 (no `G_t`) and 1.2 (with `G_t`); `exp1_language_modeling/` specified, `exp1_pt_vs_gpt/` superseded. Source check found B.3.3 single-split and the context-free degeneracy of `G_t` under the exact readout. |
 | 2026-08-05 | 0.3.1 | Experiment 0 results recorded: overfit sweep, the `D_0` floor, and the finding that the exact readout is nearly flat on the note's §5 example. |
 | 2026-08-05 | 0.3.0 | Causal PT decoder implemented: content stream, exact and mean-field readouts, nine checks. All pass. |

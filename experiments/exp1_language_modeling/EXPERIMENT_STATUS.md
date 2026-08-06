@@ -338,7 +338,7 @@ Never delete a row. Failed and abandoned runs stay, with the reason.
 | 939151 | 2026-08-06 | `74d4f71` | 1.1 | exact | PT `d=256 h=4` | — | 0 | — | — | 3 s | **failed** — bad GPU on the node, `nvidia-smi` errored and `set -e` killed the job. GPU check made non-fatal |
 | 939155 | 2026-08-06 | `cdd75e2` | 1.1 | exact | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | 7004.89 | 549 s | only **300 steps** — 1.83 s/step, **78× slower than MFVI**. Peak 4.28 GiB vs 0.70. Nowhere near converged |
 | 939158 | 2026-08-06 | `cdd75e2` | 1.1 | — | GPT `d=160 L=4` | — | 0 | 2.85M / 1.62M / 1.23M | — | 16 min, cancelled | **ran on CPU without saying so.** Landed on `ai_gpu32` after its GPU failed; `torch.cuda.is_available()` returned False and the runner fell through to CPU. Making the `nvidia-smi` check non-fatal (after 939151) removed the only thing that caught this. Runner now aborts unless `--allow-cpu` is passed |
-| 939170 | 2026-08-06 | `9c7ca4e` | 1.1 | — | GPT `d=160 L=4` | — | 0 | 2.85M / 1.62M / 1.23M | pending | — | resubmission of 939158 with `--exclude=ai_gpu32` |
+| 939170 | 2026-08-06 | `9c7ca4e` | 1.1 | — | GPT `d=160 L=4` | — | 0 | 2.85M / 1.62M / 1.23M | **131.35** best | 364 s | 20 000 steps. **Overfits hard** — train ppl 5.4, val runs away from 975 at step 14 000 to 2326 at 20 000. Best val reached early; test at the final step 2015.67 |
 | 939156 | 2026-08-06 | `cdd75e2` | 1.1 | MFVI | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | **664.19** | 471 s | 20 000 steps, **converged** — flat from step 10 000. test 612.14 |
 | 939157 | 2026-08-06 | `cdd75e2` | 1.2 | MFVI | PT + `G_t` | 64 | 0 | 2.85M / 2.56M / 0.29M | **678.40** | 483 s | 20 000 steps, converged. test 621.29. **Worse than without `G_t`** |
 
@@ -354,6 +354,17 @@ Never delete a row. Failed and abandoned runs stay, with the reason.
 | PT MFVI, no `G_t`, 20 000 steps | 664.19 | 612.14 | 3 % better |
 | PT MFVI, with `G_t`, 20 000 steps | 678.40 | 621.29 | 1 % better |
 | PT exact, 300 steps | 7004.89 | 6976.89 | not converged |
+
+**The two models fail in opposite directions**, which is the sharpest diagnostic obtained:
+
+| | train ppl @ 20 000 | best val ppl | behaviour |
+|---|---:|---:|---|
+| GPT | **5.4** | 131.35 | fits the corpus, then overfits hard — val runs away to 2326 |
+| PT | **611** | 664.19 | **cannot fit the training data at all**; val flat from step 10 000 |
+
+PT's failure is not generalisation and not regularisation: its *training* perplexity sits at the
+unigram level after 88 epochs, with the curve flat for the last half of training. It is
+underfitting by a wide margin.
 
 **This is a return to Experiment 0, not a result to report.** The research plan says so
 explicitly: a catastrophic gap is an implementation problem. PT converged — flat from step
