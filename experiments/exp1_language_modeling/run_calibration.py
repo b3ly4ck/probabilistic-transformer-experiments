@@ -80,6 +80,7 @@ def main() -> None:
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--only", default=None, help="run a single model by name")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--save-ckpt", default=None, help="directory to write <model>.pt into")
     args = ap.parse_args()
 
     corpus = load_ptb()
@@ -149,11 +150,22 @@ def main() -> None:
         rows.append(row)
         print(f"-> {json.dumps({k: v for k, v in row.items() if k != 'history'})}", flush=True)
 
+        if args.save_ckpt and status == "ok":
+            ckpt_dir = Path(args.save_ckpt)
+            ckpt_dir.mkdir(parents=True, exist_ok=True)
+            torch.save(
+                {"model": name, "state_dict": model.state_dict(), "config": model.cfg,
+                 "params": params, "val_ppl": result.best_val_ppl},
+                ckpt_dir / f"{name}.pt",
+            )
+            print(f"saved {ckpt_dir / (name + '.pt')}", flush=True)
+
         del model
         if args.device == "cuda":
             torch.cuda.empty_cache()
 
-    out = Path(args.out or Path(__file__).parent / "calibration_results.json")
+    suffix = f"_{args.only}" if args.only else ""
+    out = Path(args.out or Path(__file__).parent / f"calibration_results{suffix}.json")
     out.write_text(json.dumps({"env": env, "rows": rows}, indent=2, default=str))
     print(f"\nwrote {out}", flush=True)
 

@@ -176,3 +176,44 @@ def test_the_same_loop_trains_both_model_families(build, loss_fn):
     assert result.history[-1]["val_ppl"] < result.history[0]["val_ppl"]
     assert result.best_val_ppl < V  # better than uniform over the vocabulary
     assert result.tokens_seen == 30 * 4 * CTX
+
+
+# -- generation ------------------------------------------------------------
+
+
+def test_generate_from_empty_prompt_for_both_families():
+    """Position 0 is predicted from a learned constant in both models -- PT's
+    root key r, the baseline's BOS -- so an empty prompt needs no special case."""
+    from src.generate import decode, generate
+
+    g = torch.Generator()
+    g.manual_seed(0)
+    pt = CausalPTDecoder(PTConfig(vocab_size=V, d=16, n_channels=1, n_rounds=2), generator=g)
+    for model, readout in ((_gpt(), None), (pt, "mfvi"), (pt, "exact")):
+        out = generate(model, max_new_tokens=5, batch_size=3, readout=readout, generator=g)
+        assert out.shape == (3, 5)
+        assert out.min() >= 0 and out.max() < V
+        assert len(decode(out, _corpus().vocab)) == 3
+
+
+def test_generation_continues_a_prompt():
+    from src.generate import generate
+
+    g = torch.Generator()
+    g.manual_seed(1)
+    prompt = torch.randint(0, V, (2, 4), generator=g)
+    out = generate(_gpt(), max_new_tokens=3, prompt=prompt, generator=g)
+    assert out.shape == (2, 7)
+    assert torch.equal(out[:, :4], prompt)
+
+
+def test_top_k_restricts_the_support():
+    """With k=1 sampling is deterministic, so two draws must agree."""
+    from src.generate import generate
+
+    g = torch.Generator()
+    model = _gpt()
+    prompt = torch.randint(0, V, (1, 3), generator=torch.Generator().manual_seed(2))
+    a = generate(model, 4, prompt=prompt, top_k=1, generator=g)
+    b = generate(model, 4, prompt=prompt, top_k=1, generator=g)
+    assert torch.equal(a, b)

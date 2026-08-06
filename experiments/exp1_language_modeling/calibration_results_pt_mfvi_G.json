@@ -1,0 +1,96 @@
+{
+  "env": {
+    "commit": "eab855c",
+    "started_utc": "2026-08-06T08:02:57+00:00",
+    "device": "cuda",
+    "gpu": "NVIDIA TITAN RTX",
+    "torch": "2.0.1+cu117",
+    "host": "ai_gpu32",
+    "train_config": {
+      "context": 128,
+      "batch_size": 32,
+      "max_steps": 2000,
+      "lr": 0.001,
+      "min_lr_ratio": 0.1,
+      "warmup_steps": 200,
+      "weight_decay": 0.01,
+      "grad_clip": 1.0,
+      "betas": [
+        0.9,
+        0.95
+      ],
+      "eval_every": 500,
+      "eval_batches": 0,
+      "seed": 0,
+      "device": "cuda"
+    },
+    "args": {
+      "steps": 2000,
+      "d": 256,
+      "gpt_d": 160,
+      "gpt_layers": 4,
+      "context": 128,
+      "batch_size": 32,
+      "lr": 0.001,
+      "eval_every": 500,
+      "seed": 0,
+      "readout_chunk": 250,
+      "device": "cuda",
+      "only": "pt_mfvi_G",
+      "out": null,
+      "save_ckpt": "checkpoints/calib"
+    }
+  },
+  "rows": [
+    {
+      "model": "pt_mfvi_G",
+      "status": "ok",
+      "error": null,
+      "params": {
+        "total": 2849552,
+        "embedding": 2560000,
+        "non_embedding": 289552
+      },
+      "wall_clock_s": 48.5,
+      "peak_mem_gib": 0.7,
+      "best_val_ppl": 1442.7,
+      "final_val_ppl": 1442.7,
+      "test_ppl": 1404.23,
+      "tokens_seen": 8192000,
+      "history": [
+        {
+          "step": 500,
+          "train_loss": 8.377235412597656,
+          "val_loss": 8.351138171027689,
+          "val_ppl": 4234.998153292799,
+          "lr": 0.0009401035370210213,
+          "elapsed_s": 12.667287588119507
+        },
+        {
+          "step": 1000,
+          "train_loss": 7.698775291442871,
+          "val_loss": 7.662514237796559,
+          "val_ppl": 2127.098743154316,
+          "lr": 0.0006289150267413942,
+          "elapsed_s": 24.5206880569458
+        },
+        {
+          "step": 1500,
+          "train_loss": 7.3895745277404785,
+          "val_loss": 7.366157868329217,
+          "val_ppl": 1581.5455883173781,
+          "lr": 0.0002613476657938789,
+          "elapsed_s": 36.37779498100281
+        },
+        {
+          "step": 2000,
+          "train_loss": 7.279047012329102,
+          "val_loss": 7.274269664988799,
+          "val_ppl": 1442.6971550518888,
+          "lr": 0.00010000068538902054,
+          "elapsed_s": 48.2716338634491
+        }
+      ]
+    }
+  ]
+}
