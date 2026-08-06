@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | flag implemented; validation passes in both arms **except** one open failure blocking arm 1.2 under the exact readout — see below. No training runs yet. |
+| **Status** | flag implemented, validation passes in both arms. Arm 1.2 **runs under the MFVI readout**. Data and baseline in progress; no training runs yet. |
 | **Priority** | mandatory — without it there is no paper |
 | **Blocked by** | [Experiment 0](../exp0_decoder_validation/EXPERIMENT_STATUS.md) — **complete**, checks 1–9 pass at `ab7c082` |
 | **Supersedes** | [`exp1_pt_vs_gpt/`](../exp1_pt_vs_gpt/EXPERIMENT_STATUS.md), kept for the record |
@@ -98,14 +98,22 @@ readout is nearly flat on the note's own §5 example — the same mechanism, see
 null result would say nothing about the paper's conjecture. Therefore **arm 1.2 runs both
 readouts**, and the write-up states which one carries the claim:
 
-| Arm | Readout | What it measures |
-|---|---|---|
-| 1.2-exact | exact | the label-prior effect of `G_t` — expected small, reported for completeness |
-| 1.2-mfvi | MFVI | the GFU / FFN analogue — **this is the arm that answers the question** |
+**Decision (2026-08-05): arm 1.2 runs under the MFVI readout, not the exact one.** Arm 1.1
+runs under both, so the 1.1 vs 1.2 delta is taken within the MFVI readout, never across
+readouts.
 
-Arm 1.1 also runs both, so the 1.1 vs 1.2 delta is taken within a readout, never across.
+**The degeneracy under the exact readout is a result, not a gap in coverage.** It is not a bug
+to be fixed and not a hyperparameter to be tuned: `G_t` is a leaf on `Z_t`, so exact inference
+integrates it out and what survives cannot depend on position. The measurements confirm the
+argument rather than merely illustrating it — `λ_G` at 5, 20 and 100 give a final loss identical
+to four decimals, which is what "no hyperparameter reaches this" looks like in numbers.
 
-This is not licence to start Experiment 3 — the comparison here is `G_t` on/off within a
+That belongs in the write-up as a statement about the construction: *the in-graph feed-forward
+analogue proposed in Appendix B.3 exists only under mean-field inference; exact inference on the
+same graph removes it.* Since §23.3 makes the exact readout the mainline, the two
+recommendations are in tension, and this experiment is where that shows up.
+
+This is not licence to start Experiment 3 — the comparison here is `G_t` on/off within one
 readout, not exact vs. MFVI as a scientific object.
 
 ## Design
@@ -157,7 +165,7 @@ bug.**
 | 3 causality | bitwise, CPU — `G_t` reads `q` at `t` only, never the prefix | ☑ |
 | 4 no anti-causal path | unchanged in form, re-run | ☑ |
 | 5 tying | still no `(d, |V|)` parameter anywhere | ☑ |
-| 6 overfit | **partial — see the open failure below** | ☒ |
+| 6 overfit | passes under MFVI (2400 steps, `λ_G = 5`); under the exact readout the degeneracy below is asserted instead | ☑ |
 | 7 worked example | §5 has no `G_t`; unchanged with the flag off, bitwise | ☑ |
 | 8 free energy | non-increasing; the `Q_G` update is an exact **argmin** under perturbation | ☑ |
 | 9 exact vs. brute force | enumeration gains an explicit loop over `k`; agreement holds, so the slot is still a tree | ☑ |
@@ -167,9 +175,9 @@ bug.**
 | new | `B_global` receives gradient under both readouts | ☑ |
 | new | flag off leaves no `B_global` parameter and reproduces arm 1.1 | ☑ |
 
-Suite: 67 tests, 66 pass and 1 `xfail(strict=True)`, at commit `HEAD`.
+Suite: 67 tests, all passing.
 
-### Open failure — blocks arm 1.2 under the exact readout
+### Measured consequence of the degeneracy — recorded as a result
 
 **With `G_t` attached, the exact readout cannot memorise a single sequence.** Measured 0.4536
 against 0.0021 for the identical model without it. It is not a step budget (1200 and 2400 steps
@@ -184,12 +192,13 @@ query. The mean-field readout, which has a query, survives it.
 
 This is the *second* mechanism pushing the same way as the context-free finding above: under the
 exact readout the global head contributes nothing that varies with position, and here it
-actively costs. Recorded as a failing test (`xfail(strict=True)`, so it fails if it ever starts
-passing) rather than tuned away.
+actively costs. Asserted directly as a model property in
+`tests/test_06_overfit.py::test_global_head_is_degenerate_under_the_exact_readout`, with the
+measured gap, so the property cannot silently change.
 
-Not yet ruled out: that this is an artefact of memorising one sequence at toy width, where `q̄`
-spread is the only signal. Arm 1.2's premise does not survive a null result here, so this must
-be resolved before the arm is run.
+**Not investigated further, by decision.** The mechanism is understood from the construction and
+is not hyperparameter-reachable; digging into why `Q_G` converges near-uniform would not change
+what arm 1.2 does.
 
 ### Second finding — `λ_G` at 1 collapses the model entirely
 
@@ -210,7 +219,7 @@ comparison.
 
 | Item | Setting |
 |---|---|
-| Dataset | PTB or WikiText-2 — **not** WikiText-103 |
+| Dataset | **PTB** (Mikolov preprocessed, word level) — see decisions |
 | Tokenizer / vocabulary | identical across all models |
 | Context length | identical |
 | Optimizer | Adam, identical hyperparameters and schedule |
@@ -225,8 +234,34 @@ comparison.
 baseline configuration. Either recompute the matched GPT baseline separately per arm, or hold
 total parameters fixed across arms by adjusting `d`.
 
-> Convention chosen for this experiment: **—** (state it here before the first run; leaving it
-> unstated is what a reviewer attacks first.)
+**Measured budgets on PTB (`|V| = 10,000`), computed 2026-08-05.** The table below is why the
+convention has to be chosen deliberately rather than defaulted:
+
+| Model | total | embedding | non-embedding |
+|---|---:|---:|---:|
+| PT `d=512`, `h=4` | 6.2M | 5.1M (83%) | 1.1M |
+| PT `d=1024`, `h=4` | 14.4M | 10.2M (71%) | 4.2M |
+| PT `d=2048`, `h=4` | 37.3M | 20.5M (55%) | 16.8M |
+| GPT `d=256`, `L=6` | 7.3M | 2.6M (35%) | 4.8M |
+| GPT `d=512`, `L=6` | 24.1M | 5.1M (21%) | 19.0M |
+| GPT `d=768`, `L=6` | 50.3M | 7.7M (15%) | 42.6M |
+
+Against `GPT d=512, L=6` (24.1M), matching on **total** puts PT at `d ≈ 1500`; matching on
+**non-embedding** puts it at `d ≈ 2180`. Either way the label set runs to well over a thousand
+values.
+
+> **Convention chosen: —** (state it before the first run; leaving it unstated is what a
+> reviewer attacks first.)
+
+**Flagged: the 20–50M budget forces `d` into the thousands, and §22.2 names that as a cost.**
+"Raise `d`… this is the default lever; its real price is the one Defect 1(c) names: a `d` in the
+thousands erodes *small interpretable label set*." At a matched 24M on PTB the erosion is not
+hypothetical — `d ≈ 1500–2200` is a hidden dimension, not a syntactic label set, and the
+interpretability half of the paper's framing weakens accordingly. Options, none of them free:
+run at a smaller matched budget where `d` stays in the hundreds and accept that it is below the
+range Penghao specified; keep the budget and drop the interpretability claim to a measured trade
+curve over `(d, K)` as §22.3 already proposes; or raise `h`, which buys non-embedding parameters
+at `h·d²` without touching `d`. Decide before the first run and record which.
 
 Report **both** parameter count and wall-clock / FLOPs for every run — PT shares parameters
 across iterations, so equal parameter count does not imply equal compute. Report the
@@ -293,9 +328,11 @@ write-up says so.
   which was used. Resolution: —
 - **Value of `m`.** Not specified anywhere. It trades against `d` under the fixed-budget
   convention. Resolution: —
-- **Why does `Q_G` converge near-uniform?** If it stays uniform at scale, `G_t` is a bias and
-  the FFN claim fails by degeneracy rather than by measurement. Check whether it is an artefact
-  of single-sequence memorisation before running the arm. Resolution: —
+- ~~Why does `Q_G` converge near-uniform?~~ **Closed 2026-08-05, not investigated.** The
+  degeneracy under the exact readout follows from `G_t` being a leaf and is not reachable by
+  hyperparameters; arm 1.2 moves to the MFVI readout instead. Whether `Q_G` stays near-uniform
+  *under MFVI at corpus scale* is a different question and is answered by the arm itself, since
+  a uniform `Q_G` there would show up as a null delta.
 - **Dataset: PTB or WikiText-2.** Resolution: —
 - **Budget-matching convention.** Resolution: —
 

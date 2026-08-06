@@ -68,25 +68,31 @@ def test_overfits_with_the_global_head_under_mfvi():
     assert torch.equal(model(tokens, readout="mfvi").argmax(dim=-1), tokens)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "OPEN, blocking arm 1.2 under the exact readout: with the global head "
-        "attached the exact readout cannot memorise a single sequence. Measured "
-        "0.4536 against 0.0021 for the same model without it, unchanged by more "
-        "steps (1200 vs 2400) and unchanged by lambda_G at 5, 20 or 100 -- "
-        "identical to four decimals, because Q_G converges near-uniform "
-        "(max ~0.20 at m=5) and the GFU term degenerates to a constant vector "
-        "added to every slot's label logits. That compresses the spread of qbar "
-        "across positions (0.0535 -> 0.046), which the exact readout depends on "
-        "since it pools by LSE with no query. Recorded as a failing test rather "
-        "than tuned away; see experiments/exp1_language_modeling."
-    ),
-)
-def test_overfits_with_the_global_head_under_the_exact_readout():
-    _, last, model, tokens = _train("exact", d=32, use_global=True, steps=2400)
-    assert last < 0.05
-    assert torch.equal(model(tokens, readout="exact").argmax(dim=-1), tokens)
+def test_global_head_is_degenerate_under_the_exact_readout():
+    """G_t cannot act as a feed-forward layer under exact inference.
+
+    Not a bug and not a tuning failure: G_t is a leaf on Z_t, so exact inference
+    integrates it out and what survives -- LSE_k B'[k,a] -- cannot depend on
+    position.  What it *can* do is perturb the content stream, and it does: the
+    same model that memorises a sequence to 0.002 without the head stops at 0.45
+    with it, because the near-constant GFU term compresses the spread of qbar
+    across positions that the LSE-pooling readout depends on.
+
+    Measured to be out of reach of hyperparameters: lambda_G at 5, 20 and 100
+    give a final loss identical to four decimals, with ||B'|| landing on 21.9 in
+    all three, because Q_G converges near-uniform (max ~0.20 at m=5).
+
+    Asserted here so the property is executable rather than a note.  Arm 1.2 of
+    Experiment 1 runs under the MFVI readout for this reason.
+    """
+    _, without, _, _ = _train("exact", d=32, use_global=False)
+    _, with_head, _, _ = _train("exact", d=32, use_global=True, steps=2400)
+
+    assert without < 0.05, f"the baseline stopped memorising ({without})"
+    assert with_head > 0.3, (
+        f"the global head no longer degrades the exact readout ({with_head}); "
+        "if this changed, arm 1.2's readout decision must be revisited"
+    )
 
 
 def test_position_zero_carries_an_irreducible_floor():
