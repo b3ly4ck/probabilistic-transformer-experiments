@@ -331,9 +331,62 @@ Never delete a row. Failed and abandoned runs stay, with the reason.
 
 | Run | Date | Commit | Arm | Readout | Model | `m` | Seed | Params (total / emb / non-emb) | Val PPL | Wall-clock | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| | | | | | | | | | | | |
+| 939123 | 2026-08-06 | `74d4f71` | — | — | all four | — | 0 | — | — | 25 min | **cancelled.** Single job for four models would have hit the 4 h limit on PT-exact alone, and the JSON is written only at the end, so it would have taken the GPT row down with it |
+| 939148 | 2026-08-06 | `74d4f71` | 1.1 | — | GPT `d=160 L=4` | — | 0 | 2.85M / 1.62M / 1.23M | **130.63** | 37 s | 2000 steps, curve flat by 1500. test 118.56, peak 0.68 GiB |
+| 939149 | 2026-08-06 | `74d4f71` | 1.1 | MFVI | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | 1450.59 | 43 s | 2000 steps, **undertrained** — still falling ~10 % per eval. Superseded by 939156 |
+| 939150 | 2026-08-06 | `74d4f71` | 1.2 | MFVI | PT + `G_t` | 64 | 0 | 2.85M / 2.56M / 0.29M | 1442.70 | 48 s | as above. Superseded by 939157 |
+| 939151 | 2026-08-06 | `74d4f71` | 1.1 | exact | PT `d=256 h=4` | — | 0 | — | — | 3 s | **failed** — bad GPU on the node, `nvidia-smi` errored and `set -e` killed the job. GPU check made non-fatal |
+| 939155 | 2026-08-06 | `cdd75e2` | 1.1 | exact | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | 7004.89 | 549 s | only **300 steps** — 1.83 s/step, **78× slower than MFVI**. Peak 4.28 GiB vs 0.70. Nowhere near converged |
+| 939156 | 2026-08-06 | `cdd75e2` | 1.1 | MFVI | PT `d=256 h=4` | — | 0 | 2.83M / 2.56M / 0.27M | **664.19** | 471 s | 20 000 steps, **converged** — flat from step 10 000. test 612.14 |
+| 939157 | 2026-08-06 | `cdd75e2` | 1.2 | MFVI | PT + `G_t` | 64 | 0 | 2.85M / 2.56M / 0.29M | **678.40** | 483 s | 20 000 steps, converged. test 621.29. **Worse than without `G_t`** |
 
 ## Results
+
+### Calibration, 2026-08-06 — PT converges to the unigram baseline
+
+**PTB unigram baseline: val ppl 687.0.** Measured on the same split, for reference.
+
+| Model | Val PPL | Test PPL | vs unigram |
+|---|---:|---:|---|
+| GPT `d=160 L=4`, 2 000 steps | 130.63 | 118.56 | **5.3× better** |
+| PT MFVI, no `G_t`, 20 000 steps | 664.19 | 612.14 | 3 % better |
+| PT MFVI, with `G_t`, 20 000 steps | 678.40 | 621.29 | 1 % better |
+| PT exact, 300 steps | 7004.89 | 6976.89 | not converged |
+
+**This is a return to Experiment 0, not a result to report.** The research plan says so
+explicitly: a catastrophic gap is an implementation problem. PT converged — flat from step
+10 000, three evaluations within 1 ppl of each other — to a number indistinguishable from
+predicting word frequencies and ignoring context entirely. Generated samples agree: function
+words only, no content words, no local structure.
+
+The machinery is not broken in the ways already tested: checks 1–9 pass, the §5 worked example
+reproduces digit for digit, exact and brute-force agree to 7.5e-08, and PT memorises a single
+sequence at toy scale. Something between "correct on four words" and "learns nothing on PTB"
+is unaccounted for. Candidates not yet separated: `λ_H = 1/d` at `d = 256` (checked at
+initialisation — attention is *not* saturated, entropy 3.1 of 4.16 nats — but not checked after
+training); `n_rounds = 3` too few; the learning rate, shared with GPT, being wrong for a model
+whose parameters are all in one tied matrix; or the rank-`d` readout binding harder than
+expected at `|V| = 10 000`.
+
+**`G_t` makes it worse**, 678.40 against 664.19 — 14 ppl in the wrong direction, well outside
+the 1-ppl spread of the converged plateau. Not yet meaningful, since the base model is not
+learning; recorded so the sign is on file.
+
+### Measured cost of the exact readout
+
+| Readout | ms/step | Peak memory | Slowdown |
+|---|---:|---:|---|
+| MFVI | 23.6 | 0.70 GiB | — |
+| exact (chunked, 250) | 1832 | 4.28 GiB | **78×** |
+
+§23.3 calls this "the same FLOPs with worse hardware constants". Measured, the constant is 78,
+and it is memory traffic rather than arithmetic: the readout materialises `(B, n, |V|, d)` and
+runs elementwise exponentials over it, where the matmul form materialises `(B, n, |V|)` and
+uses tensor cores. A 20 000-step exact run is ~10 h against 8 min for MFVI. The fused
+cross-entropy §23.3 asks for is not optional at sweep scale.
+
+PT under MFVI costs 23.6 ms/step against GPT's 18.5 — only 1.3×, so the construction itself is
+not the expensive part.
 
 | Model | Arm | Readout | Params (total / emb / non-emb) | FLOPs | Val PPL (mean ± std) | Seeds |
 |---|---|---|---|---|---|---|

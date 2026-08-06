@@ -9,5 +9,5 @@
 
 set -euo pipefail
 cd /public/home/belyack/work/pt
-nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
+nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv || echo "nvidia-smi unavailable"
 /public/software/anaconda3/bin/python experiments/exp1_language_modeling/run_calibration.py "$@"
