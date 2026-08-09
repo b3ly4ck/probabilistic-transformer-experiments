@@ -1,0 +1,147 @@
+{
+  "args": {
+    "d": 256,
+    "h": 8,
+    "rank": 64,
+    "gamma": 3,
+    "n_iters": 3,
+    "readout": "exact",
+    "n_global": 0,
+    "vocab_chunk": 256,
+    "block_size": 64,
+    "batch_size": 16,
+    "steps": 2000,
+    "lr": 0.001,
+    "l2_arc": 0.0005,
+    "eval_every": 250,
+    "eval_blocks": null,
+    "seed": 0,
+    "device": "cuda",
+    "tag": "pilot_exact_T3"
+  },
+  "unigram_val_ppl": 688.8182373046875,
+  "best_val_ppl": 1555.039505207609,
+  "test_ppl": 1508.8912654287171,
+  "wall_clock_s": 793.6523613929749,
+  "params": {
+    "embedding": 2570000,
+    "non_embedding": 1050624,
+    "total": 3620624
+  },
+  "history": {
+    "step": [
+      250,
+      500,
+      750,
+      1000,
+      1250,
+      1500,
+      1750,
+      2000
+    ],
+    "train_loss": [
+      8.643624305725098,
+      8.185542106628418,
+      7.913504600524902,
+      7.672590255737305,
+      7.447319507598877,
+      7.346756458282471,
+      7.378287315368652,
+      7.328675746917725
+    ],
+    "val_loss": [
+      8.625299968416728,
+      8.187156367764482,
+      7.87617869436005,
+      7.656798993468915,
+      7.513032640729632,
+      7.426260556283241,
+      7.377869163661196,
+      7.349256229568831
+    ],
+    "val_ppl": [
+      5570.8335320708065,
+      3594.4863026107255,
+      2633.7887934258965,
+      2114.9765278360032,
+      1831.7601986437405,
+      1679.5153628445491,
+      1600.1764184186836,
+      1555.039505207609
+    ],
+    "diag": [
+      {
+        "msg_over_unary": 179.81378173828125,
+        "attn_entropy_frac": 0.8542231917381287,
+        "label_entropy": 0.11777035892009735,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.1760125160217285,
+        "qbar_std_over_positions": 0.0009471112862229347,
+        "rho": 9652131.0
+      },
+      {
+        "msg_over_unary": 147.02035522460938,
+        "attn_entropy_frac": 0.8918895721435547,
+        "label_entropy": 0.08674708008766174,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.513430118560791,
+        "qbar_std_over_positions": 0.0009375300141982734,
+        "rho": 7516306.5
+      },
+      {
+        "msg_over_unary": 116.96117401123047,
+        "attn_entropy_frac": 0.7753293514251709,
+        "label_entropy": 0.0774042159318924,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.7081708908081055,
+        "qbar_std_over_positions": 0.0009336055954918265,
+        "rho": 5817294.5
+      },
+      {
+        "msg_over_unary": 90.41300964355469,
+        "attn_entropy_frac": 0.667738676071167,
+        "label_entropy": 0.07673434913158417,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.638153076171875,
+        "qbar_std_over_positions": 0.0009202418732456863,
+        "rho": 4399887.5
+      },
+      {
+        "msg_over_unary": 64.17501831054688,
+        "attn_entropy_frac": 0.33033788204193115,
+        "label_entropy": 0.076277956366539,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.67248010635376,
+        "qbar_std_over_positions": 0.0009110369137488306,
+        "rho": 3610441.5
+      },
+      {
+        "msg_over_unary": 59.553924560546875,
+        "attn_entropy_frac": 0.2819805145263672,
+        "label_entropy": 0.0764278769493103,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.706319332122803,
+        "qbar_std_over_positions": 0.0009155652951449156,
+        "rho": 3187932.25
+      },
+      {
+        "msg_over_unary": 57.048789978027344,
+        "attn_entropy_frac": 0.2201961874961853,
+        "label_entropy": 0.07652871310710907,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.727807998657227,
+        "qbar_std_over_positions": 0.0009188060648739338,
+        "rho": 2970924.5
+      },
+      {
+        "msg_over_unary": 55.119590759277344,
+        "attn_entropy_frac": 0.22019444406032562,
+        "label_entropy": 0.07602635025978088,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 4.742803573608398,
+        "qbar_std_over_positions": 0.0009077374124899507,
+        "rho": 2847274.5
+      }
+    ]
+  }
+}

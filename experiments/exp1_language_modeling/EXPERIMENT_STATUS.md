@@ -118,5 +118,73 @@ does not mean equal compute.
 
 ## Run log
 
-| Date | Commit | Config | Seed | Metric | Wall-clock |
-|---|---|---|---|---|---|
+All runs: PTB, `|V| = 10,000`, block 64, batch 16, `ignore_first=1`, AdamW lr 1e-3, wd 1.4e-6,
+warmup 100 + cosine, grad clip 1.0, `d=256 h=8 rank=64 γ=3`, seed 0, NVIDIA TITAN RTX,
+torch 2.0.1+cu117. Reference: **unigram val ppl 688.82** on the identical token set.
+
+| Date | Commit | Job | Config | Best val ppl | Test ppl | Wall-clock |
+|---|---|---|---|---|---|---|
+| 2026-08-09 | `334e09b` | 940422 | MFVI readout, `T=3`, `l2_arc=5e-4`, 6000 steps | **695.70** | 655.09 | 306 s |
+| 2026-08-09 | `334e09b` | 940423 | **exact readout**, `T=3`, `l2_arc=5e-4`, 2000 steps | **1555.04** | 1508.89 | 793 s |
+| 2026-08-09 | `334e09b` | 940436 | MFVI, `T=1`, `l2_arc=5e-4`, 6000 steps | **695.33** | 654.60 | 180 s |
+| 2026-08-09 | `334e09b` | 940435 | MFVI, `T=3`, **`l2_arc=5.0`**, 6000 steps | **691.82** | 649.88 | 307 s |
+| 2026-08-09 | `334e09b` | 940438 | MFVI, `T=3`, **`λ_Z=4`**, 6000 steps | **690.02** | 646.51 | 228 s |
+
+**Gate: FAIL on every configuration.** Every MFVI run lands within 1 % of the unigram
+baseline; the exact readout lands more than twice above it. Perplexity does fall — 5692 →
+695 over 6000 steps for run 940422 — but it falls *to* the unigram model, which is not
+learning. This reproduces the outcome of the implementation removed at `2e38ef9`
+(val 664 against a baseline of 687), despite the RPE table that the fit-rate probe showed
+was the cause of that implementation's toy-scale failure.
+
+### Diagnostics at the end of each run
+
+| Job | `msg_over_unary` | attn `H/H_max` | `label_entropy` (max 5.55) | `max abs T` | `ρ` | `q̄` std over positions |
+|---|---|---|---|---|---|---|
+| 940422 MFVI `T=3` | 39.3 | 0.880 | 0.17 | 4.22 | 1.4e6 | 0.0008 |
+| 940423 exact `T=3` | 55.1 | 0.220 | 0.076 | 4.74 | 2.8e6 | 0.0009 |
+| 940436 MFVI `T=1` | 15.4 | 0.855 | 5.51 | 5.67 | 7.0e5 | 0.0011 |
+| 940435 MFVI `l2=5.0` | 18.6 | 0.016 | 1.15 | **0.46** | 1.5e4 | 0.0013 |
+| 940438 MFVI `λ_Z=4` | 34.5 | 0.018 | 3.28 | 2.20 | 3.3e5 | 0.0009 |
+
+Read these together, because they say something sharper than any one of them:
+
+1. **`msg_over_unary` never falls below 15.** The head message outweighs the word's own
+   unary by 15–55× in every configuration. `‖G‖ ≤ h · max|T|`, so at `max|T| = 0.46` the
+   message can be at most 3.7 — and it is still 18.6× the unary. That puts `‖S_{w,·}‖`
+   at roughly 0.2, i.e. **at or below its initialisation scale of `0.02·√256 = 0.32`.
+   The word–label matrix `S` is not growing.**
+2. **The three levers each moved the internals a great deal and the metric not at all.**
+   `l2_arc=5.0` cut `max|T|` by 9× and `ρ` by 100×; `λ_Z=4` cut `max|T|` in half;
+   `T=1` changed the label posterior from nearly one-hot (0.17 nats) to nearly uniform
+   (5.51 nats). Perplexity moved from 695.70 to 691.82, 690.02 and 695.33 — under 1 %.
+   **The failure is not a hyperparameter setting.**
+3. **`q̄` is nearly identical at every position** in all five runs (std 0.0008–0.0013
+   against a uniform value of `1/256 = 0.0039`). If `q̄_j` does not vary with `j`, then
+   `B^(c)_{j,a}` does not either, and `log μ_t(a) = Σ_c LSE_{j∈D_t} B^(c)_{j,a}` differs
+   between positions only by `log|D_t|` — a constant in `a`, which the readout's
+   normalisation removes exactly. The logits then *cannot* depend on `t`, and the model is
+   forced to the unigram distribution through `b_w`. That is the whole failure, and it is
+   an identity, not a hypothesis.
+4. **The collapse takes two different shapes with the same outcome.** At `T=3` the label
+   posterior saturates to one label everywhere; at `T=1` it stays nearly uniform
+   everywhere. Both give a constant `μ_t`. So "the inner loop saturates" is not a complete
+   description — the invariant is that the *word* never gets into its own label posterior.
+
+### Next, in order
+
+1. **Drop the word unary** (`word_unary=False`, sanctioned by §16(c): "Set `b ≡ 0` to drop
+   it"). `b_w` is a free per-word parameter that reproduces the unigram distribution
+   exactly, so the fastest descent direction is to fit the marginal with `b` and leave the
+   context path at its initialisation. Removing it forces every bit of probability mass
+   through `S` and `μ_t`. This is one flag and it separates "the context path is dead" from
+   "the context path is unused because something cheaper is available".
+2. **Prefix-ablation on a trained checkpoint** — zero and shuffle the prefix, measure the KL
+   on the output. The previous implementation measured KL 0.0115 for PT against 12.26 for
+   GPT. This is the decisive read on whether context reaches the output at all, and it
+   needs checkpoint saving, which the loop does not yet do.
+3. **Why `S` does not grow.** Its gradient arrives through two roles; if it is small in
+   both, the readout's `LSE_a(S_{w,a} + log μ_t(a))` is the place to look, since a peaked
+   `μ_t` concentrates the gradient on a few labels.
+4. Only then a GPT baseline on the identical pipeline. Comparing a model that has not
+   learned against one that has measures nothing.
