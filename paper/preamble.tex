@@ -1,0 +1,52 @@
+% Packages and page setup. Kept deliberately venue-neutral: the document is a preprint
+% first, and a conference style file can be dropped in later without touching the sections.
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+\usepackage{natbib}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+
+% --- theorem environments ---
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% --- drafting aids -------------------------------------------------------------
+% \TODO renders visibly in the draft. Set \draftfalse before circulating the PDF;
+% every outstanding item then disappears, which is also a way to see how many remain.
+\newif\ifdraft
+\drafttrue
+
+\ifdraft
+  \usepackage{xcolor}
+  \newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+  \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{[note: #1]}}}
+  % Marks a claim that must be checked against the reference PDFs before submission.
+  \newcommand{\FROMPDF}[1]{\textcolor{orange}{\textbf{[verify against PDF: #1]}}}
+\else
+  \newcommand{\TODO}[1]{}
+  \newcommand{\NOTE}[1]{}
+  \newcommand{\FROMPDF}[1]{}
+\fi

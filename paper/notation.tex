@@ -1,0 +1,61 @@
+% Notation macros.
+%
+% The names follow the reference documents, NOT transformer convention. In particular
+% `d` is the size of the label set of a word variable, not a hidden dimension, and `h`
+% counts channels (head variables per word), not attention heads in the usual sense.
+% Keep this file in sync with src/config.py, which uses the same names.
+%
+% Every macro below must correspond to something that exists in the factor graph — the
+% modelling constraint of the project is that no parameter names a non-factor, and the
+% notation should not be able to express one.
+
+% --- index sets and sizes ---
+\newcommand{\Vocab}{\mathcal{V}}                 % vocabulary
+\newcommand{\nlab}{d}                            % number of labels of a word variable
+\newcommand{\nchan}{h}                           % number of channels (head variables per word)
+\newcommand{\krank}{r}                           % Kruskal rank of the arc-score decomposition
+\newcommand{\nglob}{m}                           % number of global variables (Appendix B.3)
+\newcommand{\clip}{\gamma}                       % distance clip threshold
+\newcommand{\niter}{T}                           % MFVI iterations / loop depth
+\newcommand{\seqlen}{n}                          % sequence length
+\newcommand{\Dep}[1]{\mathcal{D}_{#1}}           % dependency candidate set at position #1
+
+% --- random variables ---
+\newcommand{\Wv}[1]{W_{#1}}                      % word variable (LATENT, not observed)
+\newcommand{\Zv}[1]{Z_{#1}}                      % label variable
+\newcommand{\Hv}[2]{H_{#1}^{(#2)}}               % head variable at position #1, channel #2
+\newcommand{\Gv}[1]{G_{#1}}                      % global variable
+
+% --- factors and parameters (each names a factor; see CLAUDE.md constraint 1) ---
+\newcommand{\Sfac}{S}                            % word--label factor, |V| x d; mediates BOTH directions
+\newcommand{\Tfac}[1]{T^{(#1)}}                  % arc score of channel #1, T = U V^\top
+\newcommand{\Ufac}[1]{U^{(#1)}}
+\newcommand{\Vfac}[1]{V^{(#1)}}
+\newcommand{\bfac}{b}                            % word unary; equals the LM-head bias
+\newcommand{\rfac}[1]{r^{(#1)}}                  % root key of channel #1
+\newcommand{\Bfac}[1]{B^{(#1)}}                  % contracted arc--label score entering the readout
+
+% --- variational quantities ---
+\newcommand{\Q}{Q}                               % variational posterior
+\newcommand{\QW}[1]{\Q_{\Wv{#1}}}
+\newcommand{\QZ}[1]{\Q_{\Zv{#1}}}
+\newcommand{\QH}[2]{\Q_{\Hv{#1}{#2}}}
+\newcommand{\Free}{\mathcal{F}}                  % mean-field free energy
+\newcommand{\lamZ}{\lambda_Z}                    % entropic Frank--Wolfe message weights
+\newcommand{\lamH}{\lambda_H}
+\newcommand{\lamW}{\lambda_W}
+\newcommand{\lamG}{\lambda_G}
+
+% --- readout ---
+\newcommand{\readout}[1]{\mu_{#1}}               % \mu_t(a): unnormalised readout score of word a
+\DeclareMathOperator*{\LSE}{LSE}                 % log-sum-exp
+\DeclareMathOperator*{\logcumsumexp}{logcumsumexp}
+
+% --- generic ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\KL}[2]{\mathrm{KL}\!\left(#1 \,\|\, #2\right)}
+\newcommand{\softmax}{\operatorname{softmax}}
+\newcommand{\prefix}[1]{{<}#1}                   % "the prefix before position #1"
+\newcommand{\stopgrad}[1]{\left\lfloor #1 \right\rfloor}  % frozen condition: no gradient path

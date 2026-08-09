@@ -1,0 +1,66 @@
+\section{A language-model head with no new parameters}
+\label{sec:output}
+
+\TODO{draft from \texttt{causal\_pt\_output\_note.pdf} --- that note is self-contained and is
+the fastest route in. Cross-check against Part~III \S15--\S16.}
+
+This section is the part of the construction most worth checking, and we present it as such.
+
+\subsection{The design that was rejected}
+\label{sec:rejected-projection}
+
+The obvious way to obtain next-token logits is to project the label posterior $\QZ{t}$ through
+a matrix $\R^{\nlab \times |\Vocab|}$. We report this design because rejecting it is what
+forced the correct one: such a matrix corresponds to no factor in the graph. The output would
+then not traverse the factor graph at all, and the model would be a CRF with a neural head
+bolted on --- precisely the thing the Probabilistic Transformer exists to avoid.
+
+\subsection{Unclamping the word variable}
+\label{sec:unclamping}
+
+The word variable $\Wv{t}$ is already in the graph, and the word--label factor $\Sfac$ is
+already a binary factor. In the encoder, $\Wv{t}$ is observed and $\Sfac$ is evaluated with its
+word argument clamped. The output mechanism is to \emph{stop clamping it}:
+%
+\begin{equation}
+\label{eq:unclamp}
+  \TODO{the marginal $\readout{t}(a) \propto \sum_{z} \Sfac_{a,z}\,\cdot\,(\text{message into } \Zv{t}) \cdot e^{\bfac_a}$, in the notation of the note}
+\end{equation}
+%
+No factor is added and no parameter is created. Next-token prediction is the posterior over a
+variable the model already had.
+
+\subsection{Consequences, not design choices}
+\label{sec:consequences}
+
+\begin{proposition}[Forced tying]
+\label{prop:tying}
+The input and output word embeddings are the same tensor.
+\end{proposition}
+\begin{proof}
+\TODO{one factor $\Sfac$ mediates both directions; there is no second matrix to untie.}
+\end{proof}
+
+\begin{corollary}[The output bias is the word unary]
+\label{cor:bias}
+\TODO{the LM-head bias equals $\bfac$}
+\end{corollary}
+
+\begin{corollary}[One model]
+\label{cor:one-model}
+Encoding and decoding are two conditioning patterns of a single parameterisation
+(\Cref{sec:one-model}).
+\end{corollary}
+
+\NOTE{These are stated as consequences deliberately. Tied embeddings are normally a
+regularisation choice defended empirically; here untying is not a hyperparameter but a
+different model. Say so --- it is a stronger statement than the usual one and costs nothing.}
+
+\subsection{The rank-$\nlab$ bottleneck}
+\label{sec:bottleneck}
+
+All predictive information reaches the vocabulary through $\Zv{t}$, whose support has size
+$\nlab$. \TODO{state the bottleneck precisely and relate it to the softmax-bottleneck argument
+of \citet{yang2018breaking}. The exact readout of \Cref{sec:exact-readout} is a \emph{mixture}
+of softmaxes, which is not rank-limited in the same way as a single softmax --- whether that
+shows up empirically is Experiment~3's secondary question.}

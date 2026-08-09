@@ -1,0 +1,78 @@
+\section{Inference}
+\label{sec:inference}
+
+\TODO{draft from Part~III \S17--\S18 and Part~IV \S23.3--\S24.1.}
+
+\NOTE{Resolved 2026-08-05, and the paper must state it in this direction: \S17.2 proposes MFVI
+as the mainline, but \S23.3 supersedes it --- the exact readout is the model, and the
+mean-field readout is the ablation. Do not present them as two equal options; that would
+misreport the document's own verdict and would leave Experiment~3 without a reference point.}
+
+\subsection{Update equations}
+\label{sec:updates}
+
+\FROMPDF{Part~III \S16 --- the six update steps, in order}
+\begin{align}
+\label{eq:update-Z}
+  \QZ{t} &\leftarrow \TODO{} \\
+\label{eq:update-H}
+  \QH{t}{c} &\leftarrow \TODO{} \\
+\label{eq:update-W}
+  \QW{t} &\leftarrow \TODO{}
+\end{align}
+
+\FROMPDF{Part~III \S17.1 --- the update schedule}
+\TODO{state the schedule and both variants: the parallel schedule (a depth-$\niter$ shared
+causal transformer) and the serial schedule ($\tau$ inner rounds per observed slot). The
+implementation exposes both; the paper should say which is used for the reported numbers and
+why.}
+
+\subsection{Exact readout}
+\label{sec:exact-readout}
+
+The subgraph at position $t$ is a star centred on $\Zv{t}$, hence a tree, so sum-product is
+exact --- no approximation is involved and no iteration is needed.
+
+\begin{proposition}[Closed-form readout]
+\label{prop:exact-readout}
+\FROMPDF{\S23.3 --- confirm the form and the seeding by $\rfac{c}$}
+\begin{equation}
+\label{eq:exact-readout}
+  \log \readout{t}(a) \;=\; \sum_{c=1}^{\nchan} \; \LSE_{j \in \Dep{t}} \; \Bfac{c}_{j,a},
+\end{equation}
+seeded with the root key $\rfac{c}_a$.
+\end{proposition}
+
+Along the sequence, $\Dep{t}$ grows by one position per step, so \Cref{eq:exact-readout} is a
+causal prefix log-sum-exp: one \texttt{logcumsumexp} scan, $O(\seqlen \nlab \nchan)$, fully
+parallel over positions. The exact readout therefore does \emph{not} cost the layer-parallel
+schedule, which is the usual reason such a readout is dismissed.
+
+\begin{remark}[The query stream disappears]
+\label{rmk:no-query-stream}
+With \Cref{eq:exact-readout} there is no predictive inner loop and no $\QZ{t}^{\mathrm{pred}}$
+iteration. Per token the cost is one content-stream solve, an $O(\nlab\nchan)$ cache update,
+and the vocabulary readout.
+\end{remark}
+
+\subsection{Mean-field readout (ablation)}
+\label{sec:mfvi-readout}
+
+\TODO{\S17.2's two-stream version, presented as the ablation compared in Experiment~3.}
+
+\subsection{Cost}
+\label{sec:cost}
+
+\TODO{table: parameters, FLOPs per token, wall-clock. Two honest costs to state rather than
+bury: (i) the $|\Vocab| \times \nlab$ readout is a log-sum-exp rather than a matmul --- same
+FLOPs, worse hardware constants, chunked over the vocabulary with a fused cross-entropy;
+(ii) LSE-pooling gradients are untested at language-model scale. \NOTE{if (ii) causes trouble
+in training it becomes a finding, not an embarrassment --- log it either way.}}
+
+\subsection{Validity of every step}
+\label{sec:validity}
+
+\FROMPDF{Part~III \S18, Check~3 --- restated in \S23.3}
+Every step is valid inference in the declared model: mean-field where exactness is impossible
+(the chain), exact sum-product where the subgraph is a tree (the slot). \TODO{spell this out;
+it replaces the earlier and now incorrect claim that every update is a softmax of a gradient.}

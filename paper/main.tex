@@ -1,0 +1,46 @@
+% Causal Probabilistic Transformer — preprint
+%
+% Build:  make        (in paper/, needs latexmk + a TeX distribution)
+% Output: build/main.pdf
+%
+% There is no TeX installation on the cluster login node as of 2026-08-09.
+% This source is written to compile with a stock TeX Live; see paper/PAPER_STATUS.md.
+
+\documentclass[11pt]{article}
+
+\input{preamble}
+\input{notation}
+
+\title{A Causal Probabilistic Transformer:\\
+       Autoregressive Language Modelling in a Dependency Factor Graph}
+
+\author{Viktor Beliakov \and Penghao Kuang \and Kewei Tu}
+% TODO(authors): confirm the author list and order with Prof. Tu before any public posting.
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\input{sections/00_abstract}
+\end{abstract}
+
+\input{sections/01_introduction}
+\input{sections/02_background}
+\input{sections/03_impossibility}
+\input{sections/04_construction}
+\input{sections/05_output}
+\input{sections/06_inference}
+\input{sections/07_experiments}
+\input{sections/08_related}
+\input{sections/09_conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{sections/A1_derivations}
+
+\end{document}

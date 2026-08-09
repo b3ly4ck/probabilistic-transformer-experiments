@@ -1,0 +1,50 @@
+\section{Introduction}
+\label{sec:intro}
+
+\TODO{draft. The paragraph plan below is the argument; prose comes after the experiments,
+so that the framing matches what was actually measured.}
+
+\paragraph{Plan.}
+\begin{enumerate}
+  \item Transformers are usually presented as an architecture. The Probabilistic Transformer
+        \citep{wu2023probabilistic} presents one instead as \emph{inference}: a CRF over
+        dependency structure whose mean-field updates, unrolled, reproduce a transformer
+        encoder. Attention weights are derived, not free parameters.
+  \item That model is masked-LM only. Autoregressive generation --- the setting in which
+        transformers are actually used --- has no counterpart in this framework.
+  \item Naively imposing a causal mask on the PT does not give a causal PT. \Cref{sec:impossibility}
+        makes the obstruction precise: causality, one global energy, and contextuality are
+        jointly unsatisfiable.
+  \item Our construction, and why the fix is structural rather than a mask.
+  \item The output mechanism, and why it is the part a reviewer should check: the language
+        model head introduces \emph{no} new parameter.
+  \item Contributions.
+\end{enumerate}
+
+\paragraph{Contributions.}
+\begin{itemize}
+  \item An impossibility result delimiting what a causal probabilistic transformer can be
+        (\Cref{sec:impossibility}), and a directed chain of conditional CRFs that satisfies the
+        remaining constraints (\Cref{sec:construction}).
+  \item A graph-faithful output mechanism (\Cref{sec:output}): promoting $\Wv{t}$ from observed
+        to latent turns the existing word--label factor $\Sfac$ into a language-model head.
+        Embedding tying, the output bias, and the identity of the encoder and decoder models
+        are consequences of the construction, not additions to it.
+  \item An exact readout (\Cref{sec:inference}): the per-position subgraph is a tree, so
+        sum-product is exact and reduces to a single causal \texttt{logcumsumexp} scan of cost
+        $O(\seqlen \nlab \nchan)$, which preserves the layer-parallel schedule.
+  \item An empirical study (\Cref{sec:experiments}) isolating the contribution of structure
+        from that of weight sharing, by comparing against a Looped Transformer as well as a
+        standard decoder.
+\end{itemize}
+
+\paragraph{What this paper does not claim.}
+We do not claim to improve on a standard decoder in perplexity, and the experiments are not
+designed to. \citet{wu2023probabilistic} state that the aim of the model is to inform
+transformers rather than to compete with them, and report degradation beyond roughly
+$10^5$ sentences; we inherit both the framing and the regime. There is in addition an honest
+rank-$\nlab$ bottleneck: all predictive information passes through the label variables.
+The question we ask is whether syntactic structure carries information that weight sharing
+alone does not --- which is a question about the \emph{gap to a Looped Transformer}, not about
+the gap to GPT. \NOTE{keep this paragraph in the paper; it pre-empts the review that reads the
+result as a failed benchmark attempt}

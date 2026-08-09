@@ -23,3 +23,19 @@ slurm-*.out
 # Окружение
 .env
 .DS_Store
+
+# LaTeX build artifacts. Scoped to paper/ on purpose: an unscoped *.out would also
+# swallow unrelated files, and the reference PDFs in "developer files/" are tracked,
+# so *.pdf must never be ignored repo-wide.
+paper/build/
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.blg
+paper/**/*.fdb_latexmk
+paper/**/*.fls
+paper/**/*.out
+paper/**/*.synctex.gz
+paper/**/*.toc
+paper/**/*.lof
+paper/**/*.lot
+paper/main.pdf

@@ -1,0 +1,44 @@
+\section{Background: the Probabilistic Transformer}
+\label{sec:background}
+
+\TODO{draft from \texttt{probalistic transformers article.pdf}. Do not reconstruct the model
+from memory --- notation and the exact form of the potentials must match the source, since
+\Cref{sec:output} argues from the identity of a factor that already exists there.}
+
+\subsection{Variables and factors}
+
+\FROMPDF{Wu \& Tu \S2.2 --- variable set and label semantics}
+Each token position $t$ carries a label variable $\Zv{t}$ ranging over $\nlab$ discrete labels,
+and $\nchan$ head variables $\Hv{t}{c}$, $c = 1,\dots,\nchan$, each ranging over candidate
+head positions. The word at position $t$ is a variable $\Wv{t}$ over the vocabulary $\Vocab$,
+observed in the encoder setting.
+
+\FROMPDF{Wu \& Tu Eqs.\ 9/10, 14/21 --- ternary potential, distance clipping at $\clip$,
+and the rank-$\krank$ decomposition $\Tfac{c} = \Ufac{c}\Vfac{c\top}$}
+
+\begin{itemize}
+  \item $\Sfac \in \R^{|\Vocab| \times \nlab}$ --- the word--label factor. Binary; in the
+        encoder the word argument is clamped to the observed token. \emph{This factor is where
+        \Cref{sec:output} does its work.}
+  \item $\Tfac{c} = \Ufac{c}\Vfac{c\top}$ --- arc scores of channel $c$, Kruskal rank $\krank$.
+  \item $\bfac$ --- the word unary term.
+  \item distance-sensitive buckets, clipped at $\clip$.
+\end{itemize}
+
+\subsection{Mean-field inference and its computation graph}
+
+\FROMPDF{Wu \& Tu \S2.3.3 and Appendix A.5 --- entropic Frank--Wolfe weights
+$\lamZ,\lamH,\lamW,\lamG$}
+Mean-field variational inference minimises the free energy $\Free$ over a factorised posterior
+$\Q = \prod_t \QZ{t} \prod_{t,c} \QH{t}{c}$ by coordinate descent. Each coordinate update is a
+softmax of a sum of expected potentials; unrolled for $\niter$ iterations, the resulting
+computation graph has the shape of a $\niter$-layer transformer encoder with shared weights, in
+which the attention distribution is $\QH{t}{c}$ --- a posterior over syntactic heads --- rather
+than a learned function of queries and keys.
+
+\subsection{Why this does not extend to a decoder}
+
+\TODO{short bridge into \Cref{sec:impossibility}: state that the encoder's single global energy
+is exactly what has to be given up, and that a causal mask on the attention weights is not
+sufficient because $\QH{t}{c}$ is a posterior in a model whose partition function couples all
+positions.}
