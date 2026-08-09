@@ -24,13 +24,35 @@ rules and modelling constraints.
 └── data/                # corpora — not versioned
 ```
 
-The tree above is the intended layout. As of v1.0.0 the implementation has been cleared and is
-being written from scratch; only `developer files/` (documentation and reference papers) and the
-corpus under `data/` are present.
+## State
+
+The causal PT decoder forward pass is implemented and validated (Experiment 0): checks 1–9 of
+the research plan pass, and the worked example of `causal_pt_output_note.pdf` §5 is reproduced
+number for number. See
+[experiments/exp0_decoder_validation/EXPERIMENT_STATUS.md](experiments/exp0_decoder_validation/EXPERIMENT_STATUS.md)
+for the validation record and
+[developer files/PROJECT_STATUS.md](developer%20files/PROJECT_STATUS.md) for what exists.
+
+The training loop, the data pipeline and the GPT / Looped baselines are not written yet.
 
 ## Setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+pip install torch pytest
+```
+
+## Tests
+
+```bash
+python -m pytest
+```
+
+## The worked example
+
+Reproduces `causal_pt_output_note.pdf` §5 with every intermediate tensor printed.
+
+```bash
+python -m experiments.exp0_decoder_validation.worked_example
 ```
