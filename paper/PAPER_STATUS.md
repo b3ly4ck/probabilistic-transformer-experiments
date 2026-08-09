@@ -99,9 +99,15 @@ The ACL style files (`acl.sty`, `acl_natbib.bst`) are committed, from
 `github.com/acl-org/acl-style-files`. `main.tex` uses the `preprint` option — non-anonymous with
 page numbers; switch to `review` for anonymous submission and `final` for camera-ready.
 
-**Nothing here has been compiled yet.** The install was still running when the restructuring was
-committed. The first build will surface errors, and that is not evidence of anything wrong with
-the content.
+**First build: 2026-08-09, clean.** No LaTeX errors, no undefined references, no undefined
+citations, no overfull or underfull boxes. Output is 8 pages including references and
+appendices. One cosmetic warning remains — `name{Hfootnote.1} has been referenced but does not
+exist` — from the `\thanks` corresponding-author footnote interacting with hyperref in the ACL
+template; it does not affect the output.
+
+That 8 pages says nothing about the final length: every section is an outline, and the draft
+markers render as visible red text that will disappear. Re-check with `make pages` once prose
+exists — the budget is 8 pages of *main body*, before the references.
 
 ## Rules specific to the paper
 
