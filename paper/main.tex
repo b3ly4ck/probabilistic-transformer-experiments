@@ -1,26 +1,45 @@
 % Causal Probabilistic Transformer — preprint
 %
-% Build:  make        (in paper/, needs latexmk + a TeX distribution)
-% Output: build/main.pdf
+% Format deliberately mirrors Wu & Tu, "Probabilistic Transformer: A Probabilistic Dependency
+% Model for Contextual Word Representation" (Findings of ACL 2023) — same style file, same
+% section skeleton, same length budget (8 pages of main body, everything else in appendices).
+% See PAPER_STATUS.md for the section-by-section mapping and the page budget.
 %
-% There is no TeX installation on the cluster login node as of 2026-08-09.
-% This source is written to compile with a stock TeX Live; see paper/PAPER_STATUS.md.
+% Build: make   (output build/main.pdf)
 
 \documentclass[11pt]{article}
+
+% "preprint" = non-anonymous with page numbers. Switch to "review" for anonymous submission,
+% "final" for camera-ready.
+\usepackage[preprint]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
 
 \input{preamble}
 \input{notation}
 
-\title{A Causal Probabilistic Transformer:\\
-       Autoregressive Language Modelling in a Dependency Factor Graph}
+\title{Causal Probabilistic Transformer:\\
+       A Probabilistic Dependency Model for Autoregressive Language Modelling}
+% NOTE: the title deliberately echoes Wu & Tu's, signalling that this is the causal counterpart
+% of that model rather than an unrelated construction.
 
-\author{Viktor Beliakov \and Penghao Kuang \and Kewei Tu}
-% TODO(authors): confirm the author list and order with Prof. Tu before any public posting.
-
-\date{\today}
+\author{
+  Viktor Beliakov \\
+  \And
+  Penghao Kuang \\
+  \And
+  Kewei Tu \thanks{Corresponding author.} \\
+}
+% TODO(authors): confirm the author list, order and affiliation block with Prof. Tu before any
+% public posting. Wu & Tu use a single shared-institution block (ShanghaiTech); match it.
 
 \begin{document}
-
 \maketitle
 
 \begin{abstract}
@@ -28,19 +47,22 @@
 \end{abstract}
 
 \input{sections/01_introduction}
-\input{sections/02_background}
-\input{sections/03_impossibility}
-\input{sections/04_construction}
-\input{sections/05_output}
-\input{sections/06_inference}
-\input{sections/07_experiments}
-\input{sections/08_related}
-\input{sections/09_conclusion}
+\input{sections/02_model}
+\input{sections/03_comparison}
+\input{sections/04_experiments}
+\input{sections/05_related}
+\input{sections/06_discussion}
+\input{sections/07_conclusion}
+\input{sections/08_limitations}
 
-\bibliographystyle{plainnat}
 \bibliography{refs}
 
 \appendix
-\input{sections/A1_derivations}
+\input{sections/A_derivations}
+\input{sections/B_variants}
+\input{sections/C_proof}
+\input{sections/D_datasets}
+\input{sections/E_validation}
+\input{sections/F_worked_example}
 
 \end{document}

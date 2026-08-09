@@ -1,28 +1,26 @@
-% Packages and page setup. Kept deliberately venue-neutral: the document is a preprint
-% first, and a conference style file can be dropped in later without touching the sections.
-
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[margin=1in]{geometry}
+% Extra packages only. The ACL style file (acl.sty) already sets the page geometry, the
+% two-column layout, the font sizes, the bibliography style and hyperref — do not re-set any
+% of those here, and do not add \usepackage{geometry}: it silently breaks the ACL layout and
+% is one of the things desk-rejection checks look for.
 
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{mathtools}
 \usepackage{bm}
-
-\usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
-
-\usepackage{natbib}
-\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage{makecell}
 \usepackage[capitalise,noabbrev]{cleveref}
 
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 
-% --- theorem environments ---
+% --- theorem environments -------------------------------------------------------------
+% Wu & Tu's paper contains no theorem environments at all: it is entirely constructive prose.
+% We need exactly one formal statement (the trilemma of Section 2.1) and one proposition (the
+% exact readout). Keep it to that — a paper in this format with six numbered theorems does not
+% look like the paper it is modelled on. Everything else goes in the appendix.
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}[theorem]{Proposition}
@@ -34,8 +32,9 @@
 \newtheorem{remark}[theorem]{Remark}
 
 % --- drafting aids -------------------------------------------------------------
-% \TODO renders visibly in the draft. Set \draftfalse before circulating the PDF;
-% every outstanding item then disappears, which is also a way to see how many remain.
+% \TODO renders visibly in the draft. Set \draftfalse before circulating the PDF; every
+% outstanding item then disappears, which is also a way to see how many remain — and, in this
+% format, whether the paper still fits in 8 pages once they are written out.
 \newif\ifdraft
 \drafttrue
 
@@ -43,7 +42,7 @@
   \usepackage{xcolor}
   \newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
   \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{[note: #1]}}}
-  % Marks a claim that must be checked against the reference PDFs before submission.
+  % Marks a claim taken from a reference PDF that has not been re-read while writing.
   \newcommand{\FROMPDF}[1]{\textcolor{orange}{\textbf{[verify against PDF: #1]}}}
 \else
   \newcommand{\TODO}[1]{}

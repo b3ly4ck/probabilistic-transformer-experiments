@@ -1,0 +1,33 @@
+\section{Discussion}
+\label{sec:discussion}
+
+% Wu & Tu have a Discussion section separate from their Conclusion, and it is where the honest
+% statements live: that the goal is not to compete with transformers, and that the model
+% underperforms beyond ~100k sentences. We inherit both the framing and the section. This is
+% the most useful structural thing copied from their paper -- it gives the concessions a place
+% of their own, so they read as scope rather than as apology buried in a results paragraph.
+
+\paragraph{What this paper does and does not claim.}
+As in \citet{wu2023probabilistic}, our goal is not to propose a model that competes with
+transformers on perplexity. It is to establish that the probabilistic-dependency account of
+contextual representation extends to autoregressive generation, and to measure what its
+structure contributes. \TODO{one sentence stating what the numbers actually showed, written
+after they exist and not before.}
+
+\paragraph{The rank-$\nlab$ bottleneck.}
+\TODO{All predictive information reaches the vocabulary through $\Zv{t}$, whose support has size
+$\nlab$. This is an honest cost of the construction rather than a defect of the implementation,
+and it predicts a gap to a standard decoder that no amount of tuning removes. Say by how much,
+and relate to the measurement in \Cref{sec:exp3}.}
+
+\paragraph{The missing feed-forward structure.}
+\TODO{inherited from the encoder model, and the leading suspect in its degradation on larger
+corpora. Report what the global-variable ablation of \Cref{sec:exp-ablations} found --- this is
+the first empirical test of the Appendix B.3 proposal of \citet{wu2023probabilistic}, and it is
+worth saying so explicitly whichever way it came out.}
+
+\paragraph{Extensions.}
+\TODO{keep short. Candidates: continuous or vector-valued $\Zv{}$; dependency-label variables
+paired with each $\Hv{}{}$; whether the exact readout suggests anything transferable back to
+ordinary decoders --- which is the direction \citet{wu2023probabilistic} name as the point of
+the whole programme.}

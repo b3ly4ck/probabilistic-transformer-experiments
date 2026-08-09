@@ -1,0 +1,24 @@
+\section{Derivations}
+\label{app:derivations}
+
+% Mirrors Wu & Tu Appendix A, which carries the inference details the main text compresses
+% (their A.5 is where the message weights \lambda_Z, \lambda_H are justified).
+
+\subsection{Full mean-field updates}
+\label{app:full-updates}
+\TODO{the complete updates from Part~III \S16, with the steps \Cref{sec:inference} compresses.}
+
+\subsection{Derivation of the exact readout}
+\label{app:exact-derivation}
+\TODO{sum-product on the star subgraph, giving \Cref{eq:exact-readout}; and the
+\texttt{logcumsumexp} form along the sequence.}
+
+\subsection{Message weights}
+\label{app:message-weights}
+\TODO{$\lamZ, \lamH, \lamW, \lamG$ --- follow Wu \& Tu \S A.5, and state where the causal model
+forces a different choice from theirs.}
+
+\subsection{Complexity}
+\label{app:complexity}
+\TODO{per-token cost of the content-stream solve, the $O(\nlab\nchan)$ cache update and the
+vocabulary readout; and the chunked fused cross-entropy used in the implementation.}

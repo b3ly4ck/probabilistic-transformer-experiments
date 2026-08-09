@@ -1,0 +1,30 @@
+\section{Implementation Validation}
+\label{app:validation}
+
+% No counterpart in Wu & Tu. It exists because two of these checks test the derivation rather
+% than the code, and because a causal model that is silently non-causal produces entirely
+% plausible numbers.
+
+\TODO{the full checklist, with pass/fail and the numbers. \Cref{sec:exp-correctness} reports
+only the two that test the equations; these are the rest.}
+
+\begin{itemize}
+  \item \textbf{Causality.} Changing the token at position $t$ leaves the logits at every
+        position $<t$ bitwise unchanged (CPU, fixed seed --- on GPU, non-deterministic
+        reductions can perturb the last bit of correct code).
+  \item \textbf{Frozen prefix.} Prefix quantities are kept as attached leaves with
+        \texttt{requires\_grad=True}; after backpropagating the loss at step $t$, their gradient
+        is exactly zero for $j \ge t$ and non-zero for $j < t$. Testing this on a detached
+        tensor would pass unconditionally and is therefore no test at all.
+  \item \textbf{Tying.} Input and output embeddings are the same tensor object, not merely
+        equal.
+  \item \textbf{Normalisation.} All posteriors sum to one along their variable axis at every
+        iteration.
+  \item \textbf{Free energy.} The mean-field free energy is non-increasing across iterations on
+        a toy graph. \TODO{figure} \NOTE{this is the check that catches a typo in the update
+        equations; shapes, normalisation and causality are all blind to one.}
+  \item \textbf{Exact readout vs.\ brute force.} On one slot the graph is a tree, so
+        \Cref{eq:exact-readout} must agree with explicit enumeration over a tiny vocabulary.
+        \TODO{agreement to 1e-N} This validates the factorisation itself.
+  \item \textbf{Single-batch overfit.} Loss on one batch falls to near zero.
+\end{itemize}

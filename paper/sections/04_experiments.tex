@@ -1,0 +1,99 @@
+\section{Experiments}
+\label{sec:experiments}
+
+% Mirrors Wu & Tu Section 4: three subsections (Tasks and Datasets / Settings / Results), about
+% 1.6 pages, and -- the part worth copying -- ONE results table for the whole paper. Their
+% Table 1 covers five tasks and six datasets in eleven rows, and their Results prose is barely
+% half a column. Detailed dataset descriptions go to the appendix.
+
+\NOTE{No number appears here without a row in the run log of the corresponding
+\texttt{experiments/*/EXPERIMENT\_STATUS.md}: date, commit, config, seed, metric, wall-clock.}
+
+\subsection{Tasks and Datasets}
+\label{sec:tasks}
+
+\TODO{brief, with the detail in \Cref{app:datasets} --- this is how Wu \& Tu handle it.}
+
+\paragraph{Language modelling.} \TODO{PTB \citep{marcus1993building} and/or WikiText-2
+\citep{merity2017pointer}; perplexity on the held-out set.}
+
+We deliberately do not use WikiText-103. \citet{wu2023probabilistic} report that the encoder
+model significantly underperforms transformers beyond roughly $10^5$ sentences, suspected to be
+the absence of a feed-forward structure; running there would test a known failure mode of the
+encoder rather than the causal extension. \NOTE{state this before a reviewer asks why the
+corpus is small --- their own paper makes the same point in its Discussion}
+
+\subsection{Settings}
+\label{sec:settings}
+
+\TODO{parameter budget 20--50M matched across models; identical tokenizer, vocabulary and
+context length; one shared training loop; Adam with identical hyperparameters and schedule;
+$k$ seeds, mean $\pm$ std. Wu \& Tu report mean and std over 5 random runs --- match that.}
+
+\paragraph{Matching budgets.}
+We report parameter count \emph{and} wall-clock, since the causal PT shares parameters across
+iterations and equal parameter count therefore does not mean equal compute.
+
+\paragraph{The embedding split.}
+We report embedding and non-embedding parameters separately, which matters more here than in a
+usual comparison. With tying forced (\Cref{sec:output}) the causal PT's parameters sit almost
+entirely in $\Sfac \in \R^{|\Vocab|\times\nlab}$; the arc scores $\Tfac{c}$, the word unary
+$\bfac$ and the root key $\rfac{c}$ are negligible beside it. At a matched total the causal PT
+is close to an embedding table plus a little and a transformer baseline is not, and a single
+total hides that completely. \TODO{state the matching rule chosen --- total parameters,
+non-embedding parameters, or both with vocabulary fixed. Any is defensible; leaving it unstated
+is what gets attacked first.}
+
+\paragraph{Loop depth.}
+The loop depth of the Looped baseline matches the number of MFVI iterations $\niter$, so
+effective depth is comparable as well as parameter count. We report a sweep over $\niter$ rather
+than a single value, so the comparison does not rest on one lucky setting.
+
+\subsection{Results}
+\label{sec:results}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+Dataset & Metric & \makecell{Params\\(emb.\ / non-emb.)} & Transformer & Looped & Causal PT \\
+\midrule
+PTB         & Perplexity & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+WikiText-2  & Perplexity & \TODO{} & \TODO{} & \TODO{} & \TODO{} \\
+\bottomrule
+\end{tabular}
+\caption{Main results, mean $\pm$ std over \TODO{$k$} random runs. The comparison this paper is
+about is the last two columns.}
+\label{tab:main}
+\end{table*}
+
+\paragraph{Correctness of the implementation.}
+\label{sec:exp-correctness}
+\TODO{two sentences plus \Cref{app:validation}. Only the two checks that test the derivation
+rather than the code belong in the main text: the mean-field free energy is non-increasing
+across iterations on a toy graph, and \Cref{eq:exact-readout} agrees with brute-force
+enumeration over a tiny vocabulary to \TODO{1e-N}. Causality, tying, normalisation and the
+single-batch overfit are software checks --- list them in the appendix.}
+
+\paragraph{Language modelling.}
+\TODO{read \Cref{tab:main}. Two readings, in this order: (i) the causal PT trains and lands
+within a modest gap of the transformer --- necessary but not the point; (ii) the causal PT
+vs.\ Looped gap is the paper's claim, because Looped has the weight sharing without the
+structure (\Cref{tab:three-point}). If the causal PT is worse than Looped across the $\niter$
+sweep, the central claim fails and we say so here.}
+
+\paragraph{Ablations.}
+\label{sec:exp-ablations}
+\TODO{(i) global variables $\Gv{t}$ on/off --- a measured variable, not an assumption, and the
+delta is itself a result since \citet{wu2023probabilistic} propose them but never test them;
+(ii) exact vs.\ mean-field readout, below.}
+
+\paragraph{Exact vs.\ mean-field readout.}
+\label{sec:exp3}
+\TODO{Two variants. (a) Evaluation-time swap: train with the mean-field readout, substitute
+\Cref{eq:exact-readout} at evaluation on the same parameters --- isolates the approximation
+error, nearly free. (b) Train with each --- measures the end-to-end effect, one extra full run.
+Neither outcome is a win or a loss: a small gap says mean field is adequate and cheap, a large
+one says the tree structure should be exploited. Also check whether the mixture-of-softmaxes
+form relieves the rank-$\nlab$ bottleneck of \Cref{sec:vs-lm-head}.}

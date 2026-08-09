@@ -1,0 +1,23 @@
+\section{Related Work}
+\label{sec:related}
+
+% Wu & Tu's Related Work is one third of a column -- a single dense paragraph. Match that
+% length; the space belongs to Sections 2 and 3.
+
+\TODO{one paragraph, in this order:}
+
+\begin{itemize}
+  \item \textbf{Syntax in transformers.} \TODO{the line \citet{wu2023probabilistic} cite ---
+        supervised attention to syntactic governors, constituency/dependency injection,
+        dependency-constrained attention. Position this work as the same deviation they claim:
+        we start from probabilistic modelling and arrive at a transformer, rather than adding
+        syntax to one.}
+  \item \textbf{Weight sharing and looped models.} \TODO{\citet{dehghani2019universal},
+        \citet{giannou2023looped}, \citet{yang2024looped}. This citation is load-bearing: it
+        establishes that the Looped baseline of \Cref{sec:experiments} is a recognised model and
+        not a strawman constructed for this paper.}
+  \item \textbf{Structured autoregressive models.} \TODO{what exists for causal LMs with latent
+        structure, and why none of it is a causal PT.}
+  \item \textbf{The softmax bottleneck.} \TODO{\citet{yang2018breaking}; connect to
+        \Cref{sec:vs-lm-head}.}
+\end{itemize}

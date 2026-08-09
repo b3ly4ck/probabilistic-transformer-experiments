@@ -1,24 +1,18 @@
-% Written last. The version below fixes the claim so the rest of the paper has a target;
-% the numbers are placeholders until the experiments land.
+% Wu & Tu's abstract is a single paragraph of about 150 words, and it ends on the "we hope this
+% informs transformers" note rather than on a number. Match both. Written last; the version
+% below fixes the claim so the rest of the paper has a target.
 
-The Probabilistic Transformer \citep{wu2023probabilistic} models contextual word
-representations as posterior inference in a conditional random field over dependency
-structure, and recovers a transformer encoder as the computation graph of mean-field
-variational inference. It is, however, a masked encoder: no causal autoregressive version
-exists. We give one.
-
-We first show that causality, a single global energy function and contextuality cannot hold
-simultaneously, and resolve the conflict with a directed chain of \emph{conditional} CRFs in
-which the prefix enters each step as a frozen condition, so that the anti-causal term is never
-formed rather than removed after the fact. We then obtain a language-model head without
-introducing any parameter outside the factor graph, by promoting the word variable from
-observed to latent: the existing word--label factor is simply unclamped. Tied input and output
-embeddings, an output bias equal to the word unary term, and a single model with two
-conditioning patterns all follow as consequences rather than design choices. Because the
-per-position subgraph is a star, and hence a tree, the vocabulary readout admits an exact
-sum-product solution --- a mixture of softmaxes computed by one causal
-\texttt{logcumsumexp} scan --- alongside the mean-field one.
-
-Empirically we ask whether syntactic structure pays for itself in a causal decoder. \TODO{one
-sentence per experiment once numbers exist; report the PT/Looped comparison as the headline,
-since Looped isolates weight sharing from structure} \TODO{final numbers}
+The probabilistic transformer of \citet{wu2023probabilistic} models contextual word
+representation as posterior inference in a conditional random field over dependency structure,
+and its mean-field inference procedure turns out to resemble a transformer encoder. That model
+is an encoder only. In this work we derive its autoregressive counterpart. We show that
+causality, a single global energy function and contextuality cannot hold simultaneously, and
+resolve the conflict with a directed chain of conditional random fields in which the prefix
+enters each step as a frozen condition. We further obtain a language-model head without adding
+any parameter outside the factor graph, by promoting the word variable from observed to latent;
+tied input and output embeddings then follow as a consequence rather than a design choice.
+Because the per-position subgraph is a tree, the vocabulary readout is available in closed form.
+Experiments on \TODO{corpora} compare our model against a standard causal transformer and
+against a looped transformer, the latter isolating the effect of syntactic structure from that
+of weight sharing. \TODO{one sentence of result} We hope that this work helps extend the
+probabilistic account of contextual representation to generation.

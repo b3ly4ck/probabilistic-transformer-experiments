@@ -1,0 +1,26 @@
+% Unnumbered, placed after the Conclusion and before the references -- this is mandatory in the
+% *ACL format since 2023, and it does not count against the page limit. Wu & Tu use it for three
+% concrete concessions rather than generalities; do the same.
+
+\section*{Limitations}
+\label{sec:limitations}
+
+\TODO{three or four concrete items. Candidates, each a consequence of the construction rather
+than something more tuning would fix:}
+
+\begin{itemize}
+  \item \textbf{The rank-$\nlab$ bottleneck.} All predictive information reaches the vocabulary
+        through the label variables (\Cref{sec:vs-lm-head}).
+  \item \textbf{Scale.} Evaluated only on small corpora, for the reason given in
+        \Cref{sec:tasks}; behaviour beyond that regime is untested here, and the encoder model
+        is reported to degrade there.
+  \item \textbf{No single sequence-level joint.} Giving up the global energy
+        (\Cref{sec:obstruction}) means quantities defined by that joint are unavailable.
+  \item \textbf{Speed.} \TODO{measure. The vocabulary readout is a log-sum-exp rather than a
+        matmul: same FLOPs, worse constants. Wu \& Tu report their encoder as about 3 times
+        slower than a transformer despite having far fewer parameters --- report the analogous
+        number here rather than leaving the reader to assume it is small.}
+  \item \TODO{at least one item that the runs exposed rather than the construction predicted.
+        A limitations section made entirely of things known in advance is less credible than one
+        that admits a surprise.}
+\end{itemize}

@@ -1,0 +1,90 @@
+\section{Comparison with Causal Transformers}
+\label{sec:comparison}
+
+% This section is the analogue of Wu & Tu Section 3 ("Comparison with Transformers"), which is
+% the LARGEST section of their paper -- about 2.4 pages, as long as their experiments. It had
+% no counterpart in the first outline of this paper, and that was the biggest structural gap:
+% in this format the conceptual comparison carries as much weight as the numbers, and it is
+% also where the Looped baseline of Section 4 gets motivated rather than asserted.
+
+\citet{wu2023probabilistic} show that MFVI in the encoder model reproduces the computation graph
+of a transformer encoder, with the posterior over dependency heads playing the role of
+self-attention. We ask the same question of the causal model, and the answer is the reason the
+experiments in \Cref{sec:experiments} take the shape they do.
+
+\subsection{Tensor form}
+\label{sec:tensor-form}
+
+\TODO{re-derive the update equations of \Cref{sec:inference} in tensor form, following the
+structure of Wu \& Tu \S3.1 so the two papers can be read side by side. Their $Q_z^{(t)}$,
+$Q_{h,c}^{(t)}$, $\mathcal{F}$, $\mathcal{G}$ notation should be reused verbatim wherever the
+quantity is the same one --- deviating from it without reason costs the reader the comparison.}
+
+\subsection{Single-channel update vs.\ masked self-attention}
+\label{sec:vs-attention}
+
+\TODO{the causal analogue of their \S3.2. The claim to establish: the single-channel update
+under the causal chain reduces to scaled dot-product attention with a causal mask, and the
+correspondence $Q_c \leftrightarrow W^Q$, $K_c = V_c \leftrightarrow W^K = W^V$ carries over.
+State precisely where it stops holding --- that is more interesting than where it does.}
+
+\subsection{The readout vs.\ a language-model head}
+\label{sec:vs-lm-head}
+
+\TODO{no counterpart in Wu \& Tu, because the encoder has no LM head. Show that
+\Cref{eq:exact-readout} is a mixture of $\nchan$ softmaxes over a $\nlab$-dimensional space,
+compare with the ordinary $\R^{\nlab\times|\Vocab|}$ head, and connect to
+\citet{yang2018breaking}: the rank-$\nlab$ bottleneck is real, but a mixture of softmaxes is not
+rank-limited in the way a single softmax is. Whether that helps is measured in
+\Cref{sec:exp3}.}
+
+\subsection{Full model comparison}
+\label{sec:full-comparison}
+
+\begin{figure*}[t]
+\centering
+\TODO{Figure 2, full width. Three computation graphs side by side --- (a) GPT-style decoder,
+(b) Looped decoder, (c) causal probabilistic transformer --- in the visual style of Wu \& Tu's
+Figure 3. This figure is what makes \Cref{tab:three-point} unnecessary to argue for in words.}
+\caption{Computation graphs for a causal transformer, a Looped transformer, and a causal
+probabilistic transformer.}
+\label{fig:computation-graphs}
+\end{figure*}
+
+\TODO{prose. The differences to draw out, following their \S3.4:}
+
+\begin{itemize}
+  \item \textbf{No feed-forward structure.} Inherited from the encoder model, and the reason
+        the global variables of \Cref{sec:variants} are worth measuring.
+  \item \textbf{No residual connections or layer norm.} The unary scores are re-added at each
+        iteration instead.
+  \item \textbf{Parameters shared across iterations.} This is the property the Looped
+        transformer \citep{dehghani2019universal, giannou2023looped} also has, and it is why a
+        comparison against a standard decoder alone cannot attribute any difference to
+        structure.
+  \item \textbf{The output is a posterior, not a projection.} No parameter exists outside the
+        factor graph (\Cref{sec:output}).
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & \makecell{Weight\\sharing} & \makecell{Syntactic\\structure} \\
+\midrule
+Causal transformer & no  & no  \\
+Looped transformer & yes & no  \\
+Causal PT          & yes & yes \\
+\bottomrule
+\end{tabular}
+\caption{The three models of \Cref{sec:experiments}. Looped vs.\ transformer isolates weight
+sharing; causal PT vs.\ Looped isolates structure, which is the comparison this paper is about.}
+\label{tab:three-point}
+\end{table}
+
+\Cref{tab:three-point} is what the experimental design follows from: the causal PT differs from
+a standard decoder in two ways at once, so a two-model comparison cannot attribute a difference
+to either. \NOTE{putting this table in Section 3 rather than Section 4 is deliberate --- it
+makes the Looped baseline a consequence of the model comparison instead of an experimental
+choice that a reviewer could read as cherry-picked.}
