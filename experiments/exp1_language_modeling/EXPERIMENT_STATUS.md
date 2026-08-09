@@ -241,31 +241,155 @@ fixed `λ_Z` cannot recover the message variance because it depends on sentence 
 not apply. What was tolerable in a sentence-level MLM encoder is not tolerable in a causal
 decoder over 64-token blocks.
 
+### The `λ_Z` sweep falsified the saturation diagnosis — 2026-08-09
+
+The prediction written above was: label entropy should recover *and* the ablation KL should
+become non-zero; "if perplexity stays at 690 while the entropy recovers, saturation was not the
+binding constraint and the diagnosis is wrong."
+
+| Job | `λ_Z` | Best val ppl | Test ppl | `label_entropy` (max 5.55) | `q̄` variance over positions | ablation KL |
+|---|---|---|---|---|---|---|
+| 940445 | 1 | 695.73 | 655.10 | 0.044 | 3.0e-05 | **0.000e+00** |
+| 940483 | 16 | 696.24 | 655.82 | **4.95** | 4.8e-07 | **0.000e+00** |
+| 940484 | 32 | 697.76 | 657.63 | **5.26** | 1.9e-10 | **0.000e+00** |
+| 940485 | 64 | 699.29 | 659.42 | **5.48** | 3.9e-11 | **0.000e+00** |
+
+The entropy recovered completely — 0.0009 nats to 5.48 of a possible 5.55 — and perplexity did
+not move, and the ablation KL stayed at exactly zero. **The diagnosis is wrong by its own
+stated criterion.** Recorded rather than rewritten.
+
+What actually happened is that the model traded one degenerate fixed point for another: at
+`λ_Z = 1` the label posterior is the same *one-hot* at every position, at `λ_Z = 64` it is the
+same *near-uniform* vector at every position, and the variance of `q̄` across positions got
+**worse**, from 3.0e-05 to 3.9e-11. Saturation was a surface symptom. The invariant is that
+`q̄` does not vary with position.
+
+A second inference of the previous entry is also withdrawn: **`S` does grow.** `‖S_w‖` reaches
+17.4–20.1 against an initialisation of 0.32. The earlier claim that it stays at initialisation
+scale was read off the ratio `msg_over_unary` rather than measured, and was wrong. What
+explodes instead is the **root column**: `‖r‖` reaches 48–58 while `max|T|` falls to 0.016–0.16,
+i.e. the arc scores vanish and ROOT carries the message, by a factor of order 10³.
+
+### The initialisation, not training, is where the context is lost
+
+The control that should have been run first. Prefix ablation on **untrained** models:
+
+| model | ablation KL | `max abs Δlogit` | argmax unchanged |
+|---|---|---|---|
+| untrained, `init_std = 0.02` (the default) | 9.5e-11 | 4.3e-09 | 1.000 |
+| untrained, `init_std = 0.5` | **6.9e-02** | **2.405** | **0.375** |
+| untrained, exact readout, `init_std = 0.02` | 9.3e-08 | 3.8e-06 | 1.000 |
+
+**The forward path is not broken** — at `init_std = 0.5` an untrained model's prediction moves
+substantially when the prefix is shuffled, and its argmax changes on 62 % of slots. The
+mechanism works.
+
+**At the default `init_std = 0.02` the model is already prefix-blind before a single gradient
+step**, and no configuration tried has escaped that basin. This reframes every run above: it is
+not a collapse *from* a working state, it is a failure to ever leave a context-free
+initialisation, with the unigram solution available immediately through `b` and through `S`.
+
+`init_std = 0.02` is the nanoGPT convention, is specified by neither paper, and was flagged as
+an unjustified default of mine in the exp0 review of 2026-08-09, where the decision taken was
+to keep it. That decision now has evidence against it.
+
+### The initialisation hypothesis is also falsified, and the failure is localised
+
+| Job | `init_std` | Best val ppl | Test ppl | `q̄` var over positions | ablation KL |
+|---|---|---|---|---|---|
+| 940445 | 0.02 | 695.73 | 655.10 | 3.0e-05 | 0.000e+00 |
+| 940489 | 0.2 | 695.53 | 654.86 | 4.3e-05 | 0.000e+00 |
+| 940490 | 0.5 | 702.57 | 660.80 | **7.3e-04** | **5.7e-08** |
+
+Training from an initialisation that demonstrably uses context still ends at the unigram. So
+the initialisation is not the binding constraint either — it only changes how much context
+survives, not whether the model learns.
+
+**Where the information actually dies.** Measured on the `init_std = 0.5` checkpoint, which is
+the one with the most surviving signal:
+
+```
+logits std ACROSS SEQUENCES at a fixed slot :  8.9e-05
+logits std ACROSS SLOTS within a sequence   :  1.5e-01      ← a factor of 1700
+```
+
+The prediction at slot `t` is **the same for every sequence**. The model has learned
+`p(w | position in the block)` and nothing else — which, averaged over positions, is the
+unigram. That is why nine configurations all land at 690–703 and why the ablation KL is zero:
+there is no content to ablate.
+
+It is not the RPE table collapsing — the distance buckets stay distinct (relative differences
+1.40, 1.39, 1.41 between bucket 0 and buckets 1–3). Position is used; content is not.
+
+And the content **is** present upstream. Tracing the content stream on the same checkpoint:
+
+```
+q^(0) = softmax(S_w)   std across sequences 1.9e-03   across slots 2.1e-03
+q after iteration 1    std across sequences 2.3e-03   across slots 2.7e-03
+q after iteration 2    std across sequences 3.8e-03   across slots 4.6e-03
+q after iteration 3    std across sequences 2.1e-03   across slots 4.0e-03
+```
+
+`q̄` varies with the words about as much as it varies with position. **The word reaches `q̄`.
+It does not reach the logits.** The loss of information is between the frozen prefix beliefs
+and the readout, not in the content stream and not in the initialisation.
+
+That is also a *learned* degeneracy rather than a structural impossibility: the same
+architecture at `init_std = 0.5` **before training** has ablation KL 6.9e-02 with the argmax
+changing on 62 % of slots. Training destroys a sensitivity that is there at the start.
+
+### Every configuration tried, one table
+
+Unigram baseline 688.82. All MFVI unless stated, `d=256 h=8 rank=64 γ=3`, 6000 steps.
+
+| Variable | Value | Best val ppl |
+|---|---|---|
+| baseline | `T=3, λ_Z=1, l2=5e-4, init 0.02` | 695.70 / 695.73 |
+| readout | exact (2000 steps) | 1555.04 |
+| rounds | `T=1` | 695.33 |
+| L2 on arc scores | `5.0` | 691.82 |
+| `λ_Z` | 4 / 16 / 32 / 64 | 690.02 / 696.24 / 697.76 / 699.29 |
+| word unary | `b` removed | 985.02 |
+| `init_std` | 0.2 / 0.5 | 695.53 / 702.57 |
+
+Nine runs, a 45× range in `λ_Z`, a 10⁴× range in the L2 coefficient, 25× in initialisation
+scale, both readouts, with and without the word unary — and the metric never leaves the
+interval [690, 703] except when it gets worse.
+
 ### Next, in order
 
-Steps 1 and 2 are done, above. What they establish is that the failure is **label-posterior
-saturation caused by an unnormalised 60:1 scale gap between the head message and the word
-message**, not a shortcut through `b` and not the round count. The remaining steps follow from
-that and are ordered by how directly they attack it.
+Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
+initialisation — were each stated with a falsifiable prediction and each falsified by the run
+that followed. What survives is a *localisation*, not a cause:
 
-1. **`λ_Z` sweep — 16, 32, 64.** This is the knob the mechanism names: `λ_Z` divides
-   `s̄ + G` before the softmax, and at `‖G‖ = 45` a value of 1 saturates while 4 (already
-   measured, val 690.02) is nowhere near enough. `λ_Z` is a legitimate entropic Frank-Wolfe
-   message weight, treated as a hyperparameter by the source, so nothing about the graph
-   changes. **Prediction to check against, so this is falsifiable:** label entropy should
-   rise from 0.0009 nats toward `log 256 = 5.55`, and the prefix-ablation KL should become
-   non-zero. If perplexity stays at 690 while the entropy recovers, saturation was not the
-   binding constraint and the diagnosis is wrong.
-2. **Extend the regulariser to the root column.** `arc_regulariser()` covers `T` only, and
-   the `l2_arc = 5.0` probe showed the message re-routing through `r` (root attention mass
-   0.20 → 4.78). Whatever the L2 term is meant to bound, it has to bound both carriers or it
-   only moves the problem.
-3. **A normalisation that stays inside the graph, if 1 and 2 are not enough.** Note the
-   constraint from §22.2: "expressivity is bought by adding *variables and factors*, never by
-   adding *maps*" — a LayerNorm is a map and is out. A per-channel or length-dependent `λ_H`,
-   or `λ_Z` scaled with `|D_t|`, is a *weight* and is in. Wu & Tu themselves observe that no
-   fixed `λ_Z` recovers the variance because it depends on length.
-4. **Why `S` stays small** (‖S_w‖ 1.78 against ‖G‖ 44.85) — likely a consequence of 1 rather
-   than a separate cause, so re-measure after the sweep before spending time on it.
-5. Only then a GPT baseline on the identical pipeline. Comparing a model that has not learned
-   against one that has measures nothing.
+> The word reaches `q̄` and does not reach the logits. The information is lost between the
+> frozen prefix beliefs and the readout, and the sensitivity that is lost was present at
+> initialisation.
+
+The remaining candidates, ordered by how directly they attack that localisation. **None of
+them should be run as a sweep** — each needs a prediction attached first, because three
+plausible diagnoses have already died.
+
+1. **Instrument the readout across sequences, not across positions.** Every diagnostic so far
+   measured variation over *positions*, which is exactly the axis the model still uses. The
+   quantity that matters is `std across sequences at a fixed slot`, stage by stage:
+   `q̄ → B → α → G → Q_Z → logits`. `q̄` has it (1.9e-3 to 3.8e-3) and the logits do not
+   (8.9e-5). One of those five stages destroys it, and the measurement is cheap and local.
+2. **Check the predictive attention's query.** §17.1 initialises `Q_Z^(0) = σ(s̄/λ_Z)`, a
+   single global vector — identical at every slot *and every sequence*. At `τ = 1` the whole
+   readout would then see the prefix only through the mask; `τ = 2` is supposed to fix that by
+   making round 2's query context-dependent. Whether it does at this scale is measurable, and
+   `τ` has never been varied in any run above — it sat at 2 throughout.
+3. **The exact readout is pure pooling and has no query at all** —
+   `log μ_t(a) = Σ_c LSE_{j∈D_t} B^(c)_{j,a}` is a soft max over prefix positions per label.
+   §23.3 flags exactly this: "the optimisation behaviour of LSE-pooling gradients at LM scale
+   is untested". It scored 1555 here, more than twice the unigram. That is consistent with the
+   pooling being the weak link, and it is a claim about the *construction*, not the code.
+4. **A GPT baseline on the identical pipeline** — but now for a different reason than
+   comparison: it would confirm the loop, the data and the metric are sound, which currently
+   rests only on the synthetic-stream test in `tests/test_11`. Cheap and worth having before
+   any further PT diagnosis.
+
+**What must not happen next:** another hyperparameter sweep. Nine runs spanning 45× in `λ_Z`,
+10⁴× in the L2 coefficient and 25× in initialisation scale moved the metric by less than 2 %.
+The answer is not in that space.

@@ -41,6 +41,8 @@ def build_args() -> argparse.Namespace:
         "tensor the context path uses.",
     )
     p.add_argument("--save-ckpt", action="store_true", help="write a checkpoint for the ablation step")
+    p.add_argument("--init-std", type=float, default=0.02,
+                   help="not from either paper; the nanoGPT convention. Measured 2026-08-09: at\n0.02 an *untrained* model is already prefix-blind (ablation KL 9.5e-11), at 0.5 it\nis not (KL 6.9e-2).")
     p.add_argument("--lambda-z", type=float, default=1.0)
     p.add_argument("--lambda-h", type=float, default=None, help="default None -> 1/d")
     p.add_argument("--vocab-chunk", type=int, default=512)
@@ -92,6 +94,7 @@ def main() -> None:
         lambda_Z=a.lambda_z,
         lambda_H=a.lambda_h,
         word_unary=not a.no_word_unary,
+        init_std=a.init_std,
     )
     model = CausalPTDecoder(cfg)
 
