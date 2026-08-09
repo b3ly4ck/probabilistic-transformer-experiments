@@ -31,6 +31,16 @@ def build_args() -> argparse.Namespace:
     p.add_argument("--n-iters", type=int, default=3)
     p.add_argument("--readout", default="exact", choices=("exact", "mfvi"))
     p.add_argument("--n-global", type=int, default=0)
+    p.add_argument(
+        "--no-word-unary",
+        action="store_true",
+        help="drop the factor b (§16(c): 'Set b ≡ 0 to drop it'). Note this does NOT make "
+        "the unigram distribution unreachable — logits(w) = LSE_a(S_{w,a} + log mu(a)) can "
+        "represent an arbitrary unigram through S alone when mu is constant. What it "
+        "removes is the *cheapest* route to it, and it forces that route through the same "
+        "tensor the context path uses.",
+    )
+    p.add_argument("--save-ckpt", action="store_true", help="write a checkpoint for the ablation step")
     p.add_argument("--lambda-z", type=float, default=1.0)
     p.add_argument("--lambda-h", type=float, default=None, help="default None -> 1/d")
     p.add_argument("--vocab-chunk", type=int, default=512)
@@ -81,6 +91,7 @@ def main() -> None:
         vocab_chunk=a.vocab_chunk,
         lambda_Z=a.lambda_z,
         lambda_H=a.lambda_h,
+        word_unary=not a.no_word_unary,
     )
     model = CausalPTDecoder(cfg)
 
@@ -91,6 +102,12 @@ def main() -> None:
     t0 = time.time()
     hist = train(model, corpus.train, corpus.valid, tcfg, random_batch)
     wall = time.time() - t0
+
+    if a.save_ckpt:
+        ck = Path("checkpoints") / f"{a.tag}_{a.readout}.pt"
+        ck.parent.mkdir(exist_ok=True)
+        torch.save({"cfg": cfg, "state_dict": model.state_dict(), "args": vars(a)}, ck)
+        print(f"checkpoint {ck}")
 
     test = evaluate(model, corpus.test, tcfg)
     best = min(hist.val_ppl) if hist.val_ppl else float("nan")
