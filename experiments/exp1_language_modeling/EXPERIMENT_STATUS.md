@@ -171,20 +171,101 @@ Read these together, because they say something sharper than any one of them:
    everywhere. Both give a constant `μ_t`. So "the inner loop saturates" is not a complete
    description — the invariant is that the *word* never gets into its own label posterior.
 
+### Step 1 (drop the word unary) and step 2 (prefix ablation) — 2026-08-09
+
+| Job | Config | Best val ppl | Test ppl |
+|---|---|---|---|
+| 940445 | MFVI `T=3`, **with** `b` (control) | 695.73 | 655.10 |
+| 940444 | MFVI `T=3`, **`word_unary=False`** | **985.02** | 945.01 |
+
+The control reproduces run 940422 to two decimals (695.73 vs 695.70), so the pipeline is
+deterministic. **Removing `b` makes the model worse, not better.** The context path does not
+come alive when the cheap route to the marginal is removed; the model simply becomes worse at
+the marginal. `b` is not the culprit.
+
+(Correction to how this step was proposed: dropping `b` never made the unigram unreachable.
+With `μ` constant, `logits(w) = LSE_a(S_{w,a} + log μ(a))` is still a function of `w` alone and
+`S` has `d` free parameters per word. Removing `b` deletes the cheapest route, not the only one.)
+
+**Prefix ablation on both checkpoints — the decisive measurement:**
+
+| checkpoint | condition | KL | `max abs Δlogit` | argmax unchanged |
+|---|---|---|---|---|
+| with `b` | prefix shuffled | **0.0000** | **0.0000** | **1.000** |
+| with `b` | prefix replaced by one repeated token | **0.0000** | **0.0000** | **1.000** |
+| no `b` | prefix shuffled | **0.0000** | **0.0000** | **1.000** |
+| no `b` | prefix replaced by one repeated token | **0.0000** | **0.0000** | **1.000** |
+
+Not "a thousand times less than GPT" as in the previous implementation (KL 0.0115). **Exactly
+zero.** The output does not depend on the prefix at all.
+
+### Mechanism, traced on the trained checkpoint
+
+An exact zero is a saturated softmax, not a weak signal, and the trace confirms it end to end:
+
+```
+content stream  q̄ : max prob 0.9922, entropy 0.0441 nats (of 5.55),
+                    distinct argmax over the 64 positions = [1, 1, 2, 1]
+scales           : ‖S_w‖ 1.78   ‖r‖ 4.05   max|T| 4.07   ‖b‖ 2.66
+predictive Q_Z   : ‖s̄‖ 0.74   ‖G‖ 44.85
+      round 1    : max prob 0.99967, entropy 0.0038 nats, 1 distinct argmax
+      round 2    : max prob 0.99993, entropy 0.0009 nats, 1 distinct argmax
+                   deviation of Q_Z across all 256 slots: 1.08e-3
+```
+
+The chain, each link measured:
+
+1. `‖G‖ = 44.85` against `‖s̄‖ = 0.74` — the head message outweighs the word message **60×**.
+   There is no normalisation between them, by construction.
+2. `Q_Z = softmax((s̄ + G)/λ_Z)` with `λ_Z = 1` therefore saturates: entropy 0.0009 nats of a
+   possible 5.55.
+3. The winning label is **the same one at every position of every sequence**. In float32 the
+   surviving deviation (1.08e-3) is below what moves the argmax and vanishes entirely in
+   `Q_Z Sᵀ`, which is why the ablation KL is exactly 0.
+4. The same collapse happens in the content stream, so `B^(c)_{j,·}` is the same for every
+   `j`, `log μ_t` is context-free, and the model has nothing left but `b_w` — the unigram.
+
+Once saturated the softmax gradient is ~0, so the state is self-locking, and it arrives early:
+`msg_over_unary` was already 93 at step 500.
+
+**Why the `l2_arc = 5.0` probe did not fix it, and what that reveals.** It crushed `max|T|` to
+0.46 — but `arc_regulariser()` covers `T` only, and **not the root column `r`**. In that run
+`root_mass_over_uniform` rose from 0.20 to **4.78**: with the arc scores penalised, the model
+routed the message through the *unpenalised* root column instead. The message was conserved,
+only its carrier changed. That is a defect in the regulariser, not a refutation of the
+hypothesis.
+
+**Relation to the source.** Wu & Tu set `λ_Z = 1` "for simplicity" and state plainly that a
+fixed `λ_Z` cannot recover the message variance because it depends on sentence length
+(App. A.5). Their variance argument also assumes near-uniform beliefs; under saturation it does
+not apply. What was tolerable in a sentence-level MLM encoder is not tolerable in a causal
+decoder over 64-token blocks.
+
 ### Next, in order
 
-1. **Drop the word unary** (`word_unary=False`, sanctioned by §16(c): "Set `b ≡ 0` to drop
-   it"). `b_w` is a free per-word parameter that reproduces the unigram distribution
-   exactly, so the fastest descent direction is to fit the marginal with `b` and leave the
-   context path at its initialisation. Removing it forces every bit of probability mass
-   through `S` and `μ_t`. This is one flag and it separates "the context path is dead" from
-   "the context path is unused because something cheaper is available".
-2. **Prefix-ablation on a trained checkpoint** — zero and shuffle the prefix, measure the KL
-   on the output. The previous implementation measured KL 0.0115 for PT against 12.26 for
-   GPT. This is the decisive read on whether context reaches the output at all, and it
-   needs checkpoint saving, which the loop does not yet do.
-3. **Why `S` does not grow.** Its gradient arrives through two roles; if it is small in
-   both, the readout's `LSE_a(S_{w,a} + log μ_t(a))` is the place to look, since a peaked
-   `μ_t` concentrates the gradient on a few labels.
-4. Only then a GPT baseline on the identical pipeline. Comparing a model that has not
-   learned against one that has measures nothing.
+Steps 1 and 2 are done, above. What they establish is that the failure is **label-posterior
+saturation caused by an unnormalised 60:1 scale gap between the head message and the word
+message**, not a shortcut through `b` and not the round count. The remaining steps follow from
+that and are ordered by how directly they attack it.
+
+1. **`λ_Z` sweep — 16, 32, 64.** This is the knob the mechanism names: `λ_Z` divides
+   `s̄ + G` before the softmax, and at `‖G‖ = 45` a value of 1 saturates while 4 (already
+   measured, val 690.02) is nowhere near enough. `λ_Z` is a legitimate entropic Frank-Wolfe
+   message weight, treated as a hyperparameter by the source, so nothing about the graph
+   changes. **Prediction to check against, so this is falsifiable:** label entropy should
+   rise from 0.0009 nats toward `log 256 = 5.55`, and the prefix-ablation KL should become
+   non-zero. If perplexity stays at 690 while the entropy recovers, saturation was not the
+   binding constraint and the diagnosis is wrong.
+2. **Extend the regulariser to the root column.** `arc_regulariser()` covers `T` only, and
+   the `l2_arc = 5.0` probe showed the message re-routing through `r` (root attention mass
+   0.20 → 4.78). Whatever the L2 term is meant to bound, it has to bound both carriers or it
+   only moves the problem.
+3. **A normalisation that stays inside the graph, if 1 and 2 are not enough.** Note the
+   constraint from §22.2: "expressivity is bought by adding *variables and factors*, never by
+   adding *maps*" — a LayerNorm is a map and is out. A per-channel or length-dependent `λ_H`,
+   or `λ_Z` scaled with `|D_t|`, is a *weight* and is in. Wu & Tu themselves observe that no
+   fixed `λ_Z` recovers the variance because it depends on length.
+4. **Why `S` stays small** (‖S_w‖ 1.78 against ‖G‖ 44.85) — likely a consequence of 1 rather
+   than a separate cause, so re-measure after the sweep before spending time on it.
+5. Only then a GPT baseline on the identical pipeline. Comparing a model that has not learned
+   against one that has measures nothing.
