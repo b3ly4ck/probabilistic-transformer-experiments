@@ -61,9 +61,13 @@ no BOS hack.
 * **Exact readout is the mainline.** §17.2 recommends MFVI, §23.3 inverts it explicitly.
   The later section wins. MFVI is kept as Experiment 3's comparison object.
 * **Gradients flow backwards through the frozen prefix** (`detach_prefix=False`), per Part
-  II §12.3 Check 2 and Part III §18 Check 5. This contradicts `CLAUDE.md` constraint 3 as
-  written; the conflict is recorded in the exp0 status file and **needs a human decision**.
-  The other reading is a config flag with a test.
+  II §12.3 Check 2 and Part III §18 Check 5. Ruled on 2026-08-09: `CLAUDE.md` constraint 3
+  was rewritten to separate the forward claim (binding) from the gradient claim (which the
+  old wording got wrong). The stop-gradient reading remains as a flag with a test.
+* **Defaults are Wu & Tu Table 2, PTB masked LM**: `d = 384, h = 16, rank = 64, γ = 3,
+  T = 5`. Previously `d = 64, h = 4, rank = None, T = 4`, which were arbitrary. Taking the
+  source's row leaves nothing here to defend that the source has not defended. Guarded by
+  `tests/test_10_diagnostics.py::test_default_config_is_the_source_table_2_row`.
 * **`λ_H = 1/d`** by default (Wu & Tu §2.3.3 and App. A.5); `λ_Z = 1`, `λ_W = 1`.
 * **RPE is implemented** — without it the content stream is permutation-invariant over the
   prefix. Only the causal half of the clipped table exists, so `n_dist = γ + 1`; `γ = 0`
@@ -86,14 +90,25 @@ status file; the four that matter:
 * **`λ_H = 1/d` does not sharpen the attention at initialisation** — measured `H/H_max =
   0.982` at `d = 384`. It cancels the `1/d²` variance shrinkage of App. A.5. Sharpening is
   driven by `‖T‖`: after overfitting, `H/H_max` fell to 0.22.
-* **`ρ = 233` at initialisation, and it is entirely the root column** — `ρ = 0.976`
-  without it. `r^(c)` is drawn at `init_std` in raw `d`-space while the arc scores reach
-  the attention contracted and therefore ≈121× smaller. An unintended attention-sink
-  prior; `PTConfig.root_init_std` exists to set it independently, default unchanged.
-* **The two schedules can disagree completely.** TV between the parallel and serial `q̄`
-  is 3e-6 at `init_std=0.02`, 0.111 at 0.5 and 0.682 (with `TV_max = 1.000`, disjoint
-  support) at 2.0 — the multistability `ρ ≥ 1` predicts. `parallel` is the training
-  mainline; re-measure on real data in Experiment 1.
+* **`ρ ≫ 1` means the bound is vacuous, not that the model is unstable.** Lemma 23.1
+  (Part IV §23.1) bounds the divergence between the predictive and observed runs of one
+  slot, and with the forcing term removed the same constant is the contraction factor of
+  the slot map, so `ρ < 1` guarantees a unique fixed point. Measured `ρ = 233` at the
+  source's configuration — and a direct probe from 48 random initialisations finds
+  **exactly one fixed point** there, and one after training at `ρ = 207`. The empirical
+  onset of a second fixed point is around `ρ ≈ 130` in a `d = 24` sweep. An earlier note
+  in this file treated the root column's share of `ρ = 233` as possibly central; that is
+  withdrawn — shrinking `root_init_std` 1000× changes neither `ρ` nor the fixed-point
+  count once the arc scores are large. `ρ` is a cheap diagnostic to log, nothing more.
+* **The root column is a measured variable, not a defect.** It is initialised ≈121×
+  above the contracted arc scores, but the attention sink it was suspected of causing is
+  absent: ROOT mass is 1.10× uniform untrained and 0.15× uniform after training, i.e. the
+  model learns to avoid it. Default unchanged; `root_mass` is logged every iteration.
+* **The two schedules can disagree completely, where the map is genuinely multistable.**
+  TV between the parallel and serial `q̄` is 3e-6 at `init_std=0.02`, 0.111 at 0.5 and
+  0.682 (with `TV_max = 1.000`, disjoint support) at 2.0 — and at that scale the slot map
+  has 15–22 fixed points, so the two schedules land in different ones. `parallel` is the
+  training mainline; re-measure on real data in Experiment 1.
 
 ### Known costs, not yet paid down
 
@@ -127,6 +142,21 @@ See the run log in each experiment's `EXPERIMENT_STATUS.md`. Summary of what exi
 | 1 — PT vs. GPT | not started |
 | 2 — PT vs. Looped | not started |
 | 3 — exact vs. MFVI readout | not started (both readouts implemented and tested) |
+
+## Required before Experiment 1 — not implemented
+
+Ruled mandatory in the review of 2026-08-09. All three come from Wu & Tu Table 2, PTB
+masked LM, and all three are training-loop concerns, which is why none exists yet.
+
+| Item | Value | Why it is not optional |
+|---|---|---|
+| L2 penalty on `T` | `5e-4` | The **only** mechanism restraining `‖T‖`. Message size and `ρ` are both governed by it, and there is no layer norm to absorb growth. Wu & Tu §4.2 add it for MLM and "experimentally find beneficial". |
+| Dropout | `0.15` | The source's value for this dataset. Note it is a training-time regulariser, not a factor, so it does not cross the §22.2 tripwire. |
+| Weight decay | `1.4e-6` | Adam, `β1 = 0.9`, `β2 = 0.999`, lr `1e-3` on PTB. |
+
+Also mandatory: evaluate with `loss(idx, ignore_first=1)`. PT scores `w_0..w_{n-1}` and a
+GPT baseline scores `w_1..w_{n-1}`; without this the two perplexities are over different
+token sets and the comparison is void.
 
 ## Data
 

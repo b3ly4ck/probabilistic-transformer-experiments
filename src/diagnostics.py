@@ -31,14 +31,103 @@ import torch
 from .pt_decoder import CausalPTDecoder
 
 
-def contraction_rho(model: CausalPTDecoder, B_full: torch.Tensor) -> torch.Tensor:
+def contraction_rho(
+    model: CausalPTDecoder, B_full: torch.Tensor, centred: bool = False
+) -> torch.Tensor:
     """``rho = sum_c ||B^(c)||_2^2 / (4 lambda_Z lambda_H)`` per sequence, Lemma 23.1.
 
-    ``B_full`` is ``(B, h, 1+t, d)``. The spectral norm is taken on the raw matrix, which
-    upper-bounds the centred one the lemma uses, so this is a conservative reading.
+    ``B_full`` is ``(B, h, 1+t, d)``.
+
+    The lemma specifies "Euclidean norms on centred vectors; shifts are irrelevant by
+    softmax invariance", so the operator that actually appears in the recursion is the
+    doubly centred one: the input ``delta q`` is a difference of distributions and sums to
+    zero, and the output only matters up to a shift because it enters a softmax. Pass
+    ``centred=True`` for that; the raw norm is an upper bound on it, hence a conservative
+    reading of ``rho``, and is the default so that a reported violation is never an
+    artefact of tightening.
     """
-    sv = torch.linalg.matrix_norm(B_full, ord=2)  # (B, h)
+    B = B_full
+    if centred:
+        B = B - B.mean(dim=2, keepdim=True)  # centre over the head domain D_t
+        B = B - B.mean(dim=3, keepdim=True)  # centre over the labels
+    sv = torch.linalg.matrix_norm(B, ord=2)  # (B, h)
     return (sv**2).sum(-1) / (4 * model.cfg.lambda_Z * model.cfg.lam_H)
+
+
+def root_attention_mass(model: CausalPTDecoder, idx: torch.Tensor) -> dict:
+    """How much attention the ROOT column takes, against what uniform would give.
+
+    ``r^(c)`` reaches the attention in raw ``d``-space while the arc scores arrive
+    contracted, so a uniform initialisation starts ROOT far above the rows it competes
+    with. Whether that becomes a genuine attention sink is a *measured* variable, not an
+    assumption — log it, and if a sink appears, ``PTConfig.root_init_std`` is the knob
+    that was already there.
+    """
+    qbar = model.content_stream(idx)
+    _, alpha = model._arc_message(qbar, model.contract(qbar))
+    n = idx.shape[1]
+    support = torch.arange(1, n + 1, device=idx.device, dtype=alpha.dtype)  # |D_t| per slot
+    mass = alpha[..., 0]  # (B, h, n)
+    return {
+        "root_mass_mean": float(mass.mean()),
+        "root_mass_last": float(mass[..., -1].mean()),
+        "uniform_last": float(1.0 / support[-1]),
+        "excess_over_uniform": float((mass / (1.0 / support)).mean()),
+    }
+
+
+def fixed_point_multiplicity(
+    model: CausalPTDecoder,
+    B_full: torch.Tensor,
+    m_W: torch.Tensor,
+    n_starts: int = 48,
+    iters: int = 500,
+    spread: float = 4.0,
+    tol: float = 1e-6,
+    seed: int = 0,
+) -> dict:
+    """Does the slot inner loop have one fixed point, or several?
+
+    This is the direct test of what Lemma 23.1's ``rho >= 1`` *admits*. Setting the word
+    message difference to zero in the lemma's recursion leaves ``delta q_s <= rho delta
+    q_{s-1}``, i.e. ``rho`` is the contraction factor of the slot map itself: below 1 the
+    map is a contraction, so the fixed point is unique and reached from any start. Above
+    1 the guarantee is *vacuous* — multistability becomes possible, not certain. Only an
+    experiment settles which, so run the loop from many random initialisations of ``Q_Z``
+    and count how many distinct fixed points come back.
+
+    ``B_full`` is ``(B, h, 1+t, d)`` and ``m_W`` is ``(B, d)`` — ``S_{w_t,.}`` in observed
+    mode, ``s_bar`` in predictive mode.
+    """
+    g = torch.Generator(device="cpu").manual_seed(seed)
+    Bt, d = m_W.shape
+    qz = torch.softmax(
+        torch.randn(n_starts, Bt, d, generator=g, dtype=m_W.dtype) * spread, dim=-1
+    )
+    for _ in range(iters):
+        logit = torch.einsum("sba,bcja->sbcj", qz, B_full)
+        alpha = torch.softmax(logit / model.cfg.lam_H, dim=-1)
+        ctx = torch.einsum("sbcj,bcja->sba", alpha, B_full)
+        qz = torch.softmax((m_W + ctx) / model.cfg.lambda_Z, dim=-1)
+
+    counts, examples = [], []
+    for b in range(Bt):
+        pts = qz[:, b]  # (n_starts, d)
+        reps: list = []
+        for p in pts:
+            if not any(0.5 * (p - r).abs().sum() < tol for r in reps):
+                reps.append(p)
+        counts.append(len(reps))
+        if len(reps) > 1:
+            sep = max(
+                float(0.5 * (a - b2).abs().sum()) for a in reps for b2 in reps if a is not b2
+            )
+            examples.append(sep)
+    return {
+        "n_fixed_points": counts,
+        "max_separation": max(examples) if examples else 0.0,
+        "n_starts": n_starts,
+    }
 
 
 def message_scale_report(model: CausalPTDecoder, idx: torch.Tensor) -> list:

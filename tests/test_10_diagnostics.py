@@ -16,8 +16,10 @@ import torch
 
 from src.diagnostics import (
     contraction_rho,
+    fixed_point_multiplicity,
     global_head_readout_term,
     message_scale_report,
+    root_attention_mass,
     schedule_divergence,
 )
 from conftest import toy_model
@@ -117,6 +119,71 @@ def test_schedules_agree_when_the_model_is_degenerate_and_may_not_otherwise(idx)
 
     large = schedule_divergence(toy_model(init_std=3.0), idx)
     assert large["tv_max"] > 0.1, "the schedule comparison is not sensitive to anything"
+
+
+def test_rho_below_one_implies_a_unique_fixed_point(idx):
+    """Lemma 23.1 with the word-message difference set to zero: rho is the contraction
+    factor of the slot map, so rho < 1 makes it a contraction and the fixed point unique
+    and reachable from any start. Asserted as an implication, not assumed."""
+    m = toy_model(init_std=0.1)
+    B_full = m._slot_keys(m.contract(m.content_stream(idx)), idx.shape[1])
+    assert float(contraction_rho(m, B_full).max()) < 1.0
+    fp = fixed_point_multiplicity(m, B_full, m.S[idx[:, -1]])
+    assert fp["n_fixed_points"] == [1] * idx.shape[0]
+    assert fp["max_separation"] == 0.0
+
+
+def test_multistability_appears_only_far_above_the_bound(idx):
+    """rho >= 1 *admits* multistability; it does not create it. The measured onset is far
+    above 1, which is why the check exists as an experiment and not as an inference."""
+    m = toy_model(init_std=6.0)
+    B_full = m._slot_keys(m.contract(m.content_stream(idx)), idx.shape[1])
+    assert float(contraction_rho(m, B_full).min()) > 1.0
+    fp = fixed_point_multiplicity(m, B_full, m.S[idx[:, -1]])
+    assert max(fp["n_fixed_points"]) > 1, "the multistability probe found nothing at rho >> 1"
+    assert fp["max_separation"] > 0.5
+
+
+def test_centred_rho_never_exceeds_the_raw_one(idx):
+    """The lemma takes norms on centred vectors; the raw norm bounds that, so reporting
+    the raw one can only over-state rho, never hide a violation."""
+    for std in (0.05, 0.5, 3.0):
+        m = toy_model(init_std=std)
+        B_full = m._slot_keys(m.contract(m.content_stream(idx)), idx.shape[1])
+        raw = contraction_rho(m, B_full)
+        centred = contraction_rho(m, B_full, centred=True)
+        assert (centred <= raw + 1e-12).all()
+
+
+def test_root_attention_mass_is_measured(idx):
+    m = toy_model()
+    stats = root_attention_mass(m, idx)
+    assert 0.0 <= stats["root_mass_mean"] <= 1.0
+    assert stats["excess_over_uniform"] > 0.0
+    for t in message_scale_report(m, idx):
+        assert 0.0 <= t["root_mass"] <= 1.0
+        assert t["root_mass_over_uniform"] >= 0.0
+
+
+def test_default_config_is_the_source_table_2_row():
+    """The defaults are Wu & Tu Table 2, PTB masked LM. Guard against silent drift."""
+    from src import PTConfig
+
+    cfg = PTConfig(vocab_size=10)
+    assert (cfg.d, cfg.h, cfg.rank, cfg.gamma, cfg.n_iters) == (384, 16, 64, 3, 5)
+    assert cfg.lam_H == 1.0 / 384 and cfg.lambda_Z == 1.0
+
+
+def test_rank_above_d_is_rejected():
+    from src import PTConfig
+
+    with torch.no_grad():
+        try:
+            PTConfig(vocab_size=10, d=32, rank=64)
+        except ValueError as e:
+            assert "rank" in str(e)
+        else:
+            raise AssertionError("a Kruskal rank above d was accepted")
 
 
 def test_loss_alignment_option_drops_the_leading_slots(idx):

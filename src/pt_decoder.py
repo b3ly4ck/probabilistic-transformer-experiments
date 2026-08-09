@@ -230,6 +230,11 @@ class CausalPTDecoder(nn.Module):
             "attn_entropy": float(ent.mean()),
             "attn_entropy_frac": float((ent / support.log().clamp(min=1e-12)).mean()),
             "label_entropy": float(-(q * q.clamp(min=1e-30).log()).sum(-1).mean()),
+            # ROOT is column 0 of D_t. r^(c) reaches the attention in raw d-space while
+            # the arc scores arrive contracted, so the sink is a *measured* variable:
+            # if it appears, PTConfig.root_init_std is the knob that was already there.
+            "root_mass": float(alpha[..., 0].mean()),
+            "root_mass_over_uniform": float((alpha[..., 0] * support).mean()),
         }
 
     def _content_parallel(self, idx: torch.Tensor, trace: Optional[list] = None) -> torch.Tensor:

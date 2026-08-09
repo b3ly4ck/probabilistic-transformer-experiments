@@ -184,7 +184,17 @@ only 0.982 → 0.932. After training, where `max|T|` reached 7.4, `H/H_max` fell
 So the answer to "does `1/d` harden the choice" is **no at init, yes once the arc scores
 grow** — which is one more reason the L2 penalty on `T` is not optional.
 
-### The root column is initialised on the wrong scale — open defect
+### The root column is initialised on a different scale — measured variable, not a defect
+
+**Superseded framing.** An earlier pass of this file called this an "open defect". It is
+an arithmetic fact about the initialisation, and it inflates `ρ`, but the two consequences
+it was suspected of causing were both tested and found absent: it does not cause
+multistability (see the `ρ` section), and it does not produce an attention sink. Measured
+ROOT attention mass, last slot: 1.10× uniform at the source's configuration untrained, and
+**0.0001 against a uniform 0.125** on the overfitted toy model — after training the model
+*avoids* ROOT rather than sinking into it. Default left unchanged, per the review; the
+mass is now logged every iteration so that if a sink does appear on real data, the knob and
+the reason are both already in place.
 
 `r^(c)` enters the attention in raw `d`-space, while arc scores arrive contracted,
 `B^(c)_{j,a} = E_{q̄_j}[T^(c)_{a,·}]`, which shrinks them by ≈`1/√d` for a near-uniform
@@ -205,14 +215,73 @@ unchanged (`= init_std`), because changing it is a modelling decision, not a bug
 should make silently. `init_std = 0.02` itself is **not from either paper** — it is the
 nanoGPT convention. Neither Wu & Tu nor the causal document specifies an initialisation.
 
-### `ρ ≫ 1` — the contraction bound is vacuous as configured
+### `ρ ≫ 1` — the bound is vacuous, and that is all it means
 
-Lemma 23.1 gives `ρ = Σ_c ‖B^(c)‖² / (4 λ_Z λ_H) < 1` as sufficient for a unique fixed
-point and for the prior/posterior divergence to be bounded; `ρ ≥ 1` "is precisely the
-regime in which the inner loop admits multistability — prediction and encoding landing in
-different fixed points". Measured `ρ = 233` untrained and `ρ = 207` after overfitting.
-Excluding the root column it is `0.976`, i.e. sitting exactly on the boundary. This is a
-diagnostic to log during Experiment 1, not a blocker: `ρ < 1` is sufficient, not necessary.
+**What Lemma 23.1 actually is.** §23 is "Defect 2: the prior/posterior divergence under
+MFVI". §23.1 opens: "Within slot `t`, the predictive and observed runs differ only in the
+word message `m_W`: `s̄` against `S_{w_t,·}`. Both share the constants `B^(c)` and the
+schedule." The lemma bounds the distance between **those two runs of the same inner loop**
+— it is not a convergence statement about one run. With `δq_s` the difference between the
+two runs' `Q_Z` after round `s`:
+
+```
+δα_s^(c) ≤ ‖B^(c)‖₂/(2λ_H) · δq_{s-1}
+δq_s     ≤ ‖ΠΔm_W‖/(2λ_Z) + ρ · δq_{s-1},     ρ := Σ_c ‖B^(c)‖₂² / (4 λ_Z λ_H)
+ρ < 1  ⟹  δq_∞ ≤ (1/(1-ρ)) · ‖ΠΔm_W‖/(2λ_Z),   ΠΔm_W = Π(S_{w_t,·} − E_{Q_W} S_{w,·})
+```
+
+The proof is two applications of the softmax Lipschitz constant `‖diag(p) − ppᵀ‖₂ ≤ ½`
+(Popoviciu) plus the mean value theorem, then a geometric series. The forcing term
+`ΠΔm_W` is the *embedding-space surprisal of the observed word*, so the bound says the
+prediction-time and encoding-time attention patterns diverge little on predictable tokens
+and more on surprising ones — the prior/posterior behaviour Bayes prescribes.
+
+Setting `Δm_W = 0` leaves `δq_s ≤ ρ δq_{s-1}` for two runs that differ only in
+initialisation, so **`ρ` is also the contraction factor of the slot map itself**: `ρ < 1`
+makes it a contraction, hence a unique fixed point reached from any start. That is the
+sense in which it is a stability criterion, and it is *sufficient, not necessary*.
+
+**Superseded claim.** An earlier pass of this file reported `ρ = 233` and treated the root
+column's share of it as potentially central. That reading is withdrawn — it was an
+inference from a vacuous bound, not a measurement. The direct test now exists
+(`fixed_point_multiplicity`): run the slot inner loop from 48 random initialisations of
+`Q_Z` to convergence and count distinct fixed points.
+
+| config | `ρ` raw | `ρ` centred | distinct fixed points | max separation |
+|---|---|---|---|---|
+| toy `d=4 h=2`, `init_std=0.1` | 0.053 | 0.020 | 1, 1, 1 | 0.000 |
+| `d=24 h=4`, `init_std=0.3` | 54.9 | — | 1, 1, 1 | 0.000 |
+| `d=24 h=4`, `init_std=0.4` | 102.7 | — | 1, 1, 1 | 0.000 |
+| `d=24 h=4`, `init_std=0.45` | 135.5 | — | 1, **2**, 1 | 0.221 |
+| `d=24 h=4`, `init_std=0.6` | 292.8 | — | 2, 3, **5** | 0.720 |
+| `d=24 h=4`, `init_std=2.0` | 10411 | 9486 | 15, 13, 19 | 1.000 |
+| **`d=384 h=16 r=64`, source row, untrained** | **233.2** | **227.8** | **1, 1** | **0.000** |
+| **overfitted toy, `d=16 h=2`** | **206.5** | — | **1** | **0.000** |
+
+Readings, in order of importance:
+
+1. **`ρ = 233` at the source's configuration produces exactly one fixed point.** So does
+   `ρ = 207` after training. The bound being violated by two orders of magnitude is not,
+   here, a symptom of anything. `ρ < 1` is very conservative; the empirical onset of a
+   second fixed point in this setup is around `ρ ≈ 130`.
+2. **The root column does not cause multistability.** Shrinking `root_init_std` by 100×
+   and 1000× at `init_std = 2.0` left `ρ` at ~9500 and the count at 15–22 fixed points.
+   Once the arc scores are large enough to matter, `ρ` is governed by `‖T‖`, exactly as
+   §23.1 says ("`ρ` should be read as governed by `‖T‖²/(λ_Z λ_H)`"). The root column
+   dominates `ρ` only in the regime where everything else is tiny — which is the regime
+   with one fixed point anyway.
+3. **`TV = 1.000` between the two schedules at `init_std = 2.0`, reported in the schedule
+   section above, is now explained**: at that scale the slot map has 15–22 fixed points,
+   so the two schedules landing on disjoint label mass is multistability, observed
+   directly rather than inferred.
+4. **Under the exact readout, the lemma's own subject largely disappears.** §23.3: the
+   exact readout "removes the query stream entirely — no predictive inner loop, no
+   `Q_Z^pred` iterations", and "with the exact readout, Defect 2 survives only in the mild
+   warm-start form of Section 23.2". Lemma 23.1 bounds a divergence between two MFVI runs;
+   with the mainline readout there is only one MFVI run. `ρ` still matters for the content
+   stream's own uniqueness, and for the MFVI arm of Experiment 3.
+
+So: worth logging, cheap, and now falsifiable by one call. Not a blocker and not a result.
 
 ### The two schedules can disagree completely
 
@@ -310,17 +379,38 @@ Recorded here so they are not silently omitted when it is written.
 | 2026-08-09 | (review pass) | same diagnostics on the overfitted toy model | 3/7 | `‖G‖/‖S_w‖` 1.839→1.928; `max|G|` 14.03 vs bound 14.78; attn `H/H_max` 0.246→0.223; `H(Q_Z)` 0.442→0.003; `ρ` 206.5 | <1 min |
 | 2026-08-09 | (review pass) | schedule divergence, `d=32 h=4 rank=8 γ=3 T=5`, len 24 | 0 | TV(parallel, serial): 3.4e-6 at `init_std=0.02`, 0.111 at 0.5, 0.682 at 2.0 with `TV_max = 1.000`; `≈0` on the overfitted model | <1 min |
 | 2026-08-09 | (review pass) | checks 1–10 after adding the diagnostics | 0/1 | 64/64 pass | 41 s |
+| 2026-08-09 | (lemma pass) | fixed-point multiplicity, 48 random starts, 500 rounds, float64 | 0/1 | `ρ=0.05` → 1 fp; `ρ=103` → 1 fp; `ρ=135` → 2 fp; `ρ=293` → up to 5; `ρ=10411` → 15–22, separation 1.000. **Source row `ρ=233` → 1 fp.** Overfitted toy `ρ=207` → 1 fp | 3 min |
+| 2026-08-09 | (lemma pass) | same, with `root_init_std` 100× and 1000× smaller at `init_std=2.0` | 0 | `ρ` 10411 → 9481/9490, fixed points 15–22 unchanged, ROOT mass → 0.0000. The root column is not the cause | 1 min |
+| 2026-08-09 | (lemma pass) | ROOT attention mass, last slot | 0 | source row untrained 0.0232 vs uniform 0.0208 (1.10×); overfitted toy 0.0001 vs uniform 0.125 (0.15×) | <1 min |
+| 2026-08-09 | (lemma pass) | full suite after adopting Table 2 defaults and adding the lemma checks | 0/1 | 70/70 pass | 44 s |
 
 Initial loss ≈ 2.48 is `log 12`, i.e. the uniform distribution — the model starts
 uninformative, as it should with `b = 0` and small `S`.
 
-## Open decisions handed back
+## Decisions taken in review, 2026-08-09
 
-1. **`detach_prefix`** — `CLAUDE.md` constraint 3 vs. Part II §12.3 / Part III §18. Set to
-   `False` (the paper). Needs a human ruling.
-2. **`rank` default** — currently `None` (full `T`). The source ran `UV` with `r = 64` on
-   every task, and §18 Check 4's attention correspondence assumes the decomposition.
-3. **`root_init_std`** — currently `= init_std`, which starts the root column 121× above
-   the arc scores it competes with and accounts for the whole of `ρ = 233`.
-4. **`n_iters`** — currently 4; the source used `T = 5` on PTB MLM.
-5. **`init_std = 0.02`** — borrowed from nanoGPT, specified by neither paper.
+All five were ruled on. Nothing below is still open.
+
+1. **`detach_prefix` stays `False`.** `CLAUDE.md` constraint 3 was rewritten instead of the
+   code: it now separates the forward claim (no *message* may flow backwards — binding)
+   from the gradient claim (gradients do flow, per Part II §12.3 Check 2 and Part III §18
+   Check 5 — the previous wording was wrong).
+2. **`rank = 64`, and the whole of Table 2's PTB row with it.** The instruction was
+   `rank = 64`, but the decomposition only saves parameters while `2·rank < d`, so
+   `rank = 64` at the previous default `d = 64` would have cost *more* than a full `T`.
+   The coherent version is the source's row: `d = 384, h = 16, rank = 64, γ = 3, T = 5`.
+   `PTConfig` now rejects `rank > d` outright. This also settles the performance question:
+   3.15 M non-embedding parameters instead of 9.44 M.
+3. **`n_iters = 5`** — the source's PTB value, replacing an arbitrary 4.
+4. **`init_std = 0.02` stays.** Not from either paper, but at that scale the two schedules
+   agree to 3.4e-6 and there is no better-argued alternative.
+5. **`root_init_std` default unchanged; ROOT attention mass is now logged** every content
+   stream iteration (`root_mass`, `root_mass_over_uniform`) and available standalone via
+   `diagnostics.root_attention_mass`. Rationale, from the review: it is a measured variable
+   with the cure already written, so changing it blind would destroy the observation.
+
+Still not implemented, and required before Experiment 1 (Wu & Tu Table 2, PTB MLM):
+dropout 0.15, L2 penalty on `T` 5e-4, weight decay 1.4e-6. The L2 term is the one that
+matters most — it is the only mechanism restraining `‖T‖`, and `‖T‖` is what drives both
+the message scale and `ρ`. Also mandatory: `loss(idx, ignore_first=1)`, or PT and the GPT
+baseline compute perplexity over different token sets.

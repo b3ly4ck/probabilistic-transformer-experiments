@@ -39,9 +39,21 @@ it invalidates the contribution.
 2. **Input and output word embeddings are tied.** This is forced by the construction — one
    word–label factor `S` mediates both directions — not a regularisation trick. Untying them
    is a bug, not a hyperparameter.
-3. **The prefix enters each decoding step as a frozen condition.** Neither gradients nor
-   messages may flow backwards from step `t` into the prefix posteriors. This is what keeps the
-   anti-causal term from ever being created; deleting it after the fact is not equivalent.
+3. **The prefix enters each decoding step as a frozen condition — in the forward pass.** No
+   *message* may flow backwards from step `t` into the prefix posteriors: `q̄_j` must be a
+   function of `w_{1:j}` alone. This is what keeps the anti-causal term from ever being created;
+   deleting it after the fact is not equivalent.
+
+   **Gradients are the opposite case, and this rule previously said so wrongly.** Part II §12.3
+   Check 2 and Part III §18 Check 5 both state that *frozen* means constant with respect to step
+   `t`'s inference problem, **not** detached in autodiff: training gradients flow backwards
+   through `B^(c)_{j,·}` into `q̄_j` and through the whole prefix computation, exactly as they do
+   through cached activations in a causal transformer. That is how the tied matrix `S` is trained
+   in both of its roles. Forward causality defines the decoder; backward gradient flow trains it.
+   `PTConfig.detach_prefix=False` is the mainline; the stop-gradient reading is kept as a flag.
+
+   What must hold, and is asserted in `tests/test_04_prefix_gradient.py`: the loss at slot `t`
+   reaches `q̄_j` only for `j < t`, and exactly zero gradient arrives at `j ≥ t`.
 4. **`W_t` is latent, not observed.** Encoding and decoding are two conditioning patterns of
    one model, not two models.
 5. **Verify on a toy example before scaling.** Small `d`, vocabulary of a few tokens, ~4 words,

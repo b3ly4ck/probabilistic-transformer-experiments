@@ -26,16 +26,22 @@ class PTConfig:
     vocab_size: int
 
     # --- graph shape ---
-    d: int = 64
-    h: int = 4
-    rank: Optional[int] = None
+    # Defaults are Wu & Tu's Table 2 row for PTB masked LM: d = 384, h = 16, T = 5,
+    # gamma = 3, Kruskal decomposition with r = 64. They were previously arbitrary
+    # choices of mine; taking the source's row wholesale means there is nothing here to
+    # defend that the source has not already defended. Note the row is coherent only as a
+    # row: rank = 64 saves parameters against a full T only while 2*rank < d, so a small
+    # d with rank = 64 would cost *more* than leaving rank at None.
+    d: int = 384
+    h: int = 16
+    rank: Optional[int] = 64
     gamma: int = 3
     n_global: int = 0  # m; B.3.3 single-split global head. 0 disables it.
     word_unary: bool = True  # the factor b; §16(c) allows dropping it (b == 0)
 
     # --- inference ---
     schedule: str = "parallel"  # "parallel" (depth-T shared causal transformer) | "serial"
-    n_iters: int = 4  # T, content-stream iterations, parallel schedule
+    n_iters: int = 5  # T, content-stream iterations, parallel schedule; Table 2 PTB value
     tau_obs: int = 1  # inner rounds per observed slot, serial schedule
     tau: int = 2  # predictive inner rounds of the MFVI readout (§17.1 asks for >= 2)
     readout: str = "exact"  # "exact" (mainline, §23.3) | "mfvi" (ablation)
@@ -73,6 +79,12 @@ class PTConfig:
             raise ValueError("gamma must be >= 0")
         if self.rank is not None and self.rank < 1:
             raise ValueError("rank must be >= 1 or None")
+        if self.rank is not None and self.rank > self.d:
+            raise ValueError(
+                f"rank {self.rank} exceeds d {self.d}: the Kruskal form T = U V^T cannot "
+                "have rank above d, and costs more parameters than a full T already at "
+                "2*rank >= d"
+            )
 
     @property
     def n_dist(self) -> int:
