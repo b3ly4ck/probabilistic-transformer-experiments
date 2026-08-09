@@ -1,79 +1,61 @@
 \section{Introduction}
 \label{sec:intro}
 
-% Continuous prose, no \paragraph headings, no bullet lists, no separate contributions list --
-% Wu & Tu's introduction has none of these, and this paper follows their format. If a
-% contributions list is wanted later it is a deliberate deviation, not an oversight.
-% Length target: ~1.2 columns, about seven paragraphs. Theirs runs six.
+% Continuous prose: no \paragraph headings, no bullet lists, no contributions list -- Wu & Tu's
+% introduction has none of these. Length target ~600 words, matching the ~1.2 columns theirs
+% occupies. Check with:  make words
+%
+% What was cut from the 968-word draft, and where it now lives, so it is not silently lost:
+%   - the mechanism behind the trilemma, in detail          -> Section 2.2 and Appendix C
+%   - the rejected projection design, argued at length      -> Section 2.4
+%   - the logcumsumexp form and its cost                    -> Section 2.5
+%   - "we regard this as the more interesting half"         -> deleted; let the reader judge
+% The introduction now states each of these once and moves on.
 
 Transformers are usually designed rather than derived. \citet{wu2023probabilistic} take the
 opposite route: they define a conditional random field over the discrete latent labels of the
 words in a sentence and over the dependency arcs between them, perform approximate inference
 with mean field variational inference, and observe that the resulting computation graph closely
 resembles a transformer encoder. Self-attention appears there not as a component that was
-chosen, but as the posterior distribution over syntactic dependency heads; the attention weights
-are computed by the inference procedure rather than parameterised directly. The model is
-therefore not an attempt to improve on transformers but an account of what one of them might be
-doing.
+chosen, but as the posterior distribution over syntactic dependency heads. The model is not an
+attempt to improve on transformers, but an account of what one of them might be doing.
 
-That account stops at the encoder. The model is trained with masked language modelling and
-produces contextual representations of words that are all visible at once, whereas the setting
-in which transformers are now predominantly used is autoregressive: each token is predicted from
-its prefix alone. \citet{wu2023probabilistic} name a decoder as an open extension of their work
-and do not pursue it. The question this paper asks is whether the probabilistic account survives
-the move to generation, or whether it was a property of the encoder all along.
+That account stops at the encoder. It is trained with masked language modelling, whereas
+transformers are now predominantly used autoregressively. \citet{wu2023probabilistic} name a
+decoder as an open extension and do not pursue it. We ask whether the probabilistic account
+survives the move to generation, or whether it was a property of the encoder all along.
 
-The obvious route does not work. One would like to mask the ternary factors so that a
-dependency head may only point backwards, leaving everything else intact. This is not enough,
-and the reason is the partition function: in a conditional random field with a single global
-energy, a factor coupling two positions contributes to the marginal at the earlier one whenever
-it contributes to the marginal at the later one, because both marginals are obtained from the
-same normalising constant. Masking changes which configurations score highly; it does not stop
-the surviving configurations from being normalised jointly. Causality, a single global energy
-function, and any genuine dependence of a representation on its context cannot hold together.
-Since the first and the third are what the model is for, the second is what we give up. In place
-of one field over the sentence we define a directed chain of conditional random fields, one per
-position, in which the posteriors over the prefix enter the next step as a frozen condition. The
-anti-causal contribution is then never formed, rather than formed and deleted --- a distinction
-that is easy to lose in implementation and that we test for directly.
+Masking the dependency factors so that a head may only point backwards is not enough. Under a
+single global energy the marginals at two positions share a normalising constant, so a factor
+coupling them reaches the earlier one whenever it reaches the later one; masking changes which
+configurations score highly, not that the survivors are normalised jointly. Causality, a single
+global energy, and genuine contextual dependence cannot hold together, and the first and third
+are what the model is for. We therefore replace the single field with a directed chain of
+conditional random fields, one per position, in which the prefix posteriors enter as a frozen
+condition, so that the anti-causal contribution is never formed rather than formed and deleted.
 
-A second problem has no counterpart in the encoder. A model that predicts words needs a
-distribution over the vocabulary, and a conditional random field over labels and arcs does not
-obviously provide one. The natural first attempt is to project the posterior over labels through
-a matrix into vocabulary space, but such a matrix corresponds to no factor in the graph: the
-prediction would leave the model through a component the posterior never reaches, and what
-remained would be a conditional random field with a neural head attached to it. Our resolution
-is that no new component is needed. The word is already a variable of the graph and the
-word--label compatibility is already a factor of it; in the encoder that variable is simply
-observed. Unclamping it turns the existing factor into a language model head, and the
-distribution over the next word becomes the posterior over a variable the model always had.
+A second problem has no counterpart in the encoder: a model that predicts words needs a
+distribution over the vocabulary. Projecting the label posterior through a matrix into
+vocabulary space would add a component corresponding to no factor, so the prediction would leave
+the model without traversing the graph. No new component is needed. The word is already a
+variable of the graph, merely observed, and word--label compatibility is already a factor of it;
+unclamping the variable turns that factor into a language model head. Properties that are
+usually stipulated then follow: the input and output word embeddings are the same matrix, since
+one factor mediates both directions; the output bias is the unary term on the word variable; and
+encoding and decoding are two conditioning patterns of one model rather than two models.
 
-Several properties then follow that are usually stipulated. The input and output word
-embeddings are the same matrix, because one factor mediates both directions and there is no
-second matrix to untie; tying is not a regularisation choice here but a property of the
-construction, and untying would describe a different model. The bias of the output layer is the
-unary term on the word variable. Encoding and decoding are not two models but two conditioning
-patterns of one, differing only in whether the word variables are observed. We regard this as
-the more interesting half of the paper, and we present it in a form intended to be checked.
+Both results are refusals, and they refuse for the same reason: the factor graph is the model,
+and it constrains what may be added to it. There is also a dividend. Conditioned on its prefix,
+the subgraph at a single position is a star centred on the label variable, hence a tree, so
+inference there is exact and the readout is a mixture of softmaxes in closed form, computed
+along the sequence by a single causal scan that leaves the layer-parallel schedule intact.
 
-Both of our main results are refusals, and they refuse for the same reason: the factor graph is
-the model, and it constrains what may be added to it. One may not keep a single global energy
-and be causal; one may not add an output matrix that names no factor. Taking the first seriously
-forces the chain of conditional fields, and taking the second seriously forces the tied
-embeddings, the output bias and the identity of the two directions. There is also a practical
-dividend. Conditioned on its prefix, the subgraph at a single position is a star centred on the
-label variable and therefore a tree, so sum-product inference is exact and the readout is
-available in closed form as a mixture of softmaxes. Along the sequence it reduces to one causal
-prefix log-sum-exp, computed by a single scan that leaves the layer-parallel schedule intact.
-
-Empirically we ask whether syntactic structure pays for itself. This cannot be settled by a
-comparison against a standard decoder alone, because our model differs from one in two ways at
-once: it reuses a single parameter set across inference iterations, and it has a syntactic
-factor graph. A looped transformer, in which one block is applied repeatedly with shared
-weights, has the first property without the second, so the comparison against it is the one that
-isolates the effect of structure. We report both. Our aim, following \citet{wu2023probabilistic},
-is not to compete with transformers on perplexity; a gap is expected, since all predictive
-information in our model passes through the label variables and the readout inherits their rank.
-\TODO{one or two sentences of result, written after the numbers exist and framed as what was
-measured rather than as what was hoped for.} We hope this extends the probabilistic account of
-contextual representation from analysis to generation.
+Empirically we ask whether syntactic structure pays for itself. A comparison against a standard
+decoder cannot settle this, because our model differs from one in two ways at once: it reuses a
+single parameter set across inference iterations, and it has a syntactic factor graph. A looped
+transformer, in which one block is applied repeatedly with shared weights, has the first without
+the second, so the comparison against it is the one that isolates structure. Following
+\citet{wu2023probabilistic}, our aim is not to compete with transformers on perplexity; a gap is
+expected, since all predictive information passes through the label variables and the readout
+inherits their rank. \TODO{one sentence of measured result.} We hope this work extends the
+probabilistic account of contextual representation from analysis to generation.

@@ -21,7 +21,7 @@ MAIN    := main
 BUILD   := build
 LATEXMK := latexmk
 
-.PHONY: all clean distclean watch check-tex pages release
+.PHONY: all clean distclean watch check-tex pages release words
 
 all: check-tex $(BUILD)/$(MAIN).pdf
 
@@ -53,6 +53,19 @@ release: all
 	@echo "This is a milestone artifact: 'git add paper/$(MAIN).pdf' only if you mean to keep"
 	@echo "this exact PDF in history forever. Rebuilds of unchanged sources are byte-identical,"
 	@echo "so re-running this without source changes leaves git with nothing to commit."
+
+# Rough word count per section, with LaTeX markup, comments and draft markers stripped. Rough
+# is the point: it is for staying inside a section's share of the 8-page budget while writing,
+# not for a precise figure. `make pages` is the authority on length.
+words:
+	@printf "%-28s %s\n" FILE WORDS
+	@for f in sections/*.tex; do \
+	  n=$$(sed 's/%.*//' $$f \
+	      | sed 's/\\TODO{[^}]*}//g; s/\\NOTE{[^}]*}//g; s/\\FROMPDF{[^}]*}//g' \
+	      | sed 's/\\label{[^}]*}//g; s/\\cite[a-z]*{[^}]*}/CITE/g; s/\\[a-zA-Z]*//g; s/[{}]//g' \
+	      | wc -w); \
+	  printf "%-28s %s\n" "$$(basename $$f)" "$$n"; \
+	done
 
 clean:
 	$(LATEXMK) -c -outdir=$(BUILD) $(MAIN).tex 2>/dev/null || true
