@@ -387,6 +387,49 @@ Recorded here so they are not silently omitted when it is written.
 Initial loss ≈ 2.48 is `log 12`, i.e. the uniform distribution — the model starts
 uninformative, as it should with `b = 0` and small `S`.
 
+## The previous implementation's failure, reproduced and attributed — 2026-08-09
+
+The implementation removed at `2e38ef9` (last at `9c77f94`) passed all nine checks and still
+converged to the unigram baseline on PTB. Its post-mortem blamed the **number of MFVI rounds**:
+toy memorisation fit rate over five seeds fell 8/20 → 7/20 → 4/20 → **1/20** as rounds went
+1 → 2 → 3 → 4. It also recorded that check 6 passed on a single lucky seed and was not
+representative.
+
+That implementation had `T` of shape `(h, d, d)` — **no distance dimension, hence no relative
+positional encoding at all**. Its attention `F_c(i,j)` depended on `j` only through `q̄_j` and
+never through `i − j`, so the content stream was a bag of prefix labels.
+
+`fit_rate.py` re-runs the same table on this implementation, sweeping the RPE table alongside
+the round count. 5 seeds, 1200 Adam steps, `d=16 h=2 V=12 n=8`, exact readout:
+
+| | T=1 | T=2 | T=3 | T=4 | T=5 |
+|---|---|---|---|---|---|
+| **`γ = 0`** (no RPE — the old shape) | 1/5 | 2/5 | 1/5 | 1/5 | 1/5 |
+| median final loss | 0.276 | 0.146 | 0.175 | 0.384 | 0.175 |
+| **`γ = 3`** (RPE, this repository) | **4/5** | **5/5** | **4/5** | **4/5** | **4/5** |
+| median final loss | **0.000** | **0.000** | **0.000** | **0.000** | **0.000** |
+
+Two conclusions:
+
+1. **The old failure reproduces exactly when the RPE table is removed** — 1/5 at `γ = 0`,
+   matching the 1/20–8/20 range of the old sweep. The missing positional encoding is a
+   sufficient explanation for it.
+2. **With RPE there is no degradation in the round count at all.** Fit rate is flat at 4–5 of 5
+   from one round to five, and the median loss is zero throughout. The "rounds are the driver"
+   conclusion was a property of a model that had no way to tell positions apart: with no
+   positional signal, more rounds means more averaging over an unordered bag, and the collapse
+   the old diagnosis measured follows.
+
+This does not by itself say the model will learn PTB — that is the pilot in
+`experiments/exp1_language_modeling/`. It says the specific mechanism previously diagnosed as
+blocking is not present here.
+
+**Correction to check 6.** The old post-mortem's point stands and is now acted on:
+`tests/test_06_overfit.py::test_overfit_is_not_a_single_lucky_seed` asserts a fit *rate* over
+four seeds rather than a single run. A single-seed memorisation test cannot distinguish a model
+that fits from one that fits sometimes, and the previous suite reported a healthy model on a
+1/5 configuration.
+
 ## Decisions taken in review, 2026-08-09
 
 All five were ruled on. Nothing below is still open.

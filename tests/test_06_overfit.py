@@ -37,6 +37,38 @@ def test_exact_readout_overfits_one_batch():
     assert torch.equal(pred, idx)
 
 
+def test_overfit_is_not_a_single_lucky_seed():
+    """A correction forced by the previous implementation's post-mortem.
+
+    That implementation's check 6 passed on seed 0 and had a fit rate of 1/5 across seeds;
+    the suite reported a healthy model because it happened to sit on the seed that works.
+    A single-seed memorisation test cannot distinguish a model that fits from one that fits
+    sometimes, so the check is over seeds and asserts a *rate*.
+
+    The full sweep over the round count and the RPE table lives in
+    ``experiments/exp0_decoder_validation/fit_rate.py``; this is its cheap guard.
+    """
+    finals = []
+    for seed in range(4):
+        m = toy_model(
+            seed=seed, dtype=torch.float32, readout="exact",
+            d=16, h=2, n_iters=2, vocab_size=12, gamma=3,
+        )
+        torch.manual_seed(100 + seed)
+        idx = torch.randint(0, 12, (1, 8))
+        opt = torch.optim.Adam(m.parameters(), lr=0.05)
+        loss = torch.tensor(float("nan"))
+        for _ in range(400):
+            opt.zero_grad(set_to_none=True)
+            loss = m.loss(idx)
+            loss.backward()
+            opt.step()
+        finals.append(float(loss))
+
+    n_fit = sum(1 for f in finals if f < 0.05)
+    assert n_fit >= 3, f"memorisation fit rate {n_fit}/4 across seeds; losses {finals}"
+
+
 def test_mfvi_readout_overfits_one_batch():
     m, idx, curve = _overfit("mfvi")
     assert curve[-1] < 0.05, f"loss plateaued at {curve[-1]:.4f}; curve {curve[::80]}"

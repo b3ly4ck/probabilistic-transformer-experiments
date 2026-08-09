@@ -115,16 +115,39 @@ class CausalPTDecoder(nn.Module):
         """
         return delta.clamp(max=self.cfg.n_dist) - 1
 
-    def contract(self, q: torch.Tensor) -> torch.Tensor:
+    def contract(self, q: torch.Tensor, T: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Contract the prefix beliefs into arc scores.
 
         ``B[k, n, c, j, a] = Σ_b q[n, j, b] · T[k, c, a, b]`` — the manoeuvre of
         Wu & Tu Appendix B.3.1, exact at the log-potential level because the
         log-potential is linear in the one-hot encoding of ``z_j``.
 
-        ``q`` is ``(B, n, d)``; the result is ``(n_dist, B, h, n, d)``.
+        ``q`` is ``(B, n, d)``; the result is ``(n_dist, B, h, n, d)``. ``T`` may be passed
+        in when it has already been materialised for this forward pass — under the Kruskal
+        form rebuilding it costs ``K h d² r`` and the content stream calls this once per
+        iteration.
         """
-        return torch.einsum("bje,kcae->kbcja", q, self.arc_scores())
+        return torch.einsum("bje,kcae->kbcja", q, self.arc_scores() if T is None else T)
+
+    def arc_regulariser(self) -> torch.Tensor:
+        """Mean square of the ternary scores — the L2 term of Wu & Tu §4.2.
+
+        "For MLM tasks, we add a small L2 regularization term to the ternary scores in our
+        model, which we experimentally find beneficial" (Table 2 gives 5e-4 on PTB). It is
+        the only mechanism restraining ``‖T‖``, and ``‖T‖`` is what bounds the message and
+        drives ``ρ``. The source does not say whether the term is a sum or a mean of
+        squares; a mean is used here so the coefficient does not depend on ``d``, ``h`` or
+        the number of distance buckets.
+
+        Computed without materialising ``T`` under the Kruskal form, via
+        ``‖U Vᵀ‖_F² = Σ_lm (UᵀU)_lm (VᵀV)_lm``.
+        """
+        if self.T is not None:
+            return (self.T**2).mean()
+        UtU = torch.einsum("khar,khas->khrs", self.U, self.U)
+        VtV = torch.einsum("khbr,khbs->khrs", self.V, self.V)
+        n_entries = self.U.shape[0] * self.U.shape[1] * self.cfg.d * self.cfg.d
+        return (UtU * VtV).sum() / n_entries
 
     # ------------------------------------------------------- messages, vectorised --
 
@@ -245,9 +268,10 @@ class CausalPTDecoder(nn.Module):
         parameter-shared causal transformer.
         """
         Sw = self.S[idx]  # (B, n, d)
+        T = self.arc_scores()  # materialised once for the whole pass
         q = torch.softmax(Sw / self.cfg.lambda_Z, dim=-1)  # Wu & Tu Eq. 7
         for _ in range(self.cfg.n_iters):
-            G, alpha = self._arc_message(q, self.contract(q))
+            G, alpha = self._arc_message(q, self.contract(q, T))
             G = G + self._global_message(q)[0]
             if trace is not None:
                 trace.append(self._iteration_stats(q, Sw, G, alpha))
