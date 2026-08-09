@@ -356,6 +356,87 @@ Nine runs, a 45× range in `λ_Z`, a 10⁴× range in the L2 coefficient, 25× i
 scale, both readouts, with and without the word unary — and the metric never leaves the
 interval [690, 703] except when it gets worse.
 
+### Stage-by-stage across sequences — there is no single guilty stage
+
+`where_content_dies.py`. The *content fraction* of a tensor is `std over sequences at a fixed
+slot / overall std` — scale-free, so stages of very different magnitude compare directly. A
+sharp drop marks where word identity is discarded. The untrained model at `init_std = 0.5` is
+the control: its prefix ablation gives KL 6.9e-2 and its argmax changes on 62 % of slots, so
+its readout demonstrably works.
+
+| stage | untrained `init 0.5` | trained `init 0.5` | trained `λ_Z=16` | trained baseline |
+|---|---|---|---|---|
+| `q̄` (content stream) | 3.10e-01 | 3.61e-02 | 5.18e-02 | 9.10e-04 |
+| `B` (contracted arcs) | 7.68e-01 | 2.41e-01 | — | 2.74e-03 |
+| `α` round 1 | 4.77e-03 | 2.59e-01 | — | 1.41e-01 |
+| `G` round 1 | 6.28e-01 | 4.75e-01 | **6.00e-05** | 3.08e-03 |
+| `Q_Z` round 1 | **3.22e-01** | **5.87e-04** | 6.52e-05 | 7.15e-09 |
+| `Q_Z` round 2 | 2.28e-01 | 1.64e-05 | — | 9.69e-10 |
+| **logits** | **7.35e-01** | 9.33e-05 | 2.98e-09 | 1.33e-08 |
+
+Read down the columns rather than across:
+
+* **The control carries content the whole way** — 0.31 at `q̄`, 0.32 through the `Q_Z` update,
+  0.73 at the logits. The architecture transmits word identity end to end. Nothing structural
+  is blocking it.
+* **Every trained model ends at 1e-5 to 1e-9 at the logits**, but they get there **at different
+  stages**. In `init 0.5` the content survives the message (`G` = 0.475) and is annihilated by
+  the `Q_Z` softmax — an 810× drop in one step. In `λ_Z = 16` the message itself is already
+  content-free (`G` = 6.0e-05) while `q̄` still has 5.2e-02, so it dies in the attention. In the
+  baseline `q̄` is already nearly content-free at 9.1e-04.
+* So the hypothesis of a single guilty stage is **wrong**. Training reliably removes the
+  content by whichever route is available, which points at the objective and the optimisation
+  rather than at one line of the forward pass.
+
+This also explains why the `λ_Z` sweep did nothing: raising `λ_Z` de-saturated the `Q_Z` softmax
+(entropy 0.0009 → 5.48) and the content simply left one stage earlier instead.
+
+### `τ` is not it either
+
+`τ` had sat at 2 in all nine earlier runs. `init_std = 0.5`, everything else held:
+
+| `τ` | 1 | 2 | 4 | 8 |
+|---|---|---|---|---|
+| best val ppl | 700.45 | 702.57 | 696.00 | 709.45 |
+
+§17.1's concern — that at `τ = 1` the attention query is the fixed global probe `σ(s̄/λ_Z)` and
+the readout sees the prefix only through the mask — is real but not binding here: making the
+query context-dependent for eight rounds changes the metric by 1 %.
+
+### Where this stands: twelve runs, one conclusion
+
+| Variable | Range covered | Best val ppl range |
+|---|---|---|
+| `λ_Z` | 1 → 64 (45×) | 690.02 – 699.29 |
+| `l2_arc` | 5e-4 → 5.0 (10⁴×) | 691.82 – 695.70 |
+| `init_std` | 0.02 → 0.5 (25×) | 695.53 – 702.57 |
+| `n_iters` (`T`) | 1, 3 | 695.33 – 695.70 |
+| `τ` | 1, 2, 4, 8 | 696.00 – 709.45 |
+| word unary `b` | on, off | 695.73 / 985.02 |
+| readout | MFVI, exact | 695.70 / 1555.04 |
+
+**Unigram baseline 688.82.** Nothing moves it. The interval is [690, 710] except where a
+change makes it worse.
+
+**What is established:**
+
+1. The architecture transmits word identity end to end — the untrained control has content
+   fraction 0.73 at the logits and prefix-ablation KL 6.9e-2.
+2. The trained models do not — content fraction 1e-5 to 1e-9 at the logits, ablation KL ~0.
+3. They lose it at *different stages* depending on the configuration, so it is not one broken
+   operation.
+4. The trained model has learned `p(w | position in block)`: logits vary 1700× more across
+   slots than across sequences.
+5. **The same model, the same loop and the same loss do learn a context-dependent task at small
+   scale** — `tests/test_11::test_training_reduces_loss_and_perplexity_on_a_learnable_stream`
+   trains this decoder on a deterministic stream where `w_{t+1} = f(w_t)` and drives validation
+   perplexity below uniform, at `|V| = 11`, `d = 16`, block 16. So neither the training loop nor
+   the model is incapable of using context in principle.
+
+The failure is therefore **scale-dependent**: context is used at `|V| = 11, d = 16` and
+abandoned at `|V| = 10⁴, d = 256`. That is the axis to probe next, and it is a much sharper
+question than any remaining hyperparameter.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
@@ -370,25 +451,24 @@ The remaining candidates, ordered by how directly they attack that localisation.
 them should be run as a sweep** — each needs a prediction attached first, because three
 plausible diagnoses have already died.
 
-1. **Instrument the readout across sequences, not across positions.** Every diagnostic so far
-   measured variation over *positions*, which is exactly the axis the model still uses. The
-   quantity that matters is `std across sequences at a fixed slot`, stage by stage:
-   `q̄ → B → α → G → Q_Z → logits`. `q̄` has it (1.9e-3 to 3.8e-3) and the logits do not
-   (8.9e-5). One of those five stages destroys it, and the measurement is cheap and local.
-2. **Check the predictive attention's query.** §17.1 initialises `Q_Z^(0) = σ(s̄/λ_Z)`, a
-   single global vector — identical at every slot *and every sequence*. At `τ = 1` the whole
-   readout would then see the prefix only through the mask; `τ = 2` is supposed to fix that by
-   making round 2's query context-dependent. Whether it does at this scale is measurable, and
-   `τ` has never been varied in any run above — it sat at 2 throughout.
+Items 1 and 2 are done, above: no single guilty stage, and `τ` is not binding. What remains,
+reordered by what the evidence now supports.
+
+1. **Bisect the scale gap.** The decisive new fact is that this decoder *does* learn context at
+   `|V| = 11, d = 16` and not at `|V| = 10⁴, d = 256`. Walk the two axes separately on a
+   synthetic stream where the answer is known — vocabulary 11 → 100 → 1000 → 10⁴ at fixed `d`,
+   then `d` at fixed vocabulary — and find where it stops. This turns a diffuse "it does not
+   learn" into a located transition, and needs no new code beyond a synthetic corpus generator.
+   It is also the cheapest of everything left.
+2. **A GPT baseline on the identical pipeline.** No longer for comparison: to confirm the loop,
+   the data and the metric are sound. If a GPT reaches ~130 on this pipeline as it did for the
+   previous implementation, everything outside the PT forward pass is exonerated. If it does
+   not, the bug is somewhere all models share and every PT diagnosis above is suspect.
 3. **The exact readout is pure pooling and has no query at all** —
    `log μ_t(a) = Σ_c LSE_{j∈D_t} B^(c)_{j,a}` is a soft max over prefix positions per label.
    §23.3 flags exactly this: "the optimisation behaviour of LSE-pooling gradients at LM scale
    is untested". It scored 1555 here, more than twice the unigram. That is consistent with the
    pooling being the weak link, and it is a claim about the *construction*, not the code.
-4. **A GPT baseline on the identical pipeline** — but now for a different reason than
-   comparison: it would confirm the loop, the data and the metric are sound, which currently
-   rests only on the synthetic-stream test in `tests/test_11`. Cheap and worth having before
-   any further PT diagnosis.
 
 **What must not happen next:** another hyperparameter sweep. Nine runs spanning 45× in `λ_Z`,
 10⁴× in the L2 coefficient and 25× in initialisation scale moved the metric by less than 2 %.

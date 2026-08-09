@@ -29,6 +29,8 @@ def build_args() -> argparse.Namespace:
     p.add_argument("--rank", type=int, default=64)
     p.add_argument("--gamma", type=int, default=3)
     p.add_argument("--n-iters", type=int, default=3)
+    p.add_argument("--tau", type=int, default=2,
+                   help="predictive inner rounds of the MFVI readout. 17.1 asks for >= 2 so the\nattention query is context-dependent; at tau=1 it is the fixed global probe\nsigma(s_bar/lambda_Z) and the readout sees the prefix only through the mask.")
     p.add_argument("--readout", default="exact", choices=("exact", "mfvi"))
     p.add_argument("--n-global", type=int, default=0)
     p.add_argument(
@@ -88,6 +90,7 @@ def main() -> None:
         rank=a.rank,
         gamma=a.gamma,
         n_iters=a.n_iters,
+        tau=a.tau,
         readout=a.readout,
         n_global=a.n_global,
         vocab_chunk=a.vocab_chunk,
