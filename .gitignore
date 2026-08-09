@@ -38,4 +38,9 @@ paper/**/*.synctex.gz
 paper/**/*.toc
 paper/**/*.lof
 paper/**/*.lot
-paper/main.pdf
+
+# paper/main.pdf is deliberately NOT ignored: it is the milestone artifact, produced by
+# `make release` and committed only when a specific PDF matters (a version sent to a
+# supervisor, a tagged draft). Everyday builds go to paper/build/, which is ignored above.
+# Builds are byte-reproducible (see paper/Makefile), so re-committing an unchanged paper
+# costs nothing -- git sees no change at all.
