@@ -71,6 +71,30 @@ no BOS hack.
 * **Global head is a flag, defaulting off** — the research plan makes it a measured
   variable (arms 1.1 / 1.2), and baking it in would assume the answer.
 
+### Measured behaviour
+
+`src/diagnostics.py` (`python -m src.diagnostics`) reports, per content-stream iteration,
+`‖G‖/‖S_w‖`, `max|G|`, attention entropy as a fraction of its maximum, label entropy, and
+the contraction constant `ρ` of Lemma 23.1. Full numbers and their reading are in the exp0
+status file; the four that matter:
+
+* **Nothing normalises `G`, and nothing needs to.** `|G_i(a)| ≤ h · max(max|T|, max|r|)`
+  because every message is a convex combination. Measured at 95 % of that bound on the
+  overfitted toy model, so the bound is tight, not slack. Parameter growth is the only
+  unbounded direction, and the source controls it with an L2 penalty on `T` (5e-4 on PTB)
+  which is **not implemented** — there is no training loop yet.
+* **`λ_H = 1/d` does not sharpen the attention at initialisation** — measured `H/H_max =
+  0.982` at `d = 384`. It cancels the `1/d²` variance shrinkage of App. A.5. Sharpening is
+  driven by `‖T‖`: after overfitting, `H/H_max` fell to 0.22.
+* **`ρ = 233` at initialisation, and it is entirely the root column** — `ρ = 0.976`
+  without it. `r^(c)` is drawn at `init_std` in raw `d`-space while the arc scores reach
+  the attention contracted and therefore ≈121× smaller. An unintended attention-sink
+  prior; `PTConfig.root_init_std` exists to set it independently, default unchanged.
+* **The two schedules can disagree completely.** TV between the parallel and serial `q̄`
+  is 3e-6 at `init_std=0.02`, 0.111 at 0.5 and 0.682 (with `TV_max = 1.000`, disjoint
+  support) at 2.0 — the multistability `ρ ≥ 1` predicts. `parallel` is the training
+  mainline; re-measure on real data in Experiment 1.
+
 ### Known costs, not yet paid down
 
 Arc scores are materialised as `d × d` per channel and bucket, so attention logits cost
@@ -80,8 +104,8 @@ is the first thing to do before Experiment 1.
 
 ## Tests
 
-`tests/test_01..09` — 54 tests, all passing, CPU, `float64` except the overfit check.
-Run with `python -m pytest`. Roughly 35 s.
+`tests/test_01..10` — 64 tests, all passing, CPU, `float64` except the overfit check.
+Run with `python -m pytest`. Roughly 41 s.
 
 The two that carry the weight:
 

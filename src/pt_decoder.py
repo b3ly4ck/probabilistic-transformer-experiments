@@ -86,9 +86,10 @@ class CausalPTDecoder(nn.Module):
 
     def reset_parameters(self) -> None:
         std = self.cfg.init_std
+        root_std = self.cfg.root_init_std if self.cfg.root_init_std is not None else std
         with torch.no_grad():
             self.S.normal_(0.0, std)
-            self.r_root.normal_(0.0, std)
+            self.r_root.normal_(0.0, root_std)
             if self.b is not None:
                 self.b.zero_()
             for p in (self.T, self.U, self.V, self.B_glob):
@@ -201,13 +202,37 @@ class CausalPTDecoder(nn.Module):
 
     # -------------------------------------------------------------- content stream --
 
-    def content_stream(self, idx: torch.Tensor) -> torch.Tensor:
-        """Filtering marginals ``q̄`` of the observed words. ``idx`` is ``(B, n)``."""
-        if self.cfg.schedule == "serial":
-            return self._content_serial(idx)
-        return self._content_parallel(idx)
+    def content_stream(self, idx: torch.Tensor, trace: Optional[list] = None) -> torch.Tensor:
+        """Filtering marginals ``q̄`` of the observed words. ``idx`` is ``(B, n)``.
 
-    def _content_parallel(self, idx: torch.Tensor) -> torch.Tensor:
+        ``trace``, when given, receives one dict of per-iteration message statistics.
+        There is no layer norm and no residual in this model class, so the size of the
+        message ``G`` relative to the unary ``S_{w,.}`` is the quantity that says whether
+        the inference is being driven by context or by the word identity; see
+        :mod:`src.diagnostics`.
+        """
+        if self.cfg.schedule == "serial":
+            return self._content_serial(idx, trace=trace)
+        return self._content_parallel(idx, trace=trace)
+
+    def _iteration_stats(self, q, Sw, G, alpha) -> dict:
+        """Message-scale diagnostics for one content-stream iteration."""
+        allowed = alpha > 0
+        ent = -(alpha * torch.where(allowed, alpha.log(), torch.zeros_like(alpha))).sum(-1)
+        support = allowed.sum(-1).clamp(min=1).to(alpha.dtype)
+        g_norm = G.norm(dim=-1)
+        s_norm = Sw.norm(dim=-1)
+        return {
+            "G_norm": float(g_norm.mean()),
+            "Sw_norm": float(s_norm.mean()),
+            "ratio": float((g_norm / s_norm.clamp(min=1e-12)).mean()),
+            "G_absmax": float(G.abs().max()),
+            "attn_entropy": float(ent.mean()),
+            "attn_entropy_frac": float((ent / support.log().clamp(min=1e-12)).mean()),
+            "label_entropy": float(-(q * q.clamp(min=1e-30).log()).sum(-1).mean()),
+        }
+
+    def _content_parallel(self, idx: torch.Tensor, trace: Optional[list] = None) -> torch.Tensor:
         """Layer-parallel schedule (Part II §12.3 "Scheduling").
 
         Iteration ``l`` computes all ``Q_i^(l)`` from ``{Q_j^(l-1)}_{j<i}`` under one
@@ -217,12 +242,14 @@ class CausalPTDecoder(nn.Module):
         Sw = self.S[idx]  # (B, n, d)
         q = torch.softmax(Sw / self.cfg.lambda_Z, dim=-1)  # Wu & Tu Eq. 7
         for _ in range(self.cfg.n_iters):
-            G, _ = self._arc_message(q, self.contract(q))
+            G, alpha = self._arc_message(q, self.contract(q))
             G = G + self._global_message(q)[0]
+            if trace is not None:
+                trace.append(self._iteration_stats(q, Sw, G, alpha))
             q = torch.softmax((Sw + G) / self.cfg.lambda_Z, dim=-1)
         return q
 
-    def _content_serial(self, idx: torch.Tensor) -> torch.Tensor:
+    def _content_serial(self, idx: torch.Tensor, trace: Optional[list] = None) -> torch.Tensor:
         """Serial left-to-right filtering (Part II §12.3, and §12.2's "freeze and advance").
 
         Each slot is a well-posed two-block MFVI problem against a frozen prefix; this
@@ -236,7 +263,14 @@ class CausalPTDecoder(nn.Module):
             B_full = self._slot_keys_from(keys, t, idx.shape[0])
             q_t = torch.softmax(Sw[:, t] / self.cfg.lambda_Z, dim=-1)
             for _ in range(self.cfg.tau_obs):
-                ctx = self._slot_message(q_t, B_full)[0] + self._global_message(q_t)[0]
+                arc, alpha = self._slot_message(q_t, B_full)
+                ctx = arc + self._global_message(q_t)[0]
+                if trace is not None:
+                    trace.append(
+                        self._iteration_stats(
+                            q_t.unsqueeze(1), Sw[:, t : t + 1], ctx.unsqueeze(1), alpha.unsqueeze(2)
+                        )
+                    )
                 q_t = torch.softmax((Sw[:, t] + ctx) / self.cfg.lambda_Z, dim=-1)
             qs.append(q_t)
             keys.append(self.contract(q_t.unsqueeze(1)))
@@ -394,11 +428,25 @@ class CausalPTDecoder(nn.Module):
             return self._logits_from_log_mu(self.exact_log_mu(Bk))
         return self.mfvi_readout(Bk)
 
-    def loss(self, idx: torch.Tensor) -> torch.Tensor:
-        """``L = -Σ_t log Q_{W_t}^readout(w_t)`` — the model's own NLL, nothing else."""
-        logits = self(idx)
+    def loss(self, idx: torch.Tensor, ignore_first: int = 0) -> torch.Tensor:
+        """``L = -Σ_t log Q_{W_t}^readout(w_t)`` — the model's own NLL, nothing else.
+
+        ``ignore_first`` drops the first slots from the average. It exists because PT and
+        a GPT baseline do **not** score the same tokens by default: given a block
+        ``w_0..w_{n-1}``, this model predicts every ``w_t`` from ``w_{<t}`` — including
+        ``w_0`` from ROOT alone, ``n`` scored tokens — while a GPT trained the usual way
+        consumes ``w_0..w_{n-2}`` and predicts ``w_1..w_{n-1}``, ``n-1`` scored tokens.
+        Comparing the two averages would compare different token sets, and PT's extra
+        slot is a first-word unigram prediction that GPT never has to make.
+
+        Experiment 1 must therefore use ``ignore_first=1`` on the PT side (or give the
+        baseline a BOS token; that is the less honest fix, since §18 Check 5 notes PT has
+        a proper first-word distribution precisely so that no BOS hack is needed).
+        """
+        logits = self(idx)[:, ignore_first:]
+        target = idx[:, ignore_first:]
         return torch.nn.functional.cross_entropy(
-            logits.reshape(-1, self.cfg.vocab_size), idx.reshape(-1)
+            logits.reshape(-1, self.cfg.vocab_size), target.reshape(-1)
         )
 
     @torch.no_grad()

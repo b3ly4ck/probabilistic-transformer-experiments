@@ -41,14 +41,27 @@ class PTConfig:
     readout: str = "exact"  # "exact" (mainline, §23.3) | "mfvi" (ablation)
 
     # --- entropic Frank-Wolfe message weights (Wu & Tu §2.3.3, A.5) ---
-    lambda_Z: float = 1.0
-    lambda_H: Optional[float] = None  # None -> 1/d, the paper's default
-    lambda_W: float = 1.0  # §18 Check 5 fixes it to 1; §22.1 reopens it as a lever
-    lambda_G: float = 1.0
+    lambda_Z: float = 1.0  # Wu & Tu §2.3.3: "we set lambda_Z = 1"
+    lambda_H: Optional[float] = None  # None -> 1/d, the paper's default, App. A.5
+    lambda_W: float = 1.0
+    # lambda_W is a *mean-field* message weight and has no analogue in the exact readout,
+    # which is sum-product in the declared model and admits no temperature. §18 Check 5
+    # fixes it to 1 "so that the readout is an untempered conditional"; §22.1 reopens
+    # lambda_W < 1 as a capacity lever. Consequence for Experiment 3: the evaluation-time
+    # swap between the two readouts is only meaningful at lambda_W = 1. Any other value
+    # makes the comparison measure temperature, not the cost of the approximation.
+    lambda_G: float = 1.0  # not specified by either paper; chosen to match lambda_Z
 
     # --- engineering ---
     vocab_chunk: int = 8192  # chunk width of the exact readout's LSE over the vocabulary
-    init_std: float = 0.02
+    init_std: float = 0.02  # not from either paper; the nanoGPT convention, see below
+    root_init_std: Optional[float] = None
+    # None -> init_std. The root/sink column r^(c) enters the attention in raw d-space,
+    # whereas the arc scores reach it contracted, B^(c)_{j,a} = E_{q_bar_j}[T^(c)_{a,.}],
+    # which shrinks them by roughly 1/sqrt(d) for a near-uniform prefix belief (and again
+    # by the Kruskal product when rank is set). Drawing both from N(0, init_std^2)
+    # therefore starts the ROOT row about two orders of magnitude larger than the rows it
+    # competes with — measured at 121x for d=384, h=16, rank=64. See exp0's status file.
     detach_prefix: bool = False  # see CausalPTDecoder docstring; the paper says False
 
     def __post_init__(self):
