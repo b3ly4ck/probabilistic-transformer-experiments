@@ -116,14 +116,30 @@ def test_ignore_first_changes_the_token_count_not_the_model():
 
 
 def test_arc_regulariser_matches_the_materialised_scores():
-    """The Kruskal short-cut must equal the mean square of the T it stands for."""
+    """The Kruskal short-cut must equal the mean square of the T it stands for, and both
+    carriers of the message must be in the term — T and the ROOT column r."""
     for rank in (None, 3):
         torch.manual_seed(0)
         m = CausalPTDecoder(
             PTConfig(vocab_size=5, d=6, h=2, rank=rank, gamma=1, init_std=0.7)
         ).double()
-        got = float(m.arc_regulariser())
-        assert got == pytest.approx(float((m.arc_scores() ** 2).mean()), rel=1e-9)
+        want = float((m.arc_scores() ** 2).mean()) + float((m.r_root**2).mean())
+        assert float(m.arc_regulariser()) == pytest.approx(want, rel=1e-9)
+
+
+def test_regulariser_covers_the_root_column():
+    """Penalising T alone was measured to move the message onto r rather than shrink it."""
+    torch.manual_seed(0)
+    m = CausalPTDecoder(PTConfig(vocab_size=5, d=6, h=2, rank=None, gamma=1, init_std=0.7))
+    before = float(m.arc_regulariser())
+    with torch.no_grad():
+        m.r_root *= 3.0
+    assert float(m.arc_regulariser()) > before, "r does not enter the regularisation term"
+
+    m.zero_grad(set_to_none=True)
+    m.arc_regulariser().backward()
+    assert m.r_root.grad is not None and m.r_root.grad.abs().max() > 0
+    assert m.T.grad is not None and m.T.grad.abs().max() > 0
 
 
 def test_regulariser_actually_restrains_the_arc_scores():

@@ -130,24 +130,36 @@ class CausalPTDecoder(nn.Module):
         return torch.einsum("bje,kcae->kbcja", q, self.arc_scores() if T is None else T)
 
     def arc_regulariser(self) -> torch.Tensor:
-        """Mean square of the ternary scores — the L2 term of Wu & Tu §4.2.
+        """Mean square of the arc scores — the L2 term of Wu & Tu §4.2.
 
         "For MLM tasks, we add a small L2 regularization term to the ternary scores in our
         model, which we experimentally find beneficial" (Table 2 gives 5e-4 on PTB). It is
-        the only mechanism restraining ``‖T‖``, and ``‖T‖`` is what bounds the message and
-        drives ``ρ``. The source does not say whether the term is a sum or a mean of
-        squares; a mean is used here so the coefficient does not depend on ``d``, ``h`` or
-        the number of distance buckets.
+        the only mechanism restraining the size of the head message, and the message is
+        what saturates the label posterior. The source does not say whether the term is a
+        sum or a mean of squares; a mean is used here so the coefficient does not depend on
+        ``d``, ``h`` or the number of distance buckets.
 
-        Computed without materialising ``T`` under the Kruskal form, via
+        **Both carriers are covered, not just ``T``.** The contracted arc score has a ROOT
+        column, ``B^(c)_{ROOT,a} = r^(c)_a``, so ``r`` is part of the same score table and
+        reaches the message *undiluted* — where ``T`` arrives contracted against ``q̄_j``,
+        ``r`` does not. Penalising ``T`` alone was measured to do nothing but move the
+        message onto the other carrier: at ``l2_arc = 5.0`` the run of 2026-08-09 drove
+        ``max|T|`` from 4.2 to 0.46 while ROOT attention mass rose from 0.20 to 4.78 times
+        uniform, and perplexity did not move. The two blocks are averaged separately and
+        summed so that one coefficient bounds both regardless of their very different sizes
+        (``T`` has ``K·h·d²`` entries against ``r``'s ``h·d``).
+
+        ``T`` is not materialised under the Kruskal form:
         ``‖U Vᵀ‖_F² = Σ_lm (UᵀU)_lm (VᵀV)_lm``.
         """
         if self.T is not None:
-            return (self.T**2).mean()
-        UtU = torch.einsum("khar,khas->khrs", self.U, self.U)
-        VtV = torch.einsum("khbr,khbs->khrs", self.V, self.V)
-        n_entries = self.U.shape[0] * self.U.shape[1] * self.cfg.d * self.cfg.d
-        return (UtU * VtV).sum() / n_entries
+            arc = (self.T**2).mean()
+        else:
+            UtU = torch.einsum("khar,khas->khrs", self.U, self.U)
+            VtV = torch.einsum("khbr,khbs->khrs", self.V, self.V)
+            n_entries = self.U.shape[0] * self.U.shape[1] * self.cfg.d * self.cfg.d
+            arc = (UtU * VtV).sum() / n_entries
+        return arc + (self.r_root**2).mean()
 
     # ------------------------------------------------------- messages, vectorised --
 
