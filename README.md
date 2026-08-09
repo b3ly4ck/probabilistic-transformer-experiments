@@ -24,16 +24,13 @@ rules and modelling constraints.
 └── data/                # corpora — not versioned
 ```
 
+The tree above is the intended layout. As of v1.0.0 the implementation has been cleared and is
+being written from scratch; only `developer files/` (documentation and reference papers) and the
+corpus under `data/` are present.
+
 ## Setup
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-## Running
-
-```bash
-python -m src.train --config experiments/baseline.yaml
 ```

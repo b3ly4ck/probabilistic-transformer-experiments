@@ -75,7 +75,6 @@ terminal scrollback does not exist; a number without a commit cannot be reproduc
 Never delete a row: failed, abandoned and superseded runs stay with their reason, and a
 validation check that passed and later broke is the most valuable line in the file. Record
 negative and neutral results as found — the paper's framing does not require PT to win.
-See [`experiments/README.md`](experiments/README.md) for the full rules.
 
 **Only the PT decoder forward pass is written from scratch.** nanoGPT is used off the shelf;
 Looped is nanoGPT with one shared block applied `T` times. The training loop is written once
