@@ -171,9 +171,14 @@ Concrete details — file paths, configs, measured numbers — not summaries.
 
 ## Environment
 
-Work happens on an HPC login node (Slurm available, `slurm-*.out` is gitignored). System `git`
-is 1.8.3.1 — old, no `git switch`/`git restore`, no `init -b`. Do not assume modern git syntax
-works; check before relying on it.
+Work happens on an HPC login node (Slurm available, `slurm-*.out` is gitignored).
+
+`git` comes from the cluster module system, not from `/usr/bin`. `~/.bashrc` sources
+`/etc/profile.d/module.sh` and runs `module load git/2.37.0`, so an interactive or login shell
+gets 2.37.0 — `switch`, `restore`, `worktree` and `init -b` all work. The system `/usr/bin/git`
+is still 1.8.3.1: a shell that skips `.bashrc` (some batch and `ssh <host> <cmd>` contexts)
+falls back to it. If a modern subcommand fails unexpectedly, run `git --version` before
+debugging anything else.
 
 ## Language
 
