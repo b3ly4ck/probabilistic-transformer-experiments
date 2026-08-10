@@ -437,6 +437,74 @@ The failure is therefore **scale-dependent**: context is used at `|V| = 11, d = 
 abandoned at `|V| = 10⁴, d = 256`. That is the axis to probe next, and it is a much sharper
 question than any remaining hyperparameter.
 
+### The pipeline is exonerated — 2026-08-10, job 940799
+
+Identical loop, identical blocks, identical `ignore_first=1` token set, identical unigram
+reference of **688.82**. 6000 steps each.
+
+| Model | Params (emb / non-emb) | Best val ppl | Test ppl | Gate |
+|---|---|---|---|---|
+| **GPT**, `n_embd=160, L=4, H=4` | 1,610,240 / 1,237,440 | **115.43** | 107.16 | **PASS** |
+| **Looped**, same shape, one shared block ×4 | 1,610,240 / 309,600 | **126.46** | 117.93 | **PASS** |
+| PT, MFVI, `d=256 h=8 rank=64 T=3` | 2,570,000 / 1,050,624 | 695.84 | 655.25 | FAIL |
+
+PT has the **largest** non-embedding budget of the three and the largest total (3.62 M against
+2.85 M and 1.92 M), so this is not a capacity deficit. Looped wins on 4× fewer non-embedding
+parameters than PT.
+
+The GPT reaches 115.43 — better than the 131 the previous implementation obtained on its own
+pipeline. So the training loop, the PTB pipeline, the deterministic evaluation, the metric and
+the slot alignment are all sound, and every PT diagnosis in this file was measuring PT rather
+than a defect the models share.
+
+**Looped is the sharper control.** It has PT's weight sharing — one block applied four times —
+and none of PT's structure, and it costs only 9.6 % against the GPT. So PT's failure is not
+weight sharing either. What is left is the construction itself: the label bottleneck and the
+readout through it.
+
+This is also the first real data point of Experiment 2, obtained for free: at a matched shape,
+weight sharing costs about 10 % perplexity.
+
+### Prefix ablation, all three models, identical code and blocks
+
+| Model | shuffled KL | `max abs Δlogit` | argmax unchanged |
+|---|---|---|---|
+| GPT | 3.9461 | 14.04 | 0.117 |
+| Looped | 3.6469 | 14.91 | 0.125 |
+| **PT** | **0.0000** | **0.0000** | **1.000** |
+
+Replacing the prefix with a single repeated token gives the same picture (GPT 3.77, Looped
+3.63, PT 0.0000). The two baselines change their prediction on ~88 % of slots; PT never
+changes it, on any slot, at float precision.
+
+### The scale bisection: both axes excluded — 2026-08-10, job 940799
+
+Order-1 Markov chain, 5 successors per state, 3000 steps, fraction of the unigram→oracle gap
+closed (1.0 = oracle, 0.0 = unigram).
+
+| cell | oracle | unigram | **GPT** | **PT** |
+|---|---|---|---|---|
+| `V=11, d=256` | 3.71 | 7.84 | **1.149** | **0.000** |
+| `V=100, d=256` | 3.65 | 81.19 | **1.000** | **0.000** |
+| `V=1000, d=256` | 3.61 | 795.42 | **1.000** | **0.000** |
+| `V=10000, d=256` | 3.61 | 7945.95 | **1.000** | **0.018** |
+| `V=1000, d=16` | 3.61 | 795.42 | **0.984** | **0.062** |
+| `V=1000, d=64` | 3.61 | 795.42 | **1.000** | **0.044** |
+
+**The scale hypothesis is falsified.** PT extracts essentially nothing at *any* vocabulary and
+*any* width, including `|V| = 11` where the entire next-token distribution is determined by a
+single preceding token drawn from eleven symbols. GPT reaches the oracle in every cell. (The
+`1.149` at `V = 11` exceeds 1 because the oracle is an estimate — the visit-weighted mean
+conditional entropy of the generating chain — not a bound.)
+
+This is the fourth diagnosis in a row to be falsified by the run that tested it: the word
+unary, label saturation, the initialisation, and now scale. Each narrowed the space.
+
+**What it buys is a minimal reproducing case.** `|V| = 11`, one channel of context, 400 k
+training tokens, 115 s per run. The failure no longer needs PTB, a 10⁴ vocabulary, or a GPU
+hour to study — it can be examined tensor by tensor by hand, which is what §17's worked
+example was designed for and what the next step should use.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the

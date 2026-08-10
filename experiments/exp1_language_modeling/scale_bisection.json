@@ -1,0 +1,308 @@
+{
+  "args": {
+    "steps": 3000,
+    "block_size": 64,
+    "batch_size": 16,
+    "lr": 0.001,
+    "n_train": 400000,
+    "n_val": 40000,
+    "device": "cuda",
+    "out": null
+  },
+  "results": [
+    {
+      "axis": "vocab",
+      "vocab": 11,
+      "d": 256,
+      "model": "pt",
+      "oracle_ppl": 3.707,
+      "unigram_ppl": 7.84,
+      "best_val_ppl": 7.85,
+      "fraction_of_gap_closed": 0.0,
+      "params": {
+        "embedding": 2827,
+        "non_embedding": 1050624,
+        "total": 1053451
+      },
+      "seconds": 115.2,
+      "diag": {
+        "msg_over_unary": 52.26755142211914,
+        "attn_entropy_frac": 0.825964093208313,
+        "label_entropy": 0.1953890174627304,
+        "root_mass_over_uniform": 0.12702080607414246,
+        "max_abs_T": 4.1001386642456055,
+        "qbar_std_over_positions": 0.00022262439597398043,
+        "rho": 2285676.25
+      }
+    },
+    {
+      "axis": "vocab",
+      "vocab": 11,
+      "d": 256,
+      "model": "gpt",
+      "oracle_ppl": 3.707,
+      "unigram_ppl": 7.84,
+      "best_val_ppl": 3.09,
+      "fraction_of_gap_closed": 1.149,
+      "params": {
+        "embedding": 19200,
+        "non_embedding": 3159552,
+        "total": 3178752
+      },
+      "seconds": 54.6,
+      "diag": {}
+    },
+    {
+      "axis": "vocab",
+      "vocab": 100,
+      "d": 256,
+      "model": "pt",
+      "oracle_ppl": 3.651,
+      "unigram_ppl": 81.19,
+      "best_val_ppl": 81.36,
+      "fraction_of_gap_closed": 0.0,
+      "params": {
+        "embedding": 25700,
+        "non_embedding": 1050624,
+        "total": 1076324
+      },
+      "seconds": 115.7,
+      "diag": {
+        "msg_over_unary": 45.90498733520508,
+        "attn_entropy_frac": 0.1072070300579071,
+        "label_entropy": 0.03127061948180199,
+        "root_mass_over_uniform": 0.8828125,
+        "max_abs_T": 17.518327713012695,
+        "qbar_std_over_positions": 0.00011371486471034586,
+        "rho": 6868025.0
+      }
+    },
+    {
+      "axis": "vocab",
+      "vocab": 100,
+      "d": 256,
+      "model": "gpt",
+      "oracle_ppl": 3.651,
+      "unigram_ppl": 81.19,
+      "best_val_ppl": 3.61,
+      "fraction_of_gap_closed": 1.0005,
+      "params": {
+        "embedding": 41984,
+        "non_embedding": 3159552,
+        "total": 3201536
+      },
+      "seconds": 57.2,
+      "diag": {}
+    },
+    {
+      "axis": "vocab",
+      "vocab": 1000,
+      "d": 256,
+      "model": "pt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 796.2,
+      "fraction_of_gap_closed": 0.0,
+      "params": {
+        "embedding": 257000,
+        "non_embedding": 1050624,
+        "total": 1307624
+      },
+      "seconds": 115.4,
+      "diag": {
+        "msg_over_unary": 32.4129638671875,
+        "attn_entropy_frac": 6.84943952364847e-05,
+        "label_entropy": 1.847343921661377,
+        "root_mass_over_uniform": 7.224421501159668,
+        "max_abs_T": 0.37974587082862854,
+        "qbar_std_over_positions": 9.558645615470596e-06,
+        "rho": 169764.875
+      }
+    },
+    {
+      "axis": "vocab",
+      "vocab": 1000,
+      "d": 256,
+      "model": "gpt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 3.94,
+      "fraction_of_gap_closed": 0.9996,
+      "params": {
+        "embedding": 272384,
+        "non_embedding": 3159552,
+        "total": 3431936
+      },
+      "seconds": 57.6,
+      "diag": {}
+    },
+    {
+      "axis": "vocab",
+      "vocab": 10000,
+      "d": 256,
+      "model": "pt",
+      "oracle_ppl": 3.612,
+      "unigram_ppl": 7945.95,
+      "best_val_ppl": 7805.11,
+      "fraction_of_gap_closed": 0.0177,
+      "params": {
+        "embedding": 2570000,
+        "non_embedding": 1050624,
+        "total": 3620624
+      },
+      "seconds": 121.6,
+      "diag": {
+        "msg_over_unary": 35.51039123535156,
+        "attn_entropy_frac": 0.015496132895350456,
+        "label_entropy": 2.995450973510742,
+        "root_mass_over_uniform": 8.155723571777344,
+        "max_abs_T": 0.749663770198822,
+        "qbar_std_over_positions": 0.002453781198710203,
+        "rho": 416222.75
+      }
+    },
+    {
+      "axis": "vocab",
+      "vocab": 10000,
+      "d": 256,
+      "model": "gpt",
+      "oracle_ppl": 3.612,
+      "unigram_ppl": 7945.95,
+      "best_val_ppl": 5.62,
+      "fraction_of_gap_closed": 0.9997,
+      "params": {
+        "embedding": 2576384,
+        "non_embedding": 3159552,
+        "total": 5735936
+      },
+      "seconds": 53.3,
+      "diag": {}
+    },
+    {
+      "axis": "d",
+      "vocab": 1000,
+      "d": 16,
+      "model": "pt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 746.65,
+      "fraction_of_gap_closed": 0.0616,
+      "params": {
+        "embedding": 17000,
+        "non_embedding": 16512,
+        "total": 33512
+      },
+      "seconds": 98.4,
+      "diag": {
+        "msg_over_unary": 28.271041870117188,
+        "attn_entropy_frac": 0.22720423340797424,
+        "label_entropy": 1.7481746673583984,
+        "root_mass_over_uniform": 4.551723480224609,
+        "max_abs_T": 5.433732986450195,
+        "qbar_std_over_positions": 0.04930024594068527,
+        "rho": 28282.203125
+      }
+    },
+    {
+      "axis": "d",
+      "vocab": 1000,
+      "d": 16,
+      "model": "gpt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 16.27,
+      "fraction_of_gap_closed": 0.984,
+      "params": {
+        "embedding": 17024,
+        "non_embedding": 13152,
+        "total": 30176
+      },
+      "seconds": 54.2,
+      "diag": {}
+    },
+    {
+      "axis": "d",
+      "vocab": 1000,
+      "d": 64,
+      "model": "pt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 760.81,
+      "fraction_of_gap_closed": 0.0437,
+      "params": {
+        "embedding": 65000,
+        "non_embedding": 262656,
+        "total": 327656
+      },
+      "seconds": 99.0,
+      "diag": {
+        "msg_over_unary": 19.716894149780273,
+        "attn_entropy_frac": 0.5516883730888367,
+        "label_entropy": 3.7556467056274414,
+        "root_mass_over_uniform": 0.23429091274738312,
+        "max_abs_T": 5.578567028045654,
+        "qbar_std_over_positions": 0.009489071555435658,
+        "rho": 42285.15234375
+      }
+    },
+    {
+      "axis": "d",
+      "vocab": 1000,
+      "d": 64,
+      "model": "gpt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 3.94,
+      "fraction_of_gap_closed": 0.9996,
+      "params": {
+        "embedding": 68096,
+        "non_embedding": 200064,
+        "total": 268160
+      },
+      "seconds": 58.6,
+      "diag": {}
+    },
+    {
+      "axis": "d",
+      "vocab": 1000,
+      "d": 256,
+      "model": "pt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 796.2,
+      "fraction_of_gap_closed": 0.0,
+      "params": {
+        "embedding": 257000,
+        "non_embedding": 1050624,
+        "total": 1307624
+      },
+      "seconds": 117.6,
+      "diag": {
+        "msg_over_unary": 32.4129638671875,
+        "attn_entropy_frac": 6.84943952364847e-05,
+        "label_entropy": 1.847343921661377,
+        "root_mass_over_uniform": 7.224421501159668,
+        "max_abs_T": 0.37974587082862854,
+        "qbar_std_over_positions": 9.558645615470596e-06,
+        "rho": 169764.875
+      }
+    },
+    {
+      "axis": "d",
+      "vocab": 1000,
+      "d": 256,
+      "model": "gpt",
+      "oracle_ppl": 3.607,
+      "unigram_ppl": 795.42,
+      "best_val_ppl": 3.94,
+      "fraction_of_gap_closed": 0.9996,
+      "params": {
+        "embedding": 272384,
+        "non_embedding": 3159552,
+        "total": 3431936
+      },
+      "seconds": 59.4,
+      "diag": {}
+    }
+  ]
+}
