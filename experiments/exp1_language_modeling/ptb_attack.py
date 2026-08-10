@@ -61,6 +61,12 @@ def run(corpus, d, a, log):
     t0 = time.time()
     hist = train(model, corpus.train, corpus.valid, tcfg, random_batch, log=log)
     best = min(hist.val_ppl)
+    final = hist.val_ppl[-1]
+    # Report both. `best` is the minimum over the trace and is the right number for a run
+    # that converges; it lies when a run diverges after an early transient. Measured at
+    # d=32 on 2026-08-10: best 523.08 was the evaluation at step 500, before the message
+    # exploded, while the run actually ended at 641.5 — near the unigram. The verdict below
+    # uses `final`.
     test = evaluate(model, corpus.test, tcfg)
     abl = ablate(model, corpus.valid, a.block_size, a.batch_size, 6, device=a.device)
     diag = hist.diag[-1] if hist.diag else {}
@@ -76,7 +82,8 @@ def run(corpus, d, a, log):
                 "args": {"block_size": a.block_size}}, ck)
     return {
         "d": d, "h": a.h, "lr": a.lr,
-        "val_ppl": round(best, 2), "test_ppl": round(test["ppl"], 2),
+        "val_ppl": round(final, 2), "val_ppl_min": round(best, 2),
+        "test_ppl": round(test["ppl"], 2),
         "train_ppl": round(hist.train_ppl[-1], 2) if hist.train_ppl else float("nan"),
         "msg_over_unary": round(diag.get("msg_over_unary", float("nan")), 2),
         "label_entropy": round(diag.get("label_entropy", float("nan")), 3),
@@ -117,7 +124,8 @@ def main() -> None:
         print(f"--- d={d} ---", flush=True)
         row = run(corpus, d, a, log=lambda s: print("   " + s, flush=True))
         results.append(row)
-        print(f"  d={d:<4} val {row['val_ppl']:8.2f}  train {row['train_ppl']:8.2f}  "
+        print(f"  d={d:<4} val {row['val_ppl']:8.2f} (min {row['val_ppl_min']:.2f})  "
+              f"train {row['train_ppl']:8.2f}  "
               f"test {row['test_ppl']:8.2f}  msg/unary {row['msg_over_unary']:7.2f}  "
               f"H(q) {row['label_entropy']:.3f}/{row['label_entropy_max']:.2f}  "
               f"ablate KL {row['ablation_kl']:.3e}", flush=True)

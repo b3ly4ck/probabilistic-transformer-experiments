@@ -705,6 +705,63 @@ edge while the model was at its healthiest result in the project. The band was w
 interval from two points on the minimal task; only the upper edge is a failure condition. Fixed
 to a ceiling of 5.0. The cost was that `d = 24` went untested in that job.
 
+### The final ladder: both interventions together — 2026-08-10, job 940858
+
+`h = 2`, `lr = 0.02`, `b` frozen at the corpus log-unigram, 15000 steps, `d` walked upward.
+
+| `d` | val ppl (final) | train ppl | test ppl | `msg/unary` | `H(q)` / max | ablation KL |
+|---|---|---|---|---|---|---|
+| **16** | **315.5** | 314.09 | **285.33** | 0.98 | 0.444 / 2.77 | **2.182** |
+| 24 | 321.5 | 325.84 | 294.89 | 2.26 | 0.959 / 3.18 | 2.003 |
+| 32 | 641.5 | 664.95 | 582.92 | 5.33 | 0.131 / 3.47 | 0.281 |
+
+**The ceiling is between `d = 24` and `d = 32`, not at `d = 16`.** The earlier "ceiling `d=16`"
+was an artefact of the 6000-step budget with a learnable `b`: at that budget `d = 24` gave
+695.38, pure unigram, `msg/unary` 21.49 and ablation KL exactly 0. With the unigram prepaid and
+a real budget it reaches 321.5. The band *is* attainable under late dynamics, as predicted.
+
+**The two interventions compose:** 473.28 (neither) → 430.04 (freeze only) → 336.89 (budget
+only) → **315.46** (both). A 33 % improvement over 3a.
+
+**`train ppl` falls below `val ppl` for the first time in the project** — 314.09 against 315.46
+at `d = 16`. Every earlier run had train *above* val (488.85 against 473.28 in 3a), which is
+the signature of underfitting. The model has finally reached the regime where it fits its own
+training data at least as well as held-out data.
+
+**A defect in this file's own reporting, found while reading the traces.** `best val ppl` was
+taken as the minimum over the trace. That is right for a converging run and wrong for a
+diverging one: at `d = 32` the minimum 523.08 is the evaluation at **step 500**, before the
+message exploded, while the run actually ends at 641.5.
+
+```
+d=32  val : 523.1  769.1  731.5  733.8  ...  646.8  641.5
+d=32  msg : 2.88  20.57  17.74  16.78  ...   5.95   5.33
+```
+
+The runner now reports the final value as `val_ppl` and keeps the minimum as `val_ppl_min`.
+The table above uses finals. Earlier rows in this file quote minima and were converging runs,
+so they are unaffected — but the `d = 32` row must be read as **641.5**, not 523.08.
+
+### Experiment 1 — where it stands
+
+| model | val ppl | test ppl | embedding / non-embedding |
+|---|---|---|---|
+| GPT | **115.43** | 107.16 | 1,610,240 / 1,237,440 |
+| Looped | **126.46** | 117.93 | 1,610,240 / 309,600 |
+| **Causal PT** (`d=16, h=2`, frozen `b`, 15k steps) | **315.46** | **285.33** | 160,000 / **4,128** |
+| unigram | 688.82 | — | — |
+
+The causal PT trains, clears the gate by a wide margin, and is **2.7× worse than the GPT
+baseline**. The parameter columns are the uncomfortable part of the result: the working PT
+configuration has **4,128** non-embedding parameters against the GPT's 1,237,440 — three
+orders of magnitude fewer. The matched-budget comparison the research plan requires has *not*
+been made, because PT cannot currently be given a comparable budget: it collapses above
+`d = 24` and above `h = 2`.
+
+That is the finding, and it is a finding about the construction rather than about tuning. The
+label bottleneck of Part IV stops being a caveat and becomes a measured boundary between
+`d = 24` and `d = 32`.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the

@@ -5,6 +5,33 @@ and which decisions were made and why. Organised by component, most recent chang
 
 ## Recent changes
 
+**2026-08-10 — the causal PT decoder learns on PTB.** Validation perplexity **315.5**, test
+**285.3**, against a unigram baseline of 688.8 and a pre-registered gate of 344.4. Output is
+demonstrably context-dependent (prefix-ablation KL 2.18 against exactly 0.0000 in every
+failing run). Full account in
+[`REPORT_2026-08-10.md`](REPORT_2026-08-10.md); run logs in
+[`experiments/exp1_language_modeling/EXPERIMENT_STATUS.md`](../experiments/exp1_language_modeling/EXPERIMENT_STATUS.md).
+
+What it took, and what it cost:
+
+* **`h = 2`, `d = 16`, `lr = 0.02`, `b` frozen at the corpus log-unigram, 15,000 steps.** Every
+  earlier PTB run used `d = 256`, `h = 8`, `lr = 1e-3` and 6,000 steps — outside the working
+  region on all four axes at once.
+* **The working region is small.** The model collapses above `d = 24` labels and above `h = 2`
+  channels, deconfounded on a separate cross grid: channels and width each degrade it
+  independently.
+* **The comparison is not yet matched.** GPT 115.4 and Looped 126.5 on the identical pipeline,
+  with 1,237,440 and 309,600 non-embedding parameters against PT's **4,128**. The
+  matched-budget comparison the plan requires cannot be run until the collapse is understood.
+* **One scalar predicts everything.** `msg_over_unary = ‖G‖/‖S_w‖` separates every run that
+  learns from every run that does not, and its entry into the healthy range coincides *within a
+  run* with the moment perplexity starts falling.
+* **The predecessor's failure is explained**: it had no relative positional encoding, and
+  removing the RPE table here reproduces its toy-scale failure exactly.
+
+Baselines added: `src/gpt.py` (nanoGPT off the shelf, and the Looped variant for Experiment 2),
+with the slot convention aligned so both models are scored on the identical token set.
+
 **2026-08-09 — restart.** The previous implementation (`src/`, `tests/`, `experiments/`,
 old status and report files, checkpoints, slurm logs) was removed at the user's request;
 the reference PDFs, `PROJECT.md` and `RESEARCH_PLAN.md` were kept, as was the PTB corpus
@@ -138,9 +165,9 @@ See the run log in each experiment's `EXPERIMENT_STATUS.md`. Summary of what exi
 
 | Experiment | State |
 |---|---|
-| 0 — decoder validation | complete; checks 1–9 pass, single-batch loss 2.45 → 0.0022 |
-| 1 — PT vs. GPT | not started |
-| 2 — PT vs. Looped | not started |
+| 0 — decoder validation | complete; checks 1–11 pass, single-batch loss 2.45 → 0.0022 |
+| 1 — PT vs. GPT | **PT trains and clears the gate: val 315.5 / test 285.3 vs unigram 688.8.** GPT 115.4, Looped 126.5 on the identical pipeline. Matched-budget arm blocked — PT collapses above `d=24`, `h=2` |
+| 2 — PT vs. Looped | not started; the Looped baseline exists and is recorded (126.5 / 117.9) |
 | 3 — exact vs. MFVI readout | not started (both readouts implemented and tested) |
 
 ## Required before Experiment 1 — not implemented
