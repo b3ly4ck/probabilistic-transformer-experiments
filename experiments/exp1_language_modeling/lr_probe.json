@@ -1,0 +1,230 @@
+{
+  "args": {
+    "vocab": 11,
+    "steps": 3000,
+    "block_size": 64,
+    "batch_size": 16,
+    "n_train": 400000,
+    "n_val": 40000,
+    "device": "cuda"
+  },
+  "oracle": 3.8367983453160446,
+  "unigram": 6.5194478034973145,
+  "results": [
+    {
+      "model": "pt",
+      "d": 256,
+      "lr": 0.001,
+      "best_val_ppl": 6.54,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 38.80486297607422,
+        "attn_entropy_frac": 0.8342240452766418,
+        "label_entropy": 0.08013252913951874,
+        "root_mass_over_uniform": 0.08023280650377274,
+        "max_abs_T": 4.011935710906982,
+        "qbar_std_over_positions": 0.00010967571870423853,
+        "rho": 1888364.25
+      },
+      "seconds": 114.4
+    },
+    {
+      "model": "pt",
+      "d": 256,
+      "lr": 0.005,
+      "best_val_ppl": 6.519,
+      "gap_closed": 0.0002,
+      "diag": {
+        "msg_over_unary": 26.985458374023438,
+        "attn_entropy_frac": 0.8382868766784668,
+        "label_entropy": 0.02037489414215088,
+        "root_mass_over_uniform": 0.06924845278263092,
+        "max_abs_T": 5.122676372528076,
+        "qbar_std_over_positions": 1.8486509361537173e-05,
+        "rho": 1786540.5
+      },
+      "seconds": 112.6
+    },
+    {
+      "model": "pt",
+      "d": 256,
+      "lr": 0.02,
+      "best_val_ppl": 6.519,
+      "gap_closed": 0.0001,
+      "diag": {
+        "msg_over_unary": 16.0504207611084,
+        "attn_entropy_frac": 0.21823333203792572,
+        "label_entropy": 0.044882260262966156,
+        "root_mass_over_uniform": 0.024518825113773346,
+        "max_abs_T": 16.02111053466797,
+        "qbar_std_over_positions": 1.720701220619958e-05,
+        "rho": 156580.9375
+      },
+      "seconds": 112.5
+    },
+    {
+      "model": "pt",
+      "d": 256,
+      "lr": 0.05,
+      "best_val_ppl": 6.52,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 60.52793502807617,
+        "attn_entropy_frac": 3.544025821611285e-05,
+        "label_entropy": 0.04143556207418442,
+        "root_mass_over_uniform": 0.3867254853248596,
+        "max_abs_T": 110.41609954833984,
+        "qbar_std_over_positions": 0.0003736476646736264,
+        "rho": 18819208.0
+      },
+      "seconds": 112.6
+    },
+    {
+      "model": "pt",
+      "d": 256,
+      "lr": 0.1,
+      "best_val_ppl": 6.212,
+      "gap_closed": 0.1146,
+      "diag": {
+        "msg_over_unary": 78.92245483398438,
+        "attn_entropy_frac": 0.13174420595169067,
+        "label_entropy": 0.011269038543105125,
+        "root_mass_over_uniform": 0.5341135263442993,
+        "max_abs_T": 462.741455078125,
+        "qbar_std_over_positions": 0.002302908105775714,
+        "rho": 352787648.0
+      },
+      "seconds": 112.6
+    },
+    {
+      "model": "pt",
+      "d": 16,
+      "lr": 0.001,
+      "best_val_ppl": 6.334,
+      "gap_closed": 0.069,
+      "diag": {
+        "msg_over_unary": 12.670260429382324,
+        "attn_entropy_frac": 0.0650138333439827,
+        "label_entropy": 0.42261284589767456,
+        "root_mass_over_uniform": 0.12791191041469574,
+        "max_abs_T": 8.457341194152832,
+        "qbar_std_over_positions": 0.03374119848012924,
+        "rho": 17040.212890625
+      },
+      "seconds": 93.6
+    },
+    {
+      "model": "pt",
+      "d": 16,
+      "lr": 0.005,
+      "best_val_ppl": 5.055,
+      "gap_closed": 0.5458,
+      "diag": {
+        "msg_over_unary": 11.682218551635742,
+        "attn_entropy_frac": 0.11272920668125153,
+        "label_entropy": 0.4325728416442871,
+        "root_mass_over_uniform": 0.2502957880496979,
+        "max_abs_T": 13.208174705505371,
+        "qbar_std_over_positions": 0.062476254999637604,
+        "rho": 48995.125
+      },
+      "seconds": 94.6
+    },
+    {
+      "model": "pt",
+      "d": 16,
+      "lr": 0.02,
+      "best_val_ppl": 3.809,
+      "gap_closed": 1.0105,
+      "diag": {
+        "msg_over_unary": 2.478062629699707,
+        "attn_entropy_frac": 0.025820564478635788,
+        "label_entropy": 0.49717777967453003,
+        "root_mass_over_uniform": 14.907699584960938,
+        "max_abs_T": 18.067062377929688,
+        "qbar_std_over_positions": 0.08140099048614502,
+        "rho": 10979.12890625
+      },
+      "seconds": 95.1
+    },
+    {
+      "model": "pt",
+      "d": 16,
+      "lr": 0.05,
+      "best_val_ppl": 6.52,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 2.196038246154785,
+        "attn_entropy_frac": 0.37698349356651306,
+        "label_entropy": 0.8616626262664795,
+        "root_mass_over_uniform": 16.299537658691406,
+        "max_abs_T": 3.687072277069092,
+        "qbar_std_over_positions": 0.008269582875072956,
+        "rho": 3087.279541015625
+      },
+      "seconds": 95.1
+    },
+    {
+      "model": "pt",
+      "d": 16,
+      "lr": 0.1,
+      "best_val_ppl": 6.495,
+      "gap_closed": 0.009,
+      "diag": {
+        "msg_over_unary": 6.686397075653076,
+        "attn_entropy_frac": 0.2883512079715729,
+        "label_entropy": 0.0029733816627413034,
+        "root_mass_over_uniform": 0.0390625,
+        "max_abs_T": 34.59580993652344,
+        "qbar_std_over_positions": 0.02190730907022953,
+        "rho": 22717.8203125
+      },
+      "seconds": 95.4
+    },
+    {
+      "model": "gpt",
+      "d": 256,
+      "lr": 0.001,
+      "best_val_ppl": 2.897,
+      "gap_closed": 1.3504,
+      "diag": {},
+      "seconds": 55.7
+    },
+    {
+      "model": "gpt",
+      "d": 256,
+      "lr": 0.005,
+      "best_val_ppl": 2.898,
+      "gap_closed": 1.3498,
+      "diag": {},
+      "seconds": 45.5
+    },
+    {
+      "model": "gpt",
+      "d": 256,
+      "lr": 0.02,
+      "best_val_ppl": 2.97,
+      "gap_closed": 1.323,
+      "diag": {},
+      "seconds": 47.3
+    },
+    {
+      "model": "gpt",
+      "d": 256,
+      "lr": 0.05,
+      "best_val_ppl": 4.243,
+      "gap_closed": 0.8488,
+      "diag": {},
+      "seconds": 46.1
+    },
+    {
+      "model": "gpt",
+      "d": 256,
+      "lr": 0.1,
+      "best_val_ppl": 5.659,
+      "gap_closed": 0.3209,
+      "diag": {},
+      "seconds": 57.5
+    }
+  ]
+}
