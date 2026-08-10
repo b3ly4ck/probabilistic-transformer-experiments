@@ -615,6 +615,50 @@ Three qualifications, all measured:
    1.7e-4 at 0.023, exactly 0 at 0.000. An independent confirmation that "gap closed" is
    measuring context use and not something else.
 
+### Step 3a/3b — the ceiling of the construction on PTB, 2026-08-10, job 940844
+
+`h = 2` (from the deconfound), `lr = 0.02`, warmup 100, 6000 steps, everything else as the
+PTB control. Unigram 688.82, gate 344.41, GPT reference 115.43.
+
+| `d` | val ppl | train ppl | test ppl | `msg/unary` | `H(q)` / max | ablation KL |
+|---|---|---|---|---|---|---|
+| **16** | **473.28** | 488.85 | **433.06** | **3.41** | 0.030 / 2.77 | **9.13e-01** |
+| 24 | 695.38 | 736.83 | 642.06 | 21.49 | 0.026 / 3.18 | **0.000e+00** |
+
+**The ceiling is `d = 16`.** The ladder stopped at `d = 24` on both criteria at once —
+`msg/unary` outside the 2-5 band and the ablation KL at exactly zero. The number for the
+write-up is **val 473.28 / test 433.06**, 31 % below the unigram baseline. Against the gate
+(344.41) this is still a **FAIL**.
+
+**The traces show a phase transition, and it is the strongest causal evidence collected.**
+
+```
+d=16  msg/unary : 13.4  11.6  21.9  11.7  |5.06|  3.38  3.17  2.89  3.36  3.37  3.34  3.41
+d=16  val ppl   : 698.4 701.2 706.9 703.6 |539.0| 511.8 500.4 488.9 480.5 476.5 474.3 473.3
+                                    step 2500 ^
+d=24  msg/unary : 13.5  15.5  86.2  32.9  20.8  20.4  41.5  32.6  25.6  23.7  23.2  21.5
+d=24  val ppl   : 698.4 701.1 706.9 704.7 702.7 701.9 700.7 699.5 695.8 695.6 695.4 695.5
+```
+
+The model sits at the unigram for 2000 steps; at the very evaluation where `msg/unary` first
+enters the band (5.06 at step 2500) validation perplexity drops 703.6 -> 539.0, and falls
+monotonically thereafter. At `d = 24` it never enters the band and never leaves the unigram.
+This is a within-run coincidence of timing, not a correlation across end-points.
+
+**Two corrections this run forces.**
+
+1. **Label entropy is not a discriminator.** The working run has `H(q) = 0.030` against a
+   maximum of 2.77 — about 1 % of it, i.e. a nearly one-hot label posterior — and the failing
+   run has 0.026/3.18, essentially the same. The band "entropy at neither extreme", carried
+   over from the minimal task, **does not hold on PTB even where the model learns**.
+   `msg_over_unary` is the only quantity that separates the outcomes.
+2. **`first_out_of_band` as implemented reports the first evaluation** (step 500 in both runs),
+   because both start out of band. The meaningful statistic is the *entry* step, not the exit.
+   Recorded rather than re-run; the traces in `attack.json` carry the information.
+
+Steps 3c (freeze `b`) and 3d (decouple `lambda_H`) were **not run**: both are conditional on
+3a failing to beat the unigram, and it did not.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
