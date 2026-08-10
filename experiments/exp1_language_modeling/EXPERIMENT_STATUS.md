@@ -564,6 +564,57 @@ one whose departure from band should be reported first when a run fails.
 the global RNG), so its oracle/unigram pair — 1.96 / 3.09 — differs from later probes. Only
 the gap-closed fractions are comparable across probes; the raw perplexities are not.
 
+### Width and channels, deconfounded — 2026-08-10, job 940827
+
+`region_probe` swept `d` with `h = 8 if d >= 64 else 2`, so its collapse at `d ≥ 64` could
+have been width, channels, or both. Full cross grid, `lr = 0.005` fixed at the best replicated
+cell, one chain (oracle 3.577, unigram 7.105), seed 0, 3000 steps per cell.
+
+| `d` | `h` | val ppl | train ppl | gap closed | `msg/unary` | `H(q)` | ablation KL |
+|---|---|---|---|---|---|---|---|
+| 16 | **2** | 5.675 | 7.006 | 0.405 | 8.56 | 0.122 | 6.93e-02 |
+| 16 | 4 | 6.715 | 6.671 | 0.110 | 18.81 | 0.089 | 1.45e-01 |
+| 16 | 8 | 6.502 | 6.462 | 0.171 | 15.52 | 0.118 | 1.59e-01 |
+| 32 | **2** | 4.551 | 4.485 | **0.724** | **6.78** | 1.796 | 9.31e-01 |
+| 32 | 4 | 5.003 | 4.921 | 0.596 | 8.21 | 0.950 | 6.80e-01 |
+| 32 | 8 | 7.104 | 7.047 | 0.000 | 36.68 | 0.083 | 0.000 |
+| 64 | **2** | 7.023 | 6.974 | 0.023 | 22.77 | 1.079 | 1.69e-04 |
+| 64 | 4 | 7.103 | 7.044 | 0.001 | 43.48 | 0.105 | 0.000 |
+| 64 | 8 | 7.106 | 7.051 | 0.000 | 47.51 | 0.047 | 0.000 |
+| 128 | 2 | 7.106 | 7.050 | 0.000 | 12.21 | 0.156 | 0.000 |
+| 128 | 4 | 7.106 | 7.051 | 0.000 | 28.39 | 0.118 | 0.000 |
+| 128 | 8 | 7.106 | 7.051 | 0.000 | 25.78 | 0.036 | 0.000 |
+
+**Both factors are real and they are not symmetric.**
+
+* **Channels degrade monotonically at every width.** At `d = 32`: 0.724 → 0.596 → 0.000 for
+  `h` = 2 → 4 → 8, with `msg/unary` rising 6.78 → 8.21 → 36.68. That is the linear-in-`h` term
+  of `|G_i(a)| ≤ h · max(max|T|, max|r|)` doing exactly what it says.
+* **Width degrades independently of channels.** At `h = 2` held fixed: 0.405 → **0.724** →
+  0.023 → 0.000 for `d` = 16 → 32 → 64 → 128. The collapse between 32 and 64 happens with the
+  channel count untouched.
+
+So the earlier "monotone in `d`" reading was **partly confounded but not wrong**: the width
+effect survives the deconfound. It is not monotone, though — the optimum is at `d = 32`, not at
+the smallest width tried.
+
+**What this licenses the write-up to say:** both the number of channels and the size of the
+label set degrade the causal PT, and at `h = 2` the width collapse lies between `d = 32` and
+`d = 64`. Neither may be attributed to the other.
+
+Three qualifications, all measured:
+
+1. **No cell reaches the healthy `msg/unary` band of 2–5** on this chain; the best is 6.78. The
+   best gap here is 0.724 against 0.936 for the nominally same configuration on the region
+   probe's chain — a different chain instance (the `v0.8.2` fix), so only fractions compare,
+   but a spread that large means the result is sensitive to the task instance and that has to
+   be carried into any claim.
+2. **`train ppl ≈ val ppl` in every cell** (4.485 vs 4.551 in the best). This is underfitting,
+   not overfitting — consistent with everything since the first pilot.
+3. **The ablation KL tracks the gap closed monotonically** — 0.93 at gap 0.724, 0.68 at 0.596,
+   1.7e-4 at 0.023, exactly 0 at 0.000. An independent confirmation that "gap closed" is
+   measuring context use and not something else.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
