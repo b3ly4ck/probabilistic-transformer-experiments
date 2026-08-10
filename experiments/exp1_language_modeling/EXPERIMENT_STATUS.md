@@ -14,7 +14,7 @@ reviewer asks "so what — another decoder that is slightly worse".
 
 **Before any comparison: does PT beat the unigram model?**
 
-A previous implementation of this project (commit `9c77f94`, removed in `2e38ef9`) passed
+A previous implementation of this project (commit `57118de`, removed in `fac793d`) passed
 all nine validation checks and reached **val ppl 664 against a unigram baseline of 687** —
 a 3 % margin that looks like a number and is not learning. Its *training* perplexity sat at
 611 after 88 epochs, i.e. it could not fit the corpus at all, and its samples were function
@@ -36,7 +36,7 @@ model measures nothing.
 
 ### What the previous failure was diagnosed as, and what is different here
 
-The diagnosis recorded at `9c77f94` was: training drives the MFVI inner loop into a
+The diagnosis recorded at `57118de` was: training drives the MFVI inner loop into a
 saturated fixed point where the head message dominates the word unary; attention entropy
 fell to 0.353 nats of a possible 4.159, and `q̄`'s spread across positions collapsed to
 0.0022, so the content stream stopped carrying position. Measured fit rate on the toy
@@ -124,16 +124,16 @@ torch 2.0.1+cu117. Reference: **unigram val ppl 688.82** on the identical token 
 
 | Date | Commit | Job | Config | Best val ppl | Test ppl | Wall-clock |
 |---|---|---|---|---|---|---|
-| 2026-08-09 | `334e09b` | 940422 | MFVI readout, `T=3`, `l2_arc=5e-4`, 6000 steps | **695.70** | 655.09 | 306 s |
-| 2026-08-09 | `334e09b` | 940423 | **exact readout**, `T=3`, `l2_arc=5e-4`, 2000 steps | **1555.04** | 1508.89 | 793 s |
-| 2026-08-09 | `334e09b` | 940436 | MFVI, `T=1`, `l2_arc=5e-4`, 6000 steps | **695.33** | 654.60 | 180 s |
-| 2026-08-09 | `334e09b` | 940435 | MFVI, `T=3`, **`l2_arc=5.0`**, 6000 steps | **691.82** | 649.88 | 307 s |
-| 2026-08-09 | `334e09b` | 940438 | MFVI, `T=3`, **`λ_Z=4`**, 6000 steps | **690.02** | 646.51 | 228 s |
+| 2026-08-09 | `f492a9d` | 940422 | MFVI readout, `T=3`, `l2_arc=5e-4`, 6000 steps | **695.70** | 655.09 | 306 s |
+| 2026-08-09 | `f492a9d` | 940423 | **exact readout**, `T=3`, `l2_arc=5e-4`, 2000 steps | **1555.04** | 1508.89 | 793 s |
+| 2026-08-09 | `f492a9d` | 940436 | MFVI, `T=1`, `l2_arc=5e-4`, 6000 steps | **695.33** | 654.60 | 180 s |
+| 2026-08-09 | `f492a9d` | 940435 | MFVI, `T=3`, **`l2_arc=5.0`**, 6000 steps | **691.82** | 649.88 | 307 s |
+| 2026-08-09 | `f492a9d` | 940438 | MFVI, `T=3`, **`λ_Z=4`**, 6000 steps | **690.02** | 646.51 | 228 s |
 
 **Gate: FAIL on every configuration.** Every MFVI run lands within 1 % of the unigram
 baseline; the exact readout lands more than twice above it. Perplexity does fall — 5692 →
 695 over 6000 steps for run 940422 — but it falls *to* the unigram model, which is not
-learning. This reproduces the outcome of the implementation removed at `2e38ef9`
+learning. This reproduces the outcome of the implementation removed at `fac793d`
 (val 664 against a baseline of 687), despite the RPE table that the fit-rate probe showed
 was the cause of that implementation's toy-scale failure.
 

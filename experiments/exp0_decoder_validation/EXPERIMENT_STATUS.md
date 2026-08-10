@@ -389,7 +389,7 @@ uninformative, as it should with `b = 0` and small `S`.
 
 ## The previous implementation's failure, reproduced and attributed — 2026-08-09
 
-The implementation removed at `2e38ef9` (last at `9c77f94`) passed all nine checks and still
+The implementation removed at `fac793d` (last at `57118de`) passed all nine checks and still
 converged to the unigram baseline on PTB. Its post-mortem blamed the **number of MFVI rounds**:
 toy memorisation fit rate over five seeds fell 8/20 → 7/20 → 4/20 → **1/20** as rounds went
 1 → 2 → 3 → 4. It also recorded that check 6 passed on a single lucky seed and was not

@@ -35,8 +35,8 @@ with the slot convention aligned so both models are scored on the identical toke
 **2026-08-09 — restart.** The previous implementation (`src/`, `tests/`, `experiments/`,
 old status and report files, checkpoints, slurm logs) was removed at the user's request;
 the reference PDFs, `PROJECT.md` and `RESEARCH_PLAN.md` were kept, as was the PTB corpus
-under `data/`. History is intact — the last commit of the old implementation is `9c77f94`
-(`v0.9.0`), so anything can be read back with `git show 9c77f94:<path>`. The version was
+under `data/`. History is intact — the last commit of the old implementation is `57118de`
+(`v0.9.0`), so anything can be read back with `git show 57118de:<path>`. The version was
 reset to `0.1.0`.
 
 **2026-08-09 — the causal PT decoder, written from scratch.** Experiment 0 complete:

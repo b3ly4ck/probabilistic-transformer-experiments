@@ -31,7 +31,7 @@ experiment, every number, the failed diagnoses (kept and marked \textsc{supersed
 corrections log, and the reproduction map. Every number is sourced from a run JSON, a slurm
 log, or a checkpoint inspection. Single-seed results are labelled as such throughout.
 Repository: \url{https://github.com/b3ly4ck/probabilistic-transformer-experiments}
-(commits \texttt{7985174}\,\ldots\,\texttt{7f70e5f}).
+(commits \texttt{ed8dda7}\,\ldots\,\texttt{d437a76}).
 \end{abstract}
 
 \section{Executive summary}
@@ -518,7 +518,7 @@ record the head costs 7.7\,\% and doubles the seed variance.
 PTB, $d{=}256$ base config: exact readout 1555.04 / 1508.89 after 2000 steps (794\,s) vs
 MFVI 695.70 / 655.09 after 6000 steps (308\,s), both TITAN RTX --- per step the exact
 readout cost ${\sim}7.8\times$ here (397 vs 51 ms). The predecessor implementation (commit
-\texttt{9c77f94}) recorded $78\times$ per step (1832 vs 23.6 ms) with its chunked exact
+\texttt{57118de}) recorded $78\times$ per step (1832 vs 23.6 ms) with its chunked exact
 readout; kept for the record, not directly comparable. Worked-example contrast (technical
 note \S5, reproduced digit for digit): on the same slot the MFVI readout gives
 $\hat p(W_4) = (.460, .267, .007, .267)$ and the exact readout $(.365, .215, .206, .215)$
@@ -610,7 +610,7 @@ it is what makes the rest of the record trustworthy.
 Login-node venv (py3.11, torch 2.13 cpu) for tests; GPU jobs use the cluster anaconda
 (py3.8.8, torch 2.0.1+cu117). All batch scripts assert CUDA and the \texttt{/public} mount;
 exclude \texttt{ai\_gpu32,ai\_gpu33}. \texttt{python -m pytest}: 96 pass at
-\texttt{f445980}. Full argument dumps are stored verbatim in each result JSON under
+\texttt{7cdcf3a}. Full argument dumps are stored verbatim in each result JSON under
 \texttt{"args"}; every run went through \texttt{sbatch \ldots\ <script>.slurm <args>}.
 
 \begin{table}[h]\centering\footnotesize
@@ -619,33 +619,33 @@ exclude \texttt{ai\_gpu32,ai\_gpu33}. \texttt{python -m pytest}: 96 pass at
 \toprule
 result (JSON tag) & job & HW & commit\\
 \midrule
-pilot\_mfvi\_T3 / pilot\_exact\_T3 & 940422 / 940423 & TITAN & 334e09b / 0a31441\\
-probe\_T1 / probe\_l2\_5 / probe\_lambdaZ4 & 940436 / 940435 / 940438 & T/T/A40 & 0a31441\\
-sweep\_lz16/32/64 & 940483/84/85 & T/T/A40 & 7dff2c2\\
-step1\_nob / step1\_withb & 940444 / 940445 & TITAN & e43dd40\\
-init0.2 / init0.5 & 940489 / 940490 & TITAN & 7dff2c2\\
-tau1 / tau4 / tau8 & 940502/503/504 & T/T/A40 & 4668d0e\\
-base\_gpt / base\_looped / base\_pt / scale & 940799 & A40 & 7d95b95\\
-lr\_probe & 940809 & TITAN & a6921e0\\
-region\_probe (grid, replicate, PTB) & 940814 & A40 & 71c926c\\
-deconfound\_dh & 940827 & A40 & fead1a0\\
-attack (3a/3b) & 940844 & A40 & 93a26a2\\
-attack\_freezeb / attack\_long & 940848 / 940850 & A40 & a7697e0\\
-attack\_final (ladder 16/24/32) & 940858 & A40 & 9c73992\\
-G\_R1 / G\_R2 & 940872 / 940879 & A40 & 6d50f53\\
-damp d32 a0.5/a0.25, d48, d64 & 940913/914/915/916 & TITAN & 6efa62a\\
-G\_rev\_d24 & 940918 & TITAN & e97e924\\
-combo / full / floor (2$\times$2) & 940920 / 940921 / 940927 & TITAN & e97e924\\
-RECseed1/2, Bseed1/2 & 940932/934, 940931/933 & TITAN & f445980\\
+pilot\_mfvi\_T3 / pilot\_exact\_T3 & 940422 / 940423 & TITAN & f492a9d / 0296af9\\
+probe\_T1 / probe\_l2\_5 / probe\_lambdaZ4 & 940436 / 940435 / 940438 & T/T/A40 & 0296af9\\
+sweep\_lz16/32/64 & 940483/84/85 & T/T/A40 & 0231ce7\\
+step1\_nob / step1\_withb & 940444 / 940445 & TITAN & e62a233\\
+init0.2 / init0.5 & 940489 / 940490 & TITAN & 0231ce7\\
+tau1 / tau4 / tau8 & 940502/503/504 & T/T/A40 & e24a0d4\\
+base\_gpt / base\_looped / base\_pt / scale & 940799 & A40 & 8842e2c\\
+lr\_probe & 940809 & TITAN & 0cc04f5\\
+region\_probe (grid, replicate, PTB) & 940814 & A40 & 35f10cd\\
+deconfound\_dh & 940827 & A40 & bee3b36\\
+attack (3a/3b) & 940844 & A40 & 779a0e4\\
+attack\_freezeb / attack\_long & 940848 / 940850 & A40 & b2f6508\\
+attack\_final (ladder 16/24/32) & 940858 & A40 & 064db8d\\
+G\_R1 / G\_R2 & 940872 / 940879 & A40 & 1ecd1fa\\
+damp d32 a0.5/a0.25, d48, d64 & 940913/914/915/916 & TITAN & 64ef791\\
+G\_rev\_d24 & 940918 & TITAN & b49933d\\
+combo / full / floor (2$\times$2) & 940920 / 940921 / 940927 & TITAN & b49933d\\
+RECseed1/2, Bseed1/2 & 940932/934, 940931/933 & TITAN & 7cdcf3a\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Comparability boundaries.} (i) Generator bug, fixed at \texttt{8b7d1b1} (v0.8.2):
+\textbf{Comparability boundaries.} (i) Generator bug, fixed at \texttt{0e679f3} (v0.8.2):
 \texttt{Dirichlet.sample} ignores its generator, so pre-fix synthetic-chain scripts drew
 different chains despite equal seeds (lr\_probe oracle 3.84/6.52; region grid 1.96/3.09;
 deconfound, post-fix, 3.577/7.105). Across probes only gap-closed fractions are comparable,
-never raw perplexities; PTB numbers unaffected. (ii) JSONs written before \texttt{9c73992}
+never raw perplexities; PTB numbers unaffected. (ii) JSONs written before \texttt{064db8d}
 store the trace \emph{minimum} as val; from then on the final value, with the minimum kept
 alongside. Only \texttt{attack\_final} $d{=}32$ is materially affected (523.08 stored vs
 641.5 final; the trace carries the truth). (iii) The 940858 $d{=}16$ reference checkpoint
