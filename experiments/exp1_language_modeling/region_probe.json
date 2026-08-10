@@ -1,0 +1,578 @@
+{
+  "args": {
+    "vocab": 11,
+    "steps": 3000,
+    "block_size": 64,
+    "batch_size": 16,
+    "n_train": 400000,
+    "n_val": 40000,
+    "ptb_steps": 6000,
+    "device": "cuda"
+  },
+  "oracle": 1.9631035386403775,
+  "unigram": 3.0931153297424316,
+  "ptb_unigram": 688.8182373046875,
+  "results": [
+    {
+      "stage": "grid",
+      "d": 8,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 2.333,
+      "gap_closed": 0.6725,
+      "diag": {
+        "msg_over_unary": 3.7860751152038574,
+        "attn_entropy_frac": 0.064851313829422,
+        "label_entropy": 0.14438390731811523,
+        "root_mass_over_uniform": 1.8915846347808838,
+        "max_abs_T": 6.434453964233398,
+        "qbar_std_over_positions": 0.13310466706752777,
+        "rho": 3055.73779296875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 8,
+      "lr": 0.01,
+      "seed": 0,
+      "best_val_ppl": 2.055,
+      "gap_closed": 0.9187,
+      "diag": {
+        "msg_over_unary": 3.09578800201416,
+        "attn_entropy_frac": 0.30551019310951233,
+        "label_entropy": 0.16043661534786224,
+        "root_mass_over_uniform": 1.4006195068359375,
+        "max_abs_T": 6.98773717880249,
+        "qbar_std_over_positions": 0.15791821479797363,
+        "rho": 4828.02099609375
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 8,
+      "lr": 0.02,
+      "seed": 0,
+      "best_val_ppl": 2.101,
+      "gap_closed": 0.8777,
+      "diag": {
+        "msg_over_unary": 4.154592514038086,
+        "attn_entropy_frac": 0.03007178194820881,
+        "label_entropy": 0.260872483253479,
+        "root_mass_over_uniform": 0.21822866797447205,
+        "max_abs_T": 9.209770202636719,
+        "qbar_std_over_positions": 0.16196183860301971,
+        "rho": 3982.576171875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 8,
+      "lr": 0.04,
+      "seed": 0,
+      "best_val_ppl": 2.392,
+      "gap_closed": 0.62,
+      "diag": {
+        "msg_over_unary": 4.854219436645508,
+        "attn_entropy_frac": 0.1272122859954834,
+        "label_entropy": 0.04433710500597954,
+        "root_mass_over_uniform": 2.506598949432373,
+        "max_abs_T": 20.498111724853516,
+        "qbar_std_over_positions": 0.1364412009716034,
+        "rho": 6255.5263671875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 16,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 2.035,
+      "gap_closed": 0.9361,
+      "diag": {
+        "msg_over_unary": 2.855013847351074,
+        "attn_entropy_frac": 0.1173265278339386,
+        "label_entropy": 1.1326735019683838,
+        "root_mass_over_uniform": 0.4004201591014862,
+        "max_abs_T": 9.032801628112793,
+        "qbar_std_over_positions": 0.07826507091522217,
+        "rho": 24357.998046875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 16,
+      "lr": 0.01,
+      "seed": 0,
+      "best_val_ppl": 2.807,
+      "gap_closed": 0.2535,
+      "diag": {
+        "msg_over_unary": 11.913213729858398,
+        "attn_entropy_frac": 0.005942647811025381,
+        "label_entropy": 0.4185400605201721,
+        "root_mass_over_uniform": 1.3780452013015747,
+        "max_abs_T": 18.72941017150879,
+        "qbar_std_over_positions": 0.052792564034461975,
+        "rho": 15649.08203125
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 16,
+      "lr": 0.02,
+      "seed": 0,
+      "best_val_ppl": 2.41,
+      "gap_closed": 0.6043,
+      "diag": {
+        "msg_over_unary": 12.315458297729492,
+        "attn_entropy_frac": 0.09890591353178024,
+        "label_entropy": 0.10202215611934662,
+        "root_mass_over_uniform": 1.7880380153656006,
+        "max_abs_T": 31.99991798400879,
+        "qbar_std_over_positions": 0.07794998586177826,
+        "rho": 47030.1015625
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 16,
+      "lr": 0.04,
+      "seed": 0,
+      "best_val_ppl": 3.093,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 7.882065773010254,
+        "attn_entropy_frac": 0.4506257474422455,
+        "label_entropy": 0.03363584727048874,
+        "root_mass_over_uniform": 0.08593064546585083,
+        "max_abs_T": 14.016143798828125,
+        "qbar_std_over_positions": 0.011297606863081455,
+        "rho": 28221.81640625
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 32,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 2.13,
+      "gap_closed": 0.8522,
+      "diag": {
+        "msg_over_unary": 4.2052717208862305,
+        "attn_entropy_frac": 0.02354620024561882,
+        "label_entropy": 2.0518550872802734,
+        "root_mass_over_uniform": 0.13607093691825867,
+        "max_abs_T": 13.312923431396484,
+        "qbar_std_over_positions": 0.039442628622055054,
+        "rho": 98420.96875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 32,
+      "lr": 0.01,
+      "seed": 0,
+      "best_val_ppl": 2.226,
+      "gap_closed": 0.7671,
+      "diag": {
+        "msg_over_unary": 6.254366874694824,
+        "attn_entropy_frac": 0.025671448558568954,
+        "label_entropy": 0.4834115505218506,
+        "root_mass_over_uniform": 3.6399004459381104,
+        "max_abs_T": 15.356700897216797,
+        "qbar_std_over_positions": 0.04288410022854805,
+        "rho": 247122.8125
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 32,
+      "lr": 0.02,
+      "seed": 0,
+      "best_val_ppl": 3.06,
+      "gap_closed": 0.0291,
+      "diag": {
+        "msg_over_unary": 4.815962314605713,
+        "attn_entropy_frac": 0.0005138663109391928,
+        "label_entropy": 0.20898213982582092,
+        "root_mass_over_uniform": 0.0859261304140091,
+        "max_abs_T": 12.923863410949707,
+        "qbar_std_over_positions": 0.006942031905055046,
+        "rho": 2678.7060546875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 32,
+      "lr": 0.04,
+      "seed": 0,
+      "best_val_ppl": 3.086,
+      "gap_closed": 0.006,
+      "diag": {
+        "msg_over_unary": 7.796249866485596,
+        "attn_entropy_frac": 0.2616603374481201,
+        "label_entropy": 0.6446471810340881,
+        "root_mass_over_uniform": 16.27392578125,
+        "max_abs_T": 47.047237396240234,
+        "qbar_std_over_positions": 0.015588512644171715,
+        "rho": 574954.0625
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 64,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 2.478,
+      "gap_closed": 0.5442,
+      "diag": {
+        "msg_over_unary": 14.816995620727539,
+        "attn_entropy_frac": 0.0013107365230098367,
+        "label_entropy": 0.765274167060852,
+        "root_mass_over_uniform": 0.03766074776649475,
+        "max_abs_T": 6.547271728515625,
+        "qbar_std_over_positions": 0.005617858376353979,
+        "rho": 232255.53125
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 64,
+      "lr": 0.01,
+      "seed": 0,
+      "best_val_ppl": 3.079,
+      "gap_closed": 0.0122,
+      "diag": {
+        "msg_over_unary": 21.658531188964844,
+        "attn_entropy_frac": 0.2106909155845642,
+        "label_entropy": 0.07111405581235886,
+        "root_mass_over_uniform": 0.07571516931056976,
+        "max_abs_T": 20.542705535888672,
+        "qbar_std_over_positions": 0.007376227527856827,
+        "rho": 992510.25
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 64,
+      "lr": 0.02,
+      "seed": 0,
+      "best_val_ppl": 2.872,
+      "gap_closed": 0.1957,
+      "diag": {
+        "msg_over_unary": 28.415943145751953,
+        "attn_entropy_frac": 0.2254093885421753,
+        "label_entropy": 0.01877603307366371,
+        "root_mass_over_uniform": 0.039768170565366745,
+        "max_abs_T": 40.207359313964844,
+        "qbar_std_over_positions": 0.009022700600326061,
+        "rho": 461122.21875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 64,
+      "lr": 0.04,
+      "seed": 0,
+      "best_val_ppl": 3.093,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 28.714153289794922,
+        "attn_entropy_frac": 0.3366582989692688,
+        "label_entropy": 0.0009284443221986294,
+        "root_mass_over_uniform": 0.16804362833499908,
+        "max_abs_T": 76.37974548339844,
+        "qbar_std_over_positions": 2.371479058638215e-05,
+        "rho": 825841.6875
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 128,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 3.081,
+      "gap_closed": 0.0105,
+      "diag": {
+        "msg_over_unary": 28.175336837768555,
+        "attn_entropy_frac": 0.33612748980522156,
+        "label_entropy": 0.0660153180360794,
+        "root_mass_over_uniform": 0.03857339173555374,
+        "max_abs_T": 14.844329833984375,
+        "qbar_std_over_positions": 0.0018258588388562202,
+        "rho": 1721274.5
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 128,
+      "lr": 0.01,
+      "seed": 0,
+      "best_val_ppl": 3.093,
+      "gap_closed": 0.0001,
+      "diag": {
+        "msg_over_unary": 69.57862854003906,
+        "attn_entropy_frac": 0.4391617774963379,
+        "label_entropy": 0.010825470089912415,
+        "root_mass_over_uniform": 3.8438720703125,
+        "max_abs_T": 29.3121337890625,
+        "qbar_std_over_positions": 7.705324969720095e-05,
+        "rho": 5802209.0
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 128,
+      "lr": 0.02,
+      "seed": 0,
+      "best_val_ppl": 3.092,
+      "gap_closed": 0.0011,
+      "diag": {
+        "msg_over_unary": 72.48085021972656,
+        "attn_entropy_frac": 0.006882622372359037,
+        "label_entropy": 0.004422297701239586,
+        "root_mass_over_uniform": 3.8652753829956055,
+        "max_abs_T": 83.4928207397461,
+        "qbar_std_over_positions": 0.0034426271449774504,
+        "rho": 2211579.0
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 128,
+      "lr": 0.04,
+      "seed": 0,
+      "best_val_ppl": 3.094,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 43.801692962646484,
+        "attn_entropy_frac": 0.5272005796432495,
+        "label_entropy": 0.13793209195137024,
+        "root_mass_over_uniform": 0.27027589082717896,
+        "max_abs_T": 41.34323501586914,
+        "qbar_std_over_positions": 0.005780113860964775,
+        "rho": 5644211.0
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 256,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 3.093,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 23.247453689575195,
+        "attn_entropy_frac": 0.6342579126358032,
+        "label_entropy": 0.10473958402872086,
+        "root_mass_over_uniform": 0.07219039648771286,
+        "max_abs_T": 4.9105048179626465,
+        "qbar_std_over_positions": 3.9221951737999916e-05,
+        "rho": 1945105.75
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 256,
+      "lr": 0.01,
+      "seed": 0,
+      "best_val_ppl": 3.093,
+      "gap_closed": 0.0001,
+      "diag": {
+        "msg_over_unary": 33.9359245300293,
+        "attn_entropy_frac": 0.44412297010421753,
+        "label_entropy": 0.011526307091116905,
+        "root_mass_over_uniform": 0.04324597492814064,
+        "max_abs_T": 13.004602432250977,
+        "qbar_std_over_positions": 1.4957520761527121e-05,
+        "rho": 9145160.0
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 256,
+      "lr": 0.02,
+      "seed": 0,
+      "best_val_ppl": 3.093,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 13.189935684204102,
+        "attn_entropy_frac": 0.8610216379165649,
+        "label_entropy": 0.0027789361774921417,
+        "root_mass_over_uniform": 0.0625,
+        "max_abs_T": 5.657736301422119,
+        "qbar_std_over_positions": 8.066010195761919e-06,
+        "rho": 1379268.75
+      }
+    },
+    {
+      "stage": "grid",
+      "d": 256,
+      "lr": 0.04,
+      "seed": 0,
+      "best_val_ppl": 3.094,
+      "gap_closed": 0.0,
+      "diag": {
+        "msg_over_unary": 19.016149520874023,
+        "attn_entropy_frac": 1.2358051156880562e-41,
+        "label_entropy": 0.04120617359876633,
+        "root_mass_over_uniform": 0.635498046875,
+        "max_abs_T": 68.51074981689453,
+        "qbar_std_over_positions": 0.0016140619991347194,
+        "rho": 1111587.25
+      }
+    },
+    {
+      "stage": "replicate",
+      "d": 16,
+      "lr": 0.005,
+      "seed": 0,
+      "best_val_ppl": 2.035,
+      "gap_closed": 0.9361,
+      "diag": {
+        "msg_over_unary": 2.855013847351074,
+        "attn_entropy_frac": 0.1173265278339386,
+        "label_entropy": 1.1326735019683838,
+        "root_mass_over_uniform": 0.4004201591014862,
+        "max_abs_T": 9.032801628112793,
+        "qbar_std_over_positions": 0.07826507091522217,
+        "rho": 24357.998046875
+      }
+    },
+    {
+      "stage": "replicate",
+      "d": 16,
+      "lr": 0.005,
+      "seed": 1,
+      "best_val_ppl": 2.091,
+      "gap_closed": 0.8865,
+      "diag": {
+        "msg_over_unary": 2.866004467010498,
+        "attn_entropy_frac": 0.030001824721693993,
+        "label_entropy": 1.3974740505218506,
+        "root_mass_over_uniform": 4.476509094238281,
+        "max_abs_T": 13.101608276367188,
+        "qbar_std_over_positions": 0.07699359953403473,
+        "rho": 18983.28125
+      }
+    },
+    {
+      "stage": "replicate",
+      "d": 16,
+      "lr": 0.005,
+      "seed": 2,
+      "best_val_ppl": 2.212,
+      "gap_closed": 0.7802,
+      "diag": {
+        "msg_over_unary": 5.671848297119141,
+        "attn_entropy_frac": 0.05934533104300499,
+        "label_entropy": 0.1179223582148552,
+        "root_mass_over_uniform": 0.053677402436733246,
+        "max_abs_T": 12.12182331085205,
+        "qbar_std_over_positions": 0.07414133846759796,
+        "rho": 20732.263671875
+      }
+    },
+    {
+      "stage": "ptb",
+      "d": 16,
+      "lr": 0.005,
+      "best_val_ppl": 688.53,
+      "test_ppl": 640.89,
+      "diag": {
+        "msg_over_unary": 10.245887756347656,
+        "attn_entropy_frac": 0.0024585677310824394,
+        "label_entropy": 0.19058088958263397,
+        "root_mass_over_uniform": 0.015638839453458786,
+        "max_abs_T": 7.7648234367370605,
+        "qbar_std_over_positions": 0.011528958566486835,
+        "rho": 2798.480224609375
+      },
+      "seconds": 195.5
+    },
+    {
+      "stage": "ptb",
+      "d": 16,
+      "lr": 0.02,
+      "best_val_ppl": 473.28,
+      "test_ppl": 433.06,
+      "diag": {
+        "msg_over_unary": 3.411891460418701,
+        "attn_entropy_frac": 0.4086258113384247,
+        "label_entropy": 0.03008810244500637,
+        "root_mass_over_uniform": 0.08756473660469055,
+        "max_abs_T": 50.92000198364258,
+        "qbar_std_over_positions": 0.06472272425889969,
+        "rho": 29699.5625
+      },
+      "seconds": 194.9
+    },
+    {
+      "stage": "ptb",
+      "d": 32,
+      "lr": 0.005,
+      "best_val_ppl": 688.47,
+      "test_ppl": 640.88,
+      "diag": {
+        "msg_over_unary": 28.13730239868164,
+        "attn_entropy_frac": 6.527143409096325e-12,
+        "label_entropy": 0.15045760571956635,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 12.505844116210938,
+        "qbar_std_over_positions": 0.0031084499787539244,
+        "rho": 8635.587890625
+      },
+      "seconds": 195.7
+    },
+    {
+      "stage": "ptb",
+      "d": 32,
+      "lr": 0.02,
+      "best_val_ppl": 696.14,
+      "test_ppl": 642.49,
+      "diag": {
+        "msg_over_unary": 15.40945816040039,
+        "attn_entropy_frac": 0.42885613441467285,
+        "label_entropy": 0.015890786424279213,
+        "root_mass_over_uniform": 0.015625,
+        "max_abs_T": 32.70219039916992,
+        "qbar_std_over_positions": 0.0012052895035594702,
+        "rho": 441751.71875
+      },
+      "seconds": 205.5
+    },
+    {
+      "stage": "ptb",
+      "d": 64,
+      "lr": 0.005,
+      "best_val_ppl": 688.43,
+      "test_ppl": 640.84,
+      "diag": {
+        "msg_over_unary": 39.608299255371094,
+        "attn_entropy_frac": 0.097002774477005,
+        "label_entropy": 0.18541881442070007,
+        "root_mass_over_uniform": 0.030708475038409233,
+        "max_abs_T": 6.555383205413818,
+        "qbar_std_over_positions": 0.0033068102784454823,
+        "rho": 28678.384765625
+      },
+      "seconds": 199.7
+    },
+    {
+      "stage": "ptb",
+      "d": 64,
+      "lr": 0.02,
+      "best_val_ppl": 694.83,
+      "test_ppl": 642.01,
+      "diag": {
+        "msg_over_unary": 65.70487213134766,
+        "attn_entropy_frac": 0.000368037581210956,
+        "label_entropy": 0.03326573222875595,
+        "root_mass_over_uniform": 0.02598084881901741,
+        "max_abs_T": 32.723567962646484,
+        "qbar_std_over_positions": 0.003163486486300826,
+        "rho": 1888897.0
+      },
+      "seconds": 200.8
+    }
+  ]
+}

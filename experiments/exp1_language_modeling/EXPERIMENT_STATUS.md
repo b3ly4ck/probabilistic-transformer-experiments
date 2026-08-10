@@ -505,6 +505,65 @@ training tokens, 115 s per run. The failure no longer needs PTB, a 10⁴ vocabul
 hour to study — it can be examined tensor by tensor by hand, which is what §17's worked
 example was designed for and what the next step should use.
 
+### The working region — 2026-08-10, jobs 940809 and 940814
+
+**PT does learn.** `lr_probe` found it first on the minimal Markov task: at `d = 16, lr = 0.02`
+the decoder reached perplexity 3.809 against an oracle of 3.84 — the whole unigram→oracle gap
+closed — with `msg_over_unary` at **2.48** instead of the 12–79 of every failing configuration.
+
+`region_probe` then mapped the region. Fraction of the gap closed, one chain, seed 0:
+
+| `d` \ `lr` | 0.005 | 0.01 | 0.02 | 0.04 |
+|---|---|---|---|---|
+| 8 | 0.672 | **0.919** | 0.878 | 0.620 |
+| **16** | **0.936** | 0.254 | 0.604 | 0.000 |
+| 32 | **0.852** | 0.767 | 0.029 | 0.006 |
+| 64 | 0.544 | 0.012 | 0.196 | 0.000 |
+| 128 | 0.011 | 0.000 | 0.001 | 0.000 |
+| 256 | 0.000 | 0.000 | 0.000 | 0.000 |
+
+The region is **small `d`, small `lr`**, and it degrades monotonically in `d`. Nothing works at
+`d ≥ 128`. This inverts the usual reading: more label capacity makes the model *worse*, which
+is consistent with the message bound `|G_i(a)| ≤ h·max(max|T|, max|r|)` swamping the word
+unary as the model widens.
+
+**Replication of the best cell** `d = 16, lr = 0.005`, three seeds — because the previous
+implementation's post-mortem turned on a single-seed check that had a real fit rate of 1/5:
+
+| seed | gap closed | `msg/unary` |
+|---|---|---|
+| 0 | 0.936 | 2.86 |
+| 1 | 0.886 | 2.87 |
+| 2 | 0.780 | 5.67 |
+
+**2 of 3 seeds close more than 80 % of the gap.** Not a lucky cell, and not a reliable one
+either — the seed that fell short is also the one whose `msg/unary` left the healthy band.
+
+**Carried to PTB** (unigram 688.82, GPT reference 115.43, 6000 steps):
+
+| `d` | `lr` | val ppl | test ppl | `msg/unary` | verdict |
+|---|---|---|---|---|---|
+| 16 | 0.005 | 688.53 | 640.89 | 10.25 | unigram |
+| **16** | **0.02** | **473.28** | **433.06** | **3.41** | **beats unigram by 31 %** |
+| 32 | 0.005 | 688.47 | 640.88 | 28.14 | unigram |
+| 32 | 0.02 | 696.14 | 642.49 | 15.41 | unigram |
+| 64 | 0.005 | 688.43 | 640.84 | 39.61 | unigram |
+| 64 | 0.02 | 694.83 | 642.01 | 65.70 | unigram |
+
+**Against the gate: FAIL.** The gate written in this file is val ppl well below the baseline,
+operationalised as below half of it (344.4). 473.28 does not reach it. It is nonetheless the
+first run in the entire project to move off the unigram at all, and by 31 %.
+
+**`msg_over_unary` predicts the outcome without exception.** It is below 10 for exactly one of
+the six PTB runs, and that is exactly the one that learns. The healthy band from the minimal
+task — 2–3 — brackets the working PTB run at 3.41. This is now the quantity to watch, and the
+one whose departure from band should be reported first when a run fails.
+
+**A caveat on the region probe's absolute numbers.** Its chain was generated before the
+`make_chain` fix of `v0.8.2` (`Dirichlet.sample` ignores its generator argument and drew from
+the global RNG), so its oracle/unigram pair — 1.96 / 3.09 — differs from later probes. Only
+the gap-closed fractions are comparable across probes; the raw perplexities are not.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the

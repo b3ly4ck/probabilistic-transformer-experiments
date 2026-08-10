@@ -84,6 +84,17 @@ class CausalPTDecoder(nn.Module):
 
         self.reset_parameters()
 
+    def set_word_unary(self, log_freq: torch.Tensor) -> None:
+        """Set ``b`` to a fixed log-unigram, and freeze it if the config says so.
+
+        The factor stays in the graph; it becomes observed rather than learned.
+        """
+        if self.b is None:
+            raise ValueError("word_unary=False: there is no b to set")
+        with torch.no_grad():
+            self.b.copy_(log_freq.to(self.b.dtype))
+        self.b.requires_grad_(not self.cfg.freeze_word_unary)
+
     def reset_parameters(self) -> None:
         std = self.cfg.init_std
         root_std = self.cfg.root_init_std if self.cfg.root_init_std is not None else std

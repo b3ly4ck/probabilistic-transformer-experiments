@@ -48,6 +48,12 @@ class TrainConfig:
     # evaluation
     eval_every: int = 100
     eval_blocks: Optional[int] = None  # None -> the whole split
+    eval_train_blocks: Optional[int] = 20
+    # Training perplexity on a fixed slice of the train split, measured the same
+    # deterministic way as validation. It is the sharper of the two numbers: a model that
+    # cannot fit its own training data is not being regularised, it is failing to represent
+    # the data. The previous implementation of this project sat at train ppl 611 against a
+    # unigram baseline of 687 and that, not the validation number, was the finding.
     ignore_first: int = 1
 
     seed: int = 0
@@ -60,6 +66,7 @@ class TrainConfig:
 class History:
     step: List[int] = field(default_factory=list)
     train_loss: List[float] = field(default_factory=list)
+    train_ppl: List[float] = field(default_factory=list)
     val_loss: List[float] = field(default_factory=list)
     val_ppl: List[float] = field(default_factory=list)
     diag: List[dict] = field(default_factory=list)
@@ -76,13 +83,19 @@ def lr_at(step: int, cfg: TrainConfig) -> float:
 
 
 @torch.no_grad()
-def evaluate(model, data: torch.Tensor, cfg: TrainConfig) -> Dict[str, float]:
-    """Mean NLL and perplexity over deterministic blocks, on the scored token set."""
+def evaluate(model, data: torch.Tensor, cfg: TrainConfig,
+             limit: Optional[int] = -1) -> Dict[str, float]:
+    """Mean NLL and perplexity over deterministic blocks, on the scored token set.
+
+    ``limit`` defaults to ``cfg.eval_blocks``; pass an explicit value to score a slice.
+    """
+    if limit == -1:
+        limit = cfg.eval_blocks
     was_training = model.training
     model.eval()
     total, n = 0.0, 0
     for block in sequential_batches(
-        data, cfg.batch_size, cfg.block_size, cfg.eval_blocks, cfg.device
+        data, cfg.batch_size, cfg.block_size, limit, cfg.device
     ):
         logits = model(block)[:, cfg.ignore_first :]
         target = block[:, cfg.ignore_first :]
@@ -178,6 +191,9 @@ def train(
 
         if (step + 1) % cfg.eval_every == 0 or step + 1 == cfg.max_steps:
             ev = evaluate(model, val_data, cfg)
+            tr = (evaluate(model, train_data, cfg, limit=cfg.eval_train_blocks)
+                  if cfg.eval_train_blocks else {"ppl": float("nan")})
+            hist.train_ppl.append(tr["ppl"])
             diag = _diagnostics(model, block) if cfg.diagnostics else {}
             hist.step.append(step + 1)
             hist.val_loss.append(ev["loss"])
@@ -185,7 +201,7 @@ def train(
             hist.diag.append(diag)
             hist.train_loss.append(float(nll.detach()))
             extra = "  ".join(f"{k} {v:.4f}" for k, v in diag.items())
-            log(f"  eval @ {step + 1:>6}  val nll {ev['loss']:.4f}  val ppl {ev['ppl']:8.2f}"
+            log(f"  eval @ {step + 1:>6}  val ppl {ev['ppl']:8.2f}  train ppl {tr['ppl']:8.2f}"
                 f"  ({ev['tokens']} tokens)  {extra}")
 
     log(f"done in {time.time() - t0:.0f}s")

@@ -38,6 +38,12 @@ class PTConfig:
     gamma: int = 3
     n_global: int = 0  # m; B.3.3 single-split global head. 0 disables it.
     word_unary: bool = True  # the factor b; §16(c) allows dropping it (b == 0)
+    freeze_word_unary: bool = False
+    # Clamp b to the corpus log-unigram and never update it. b is a free per-word parameter
+    # that reproduces the unigram distribution exactly, and the diagnostics of 2026-08-09
+    # showed that solution winning the race inside the first 500 steps. Freezing it removes
+    # the cheap descent direction without removing the factor — b stays in the graph, it is
+    # simply observed rather than learned. Use CausalPTDecoder.set_word_unary().
 
     # --- inference ---
     schedule: str = "parallel"  # "parallel" (depth-T shared causal transformer) | "serial"
