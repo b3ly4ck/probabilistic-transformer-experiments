@@ -901,6 +901,37 @@ is 1.4 % and is almost certainly noise against the seed spread already measured.
 248.29 is 2.6 % and may also be. The only difference clearly outside noise is `G_t`'s 7.7 %
 damage at floor 0.1. The interaction claim needs replication, which is running.
 
+### Replication kills the interaction — 2026-08-10, jobs 940931-940934
+
+Three seeds each of the record and of the best cell of the 2×2:
+
+| configuration | n | val, mean ± sd | test, mean ± sd | raw val |
+|---|---|---|---|---|
+| record: floor 0.1, no `G_t` | 3 | **250.69 ± 2.32** | 229.31 ± 2.62 | 248.29, 250.86, 252.93 |
+| B: floor 0.5, with `G_t` | 3 | **247.66 ± 5.36** | 225.52 ± 5.46 | 241.89, 248.61, 252.48 |
+
+**The interaction claim does not survive.** The two configurations differ by 1.2 % of the mean
+against standard deviations of 2.3 and 5.4, and the ranges overlap almost entirely. The 241.89
+that was reported here as a new record was a lucky seed. That entry is **withdrawn**, not
+quietly amended.
+
+`B` also has **twice the seed variance** of the record (5.36 against 2.32), so `G_t` does not
+merely fail to help on average — it makes training less stable. That is an argument against it
+independent of the mean.
+
+**What survives from this batch, with the strength each claim actually has:**
+
+| claim | status |
+|---|---|
+| B.1 damping opens `d = 32`, −21 % | **firm** — 315.46 → 250.69 ± 2.32, far outside σ |
+| `G_t` at floor 0.1 hurts | **firm** — +7.7 %, outside σ |
+| `G_t` revives without symmetric init and L2 | **firm** — `H(Q_g)` 0.9995 → 0.9079, glob msg 3.10 → 18.59 |
+| `G_t` + raised floor beat the record | **refuted by replication** |
+| the cosine floor alone helps | **refuted** — 251.80, inside σ |
+
+The defensible number for the write-up is therefore **val 250.7 ± 2.3 / test 229.3 ± 2.6**, from
+plain damping at `d = 32`, with neither the global head nor a schedule change.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
