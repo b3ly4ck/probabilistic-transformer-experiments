@@ -50,7 +50,8 @@ def run(corpus, d, a, log):
     cfg = PTConfig(vocab_size=corpus.vocab_size, d=d, h=a.h, rank=min(a.rank, d), gamma=3,
                    n_iters=3, readout="mfvi", vocab_chunk=1024,
                    freeze_word_unary=a.freeze_b, n_global=a.n_global,
-                   alpha_Z=a.alpha_z)
+                   alpha_Z=a.alpha_z, b_glob_init_std=a.b_glob_init_std,
+                   regularise_global_head=not a.no_reg_global)
     model = CausalPTDecoder(cfg)
     if a.freeze_b:
         counts = torch.bincount(corpus.train, minlength=corpus.vocab_size).double()
@@ -115,6 +116,9 @@ def main() -> None:
                    help="m of the B.3.3 single-split global head. MFVI only — the "
                         "exact readout's contribution is a measured constant.")
     p.add_argument("--lr", type=float, default=2e-2)
+    p.add_argument("--b-glob-init-std", type=float, default=None)
+    p.add_argument("--no-reg-global", action="store_true",
+                   help="drop B' from the L2 term; T and r stay penalised")
     p.add_argument("--alpha-z", type=float, default=1.0,
                    help="B.1 step size on the label update; 1.0 = the original model")
     p.add_argument("--min-lr-frac", type=float, default=0.1)

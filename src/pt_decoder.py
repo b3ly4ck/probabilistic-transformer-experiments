@@ -105,9 +105,12 @@ class CausalPTDecoder(nn.Module):
             self.r_root.normal_(0.0, root_std)
             if self.b is not None:
                 self.b.zero_()
-            for p in (self.T, self.U, self.V, self.B_glob):
+            for p in (self.T, self.U, self.V):
                 if p is not None:
                     p.normal_(0.0, std)
+            if self.B_glob is not None:
+                bg = self.cfg.b_glob_init_std
+                self.B_glob.normal_(0.0, std if bg is None else bg)
 
     # ------------------------------------------------------------------ factors --
 
@@ -173,7 +176,7 @@ class CausalPTDecoder(nn.Module):
             n_entries = self.U.shape[0] * self.U.shape[1] * self.cfg.d * self.cfg.d
             arc = (UtU * VtV).sum() / n_entries
         total = arc + (self.r_root**2).mean()
-        if self.B_glob is not None:
+        if self.B_glob is not None and self.cfg.regularise_global_head:
             # Same lesson as r: an unpenalised carrier absorbs the message. B' is a
             # candidate constant-carrier of exactly r's kind, so it is penalised alongside.
             total = total + (self.B_glob**2).mean()

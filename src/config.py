@@ -44,6 +44,15 @@ class PTConfig:
     # feed-forward analogue, so n_global > 0 with readout="exact" is refused. The flag is
     # the narrow escape hatch for the tests that assert exactly that constancy; it must not
     # be set in an experiment.
+    b_glob_init_std: Optional[float] = None
+    regularise_global_head: bool = True
+    # Both address the mechanism measured on 2026-08-10 that kills G_t at d = 16: the rows of
+    # B' collapse (spread 0.0197 -> 0.0037) because under a uniform Q_g every row receives the
+    # same gradient 1/m, and the L2 term pulls them together on top of that. Neither the
+    # symmetric initialisation nor the penalty is part of the construction — both are our
+    # choices — so a fair verdict on §22.2 has to test the head with both removed.
+    # b_glob_init_std=None falls back to init_std; regularise_global_head=False drops B' from
+    # the L2 term while leaving T and r penalised.
     word_unary: bool = True  # the factor b; §16(c) allows dropping it (b == 0)
     freeze_word_unary: bool = False
     # Clamp b to the corpus log-unigram and never update it. b is a free per-word parameter

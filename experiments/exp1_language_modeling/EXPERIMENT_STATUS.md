@@ -814,6 +814,49 @@ without the run tag, so the `G_t` run overwrote the reference checkpoint at the 
 to include the tag. The numbers above are unaffected — they come from the logs and the JSON —
 but the earlier `d = 16` reference checkpoint is gone and would need re-running to inspect.
 
+### Damping opens `d = 32` — a new record, 2026-08-10, jobs 940913-940916
+
+Wu & Tu App. B.1 step size on the label update, `Q^(t) = α_Z Q*^(t) + (1-α_Z) Q^(t-1)`,
+applied to the content stream. Everything else at the record configuration (`h=2`, `lr=0.02`,
+`b` frozen, 15000 steps, MFVI). `α_Z = 1` reproduces the previous code bitwise.
+
+| configuration | val | train | test | `msg/unary` | ablation KL | non-emb params |
+|---|---|---|---|---|---|---|
+| `d=16`, `α_Z=1` (previous record) | 315.46 | 314.09 | 285.33 | 0.98 | 2.182 | 4,128 |
+| `d=32`, `α_Z=1` | 641.50 | 664.95 | 582.92 | 5.33 | 0.281 | 16,448 |
+| `d=32`, `α_Z=0.5` | 531.10 | 554.91 | 483.35 | 4.90 | 0.701 | 16,448 |
+| **`d=32`, `α_Z=0.25`** | **248.29** | **225.43** | **226.62** | 1.31 | **2.851** | 16,448 |
+| `d=48`, `α_Z=0.25` | 344.31 | 354.42 | 315.90 | 2.89 | 1.668 | 24,672 |
+| `d=64`, `α_Z=0.25` | 271.41 | 253.69 | 249.64 | 2.56 | 2.694 | 32,896 |
+
+**A 21 % improvement on both validation and test**, and the ablation KL rises 2.182 → 2.851, so
+the model uses *more* context rather than merely scoring better. The gap to the GPT baseline
+narrows from 2.7× to 2.15×.
+
+**The threshold sits between `α_Z = 0.5` and `0.25`.** At 0.5 the damping stalls the learning
+as well as the explosion: `msg/unary` dips to 0.99 by step 1500, `max|T|` oscillates
+0.81 → 0.34 → 3.16, the run sits at 710 for 1500 steps, and `arc_msg_norm` still reaches 46.3
+by the end. At 0.25 the phase transition arrives by step 1000-1500 and the descent is monotone.
+
+**`train < val` for the first time at a meaningful margin** — 225.43 against 248.29. The model
+has entered an overfitting regime, which it never did before; regularisation and dropout become
+meaningful knobs for the first time in the project.
+
+**Climbing the ladder at fixed `α_Z` does not help, and is non-monotone**: 32 best, 64 second,
+48 worst. `d = 48` is the outlier in the diagnostics too — the only damped run with `train > val`
+(underfitting) and with the ablation KL down at 1.67. The most likely reading is that
+`α_Z = 0.25` was selected at `d = 32` and one fixed step size does not suit every width, since
+the loop it damps grows with `d`. **So this measures what `α_Z = 0.25` does across widths, not
+where the ceiling is under damping.** Establishing the latter needs a `d × α_Z` grid, not a
+ladder along one axis; stated rather than presented as a ceiling.
+
+**A node fault, misdiagnosed twice before it was found.** Six jobs died in 2-3 seconds with no
+output file and were written off as transient scheduler faults, once in a commit message. Every
+one had landed on `ai_gpu32` or `ai_gpu33`, where `/public` is not mounted: the batch script's
+first action is `cd` into the repository under `set -e`, so it exits 1, and because `--output`
+points into the same filesystem no output file is ever written. The scripts now test the mount
+and name the node to exclude.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
