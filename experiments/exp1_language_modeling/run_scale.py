@@ -33,7 +33,16 @@ K_SUCC = 5
 
 
 def make_chain(vocab: int, n_train: int, n_val: int, seed: int = 0):
-    """Order-1 Markov stream with `K_SUCC` successors per state."""
+    """Order-1 Markov stream with `K_SUCC` successors per state.
+
+    ``torch.manual_seed`` is set here on purpose: ``Dirichlet.sample`` does not accept a
+    generator and draws from the *global* RNG, so without this the chain depends on whatever
+    ran before it and the task differs between scripts. That is how the oracle came out as
+    3.84 in ``lr_probe`` and 1.96 in ``region_probe`` for nominally the same chain — numbers
+    stayed comparable *within* a run, since every cell there shares one chain, but not across
+    runs. Each run's ``oracle``/``unigram`` pair identifies which chain it used.
+    """
+    torch.manual_seed(seed)
     g = torch.Generator().manual_seed(seed)
     succ = torch.randint(0, vocab, (vocab, K_SUCC), generator=g)
     probs = torch.distributions.Dirichlet(torch.ones(K_SUCC)).sample((vocab,))
