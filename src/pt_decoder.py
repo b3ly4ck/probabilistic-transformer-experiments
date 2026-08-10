@@ -324,7 +324,11 @@ class CausalPTDecoder(nn.Module):
             G = G_arc + g_msg
             if trace is not None:
                 trace.append(self._iteration_stats(q, Sw, G, alpha, G_arc=G_arc, qg=qg))
-            q = torch.softmax((Sw + G) / self.cfg.lambda_Z, dim=-1)
+            q_new = torch.softmax((Sw + G) / self.cfg.lambda_Z, dim=-1)
+            # Wu & Tu App. B.1 step size. At alpha_Z = 1 this is the identity and the
+            # original update is reproduced exactly.
+            a = self.cfg.alpha_Z
+            q = q_new if a == 1.0 else a * q_new + (1.0 - a) * q
         return q
 
     def _content_serial(self, idx: torch.Tensor, trace: Optional[list] = None) -> torch.Tensor:

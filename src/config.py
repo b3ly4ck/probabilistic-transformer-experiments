@@ -57,6 +57,15 @@ class PTConfig:
     n_iters: int = 5  # T, content-stream iterations, parallel schedule; Table 2 PTB value
     tau_obs: int = 1  # inner rounds per observed slot, serial schedule
     tau: int = 2  # predictive inner rounds of the MFVI readout (§17.1 asks for >= 2)
+    alpha_Z: float = 1.0
+    # Step size of the label update, Wu & Tu Appendix B.1:
+    #     Q_i^(t) = alpha_Z * Q_i^*(t) + (1 - alpha_Z) * Q_i^(t-1)
+    # 1.0 reproduces the original model exactly. Below 1 it damps the loop
+    # q -> B -> G -> q, which is the loop measured to blow up at d = 32: the message
+    # exploded from msg/unary 2.88 at step 500 to 20.57 at step 1000 and the run never
+    # recovered. B.1 also defines a step size alpha_H on the head posteriors; that one is
+    # not implemented, because it requires carrying Q_c across iterations and the Z step
+    # alone already breaks the loop in question.
     readout: str = "exact"  # "exact" (mainline, §23.3) | "mfvi" (ablation)
 
     # --- entropic Frank-Wolfe message weights (Wu & Tu §2.3.3, A.5) ---

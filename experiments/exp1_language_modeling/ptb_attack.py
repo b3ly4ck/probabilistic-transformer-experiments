@@ -49,13 +49,15 @@ def run(corpus, d, a, log):
     torch.manual_seed(a.seed)
     cfg = PTConfig(vocab_size=corpus.vocab_size, d=d, h=a.h, rank=min(a.rank, d), gamma=3,
                    n_iters=3, readout="mfvi", vocab_chunk=1024,
-                   freeze_word_unary=a.freeze_b, n_global=a.n_global)
+                   freeze_word_unary=a.freeze_b, n_global=a.n_global,
+                   alpha_Z=a.alpha_z)
     model = CausalPTDecoder(cfg)
     if a.freeze_b:
         counts = torch.bincount(corpus.train, minlength=corpus.vocab_size).double()
         model.set_word_unary((counts / counts.sum()).clamp_min(1e-12).log())
     tcfg = TrainConfig(block_size=a.block_size, batch_size=a.batch_size, max_steps=a.steps,
                        lr=a.lr, warmup_steps=a.warmup, eval_every=a.eval_every,
+                       min_lr_frac=a.min_lr_frac,
                        eval_train_blocks=20, ignore_first=1, device=a.device, seed=a.seed,
                        log_every=10**9, diagnostics=True)
     t0 = time.time()
@@ -83,7 +85,7 @@ def run(corpus, d, a, log):
     torch.save({"cfg": cfg, "state_dict": model.state_dict(),
                 "args": {"block_size": a.block_size}}, ck)
     return {
-        "d": d, "h": a.h, "lr": a.lr,
+        "d": d, "h": a.h, "lr": a.lr, "alpha_Z": a.alpha_z,
         "val_ppl": round(final, 2), "val_ppl_min": round(best, 2),
         "test_ppl": round(test["ppl"], 2),
         "train_ppl": round(hist.train_ppl[-1], 2) if hist.train_ppl else float("nan"),
@@ -113,6 +115,9 @@ def main() -> None:
                    help="m of the B.3.3 single-split global head. MFVI only — the "
                         "exact readout's contribution is a measured constant.")
     p.add_argument("--lr", type=float, default=2e-2)
+    p.add_argument("--alpha-z", type=float, default=1.0,
+                   help="B.1 step size on the label update; 1.0 = the original model")
+    p.add_argument("--min-lr-frac", type=float, default=0.1)
     p.add_argument("--warmup", type=int, default=100)
     p.add_argument("--steps", type=int, default=6000)
     p.add_argument("--block-size", type=int, default=64)
