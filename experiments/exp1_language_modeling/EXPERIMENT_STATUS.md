@@ -659,6 +659,52 @@ This is a within-run coincidence of timing, not a correlation across end-points.
 Steps 3c (freeze `b`) and 3d (decouple `lambda_H`) were **not run**: both are conditional on
 3a failing to beat the unigram, and it did not.
 
+### Steps 3c and the budget — the gate is passed, 2026-08-10, jobs 940848 / 940850
+
+Both were run as single-variable changes against the 3a configuration (`d=16, h=2, lr=0.02`).
+
+| run | steps | `b` | val ppl | train ppl | test ppl | `msg/unary` | ablation KL | gate 344.41 |
+|---|---|---|---|---|---|---|---|---|
+| 3a | 6000 | learned | 473.28 | 488.85 | 433.06 | 3.41 | 0.913 | FAIL |
+| 3c | 6000 | **frozen at log-unigram** | 430.04 | 450.35 | 393.09 | 3.96 | 0.799 | FAIL |
+| budget | **15000** | learned | **336.89** | 338.90 | **308.04** | 1.09 | **1.873** | **PASS** |
+
+Reference points: unigram 688.82, Looped 126.46, GPT 115.43.
+
+**3c works, and the mechanism is the one predicted.** Prepaying the unigram moves the phase
+transition from step 2500 to step 1000:
+
+```
+3c  msg/unary : 1.91  4.88  8.64 11.70  8.79  6.07  4.76  4.46  4.15  4.03  4.02  3.96
+3c  val ppl   : 711.7 516.1 693.9 633.5 598.1 546.0 491.9 473.2 452.6 439.9 434.4 430.0
+                      ^ step 1000
+3a  val ppl   : 698.4 701.2 706.9 703.6 539.0 511.8 500.4 488.9 480.5 476.5 474.3 473.3
+                                        ^ step 2500
+```
+
+The excursion is visible and reversible: at steps 1500-2000 `msg/unary` rises to 8.64 and
+11.70 and validation perplexity goes *back up* from 516.1 to 693.9; when it descends again the
+perplexity falls monotonically. That is a two-sided within-run coincidence, not just an onset.
+
+Freezing `b` also changes the internal state qualitatively: label entropy 0.870 of 2.77 against
+0.030 in 3a. The free `b` was not merely spending steps, it was driving `q̄` into a degenerate
+state.
+
+**The budget was the larger effect.** 473.28 → 336.89, and the run ends genuinely flat
+(339.19 → 338.84 → 336.89 → 337.21) where the 6000-step run was cut off mid-descent.
+`qbar_std_over_positions` reaches 0.126 against 0.0008 in every failing run.
+
+**Caveat on the budget comparison.** The cosine schedule is defined over `max_steps`, so a
+15000-step run is not "the same run, longer" — at step 6000 its learning rate is still high
+while the 6000-step run has already decayed to `0.1×`. Part of the gain belongs to the
+schedule, and separating the two needs a fixed-lr run. Stated rather than absorbed.
+
+**A defect in the ladder's stop rule, and the band framing behind it.** The 15000-step run was
+stopped after `d = 16` with `STOP: msg/unary 1.09 outside (2.0, 5.0)` — it fired on the *lower*
+edge while the model was at its healthiest result in the project. The band was written as an
+interval from two points on the minimal task; only the upper edge is a failure condition. Fixed
+to a ceiling of 5.0. The cost was that `d = 24` went untested in that job.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
