@@ -857,6 +857,50 @@ first action is `cd` into the repository under `set -e`, so it exits 1, and beca
 points into the same filesystem no output file is ever written. The scripts now test the mount
 and name the node to exclude.
 
+### The G_t revision and the schedule floor — 2026-08-10, jobs 940918-940927
+
+**Move 2: the global head revives when both locking factors are removed.** `B'` initialised at
+0.5 instead of 0.02 and excluded from the L2 term, `d = 24`, no damping, so the comparison is
+against the earlier `G_t` runs:
+
+| `d=24`, `m=64` | val | train | test | `H(Q_g)`/max | glob msg | arc msg | ablation KL |
+|---|---|---|---|---|---|---|---|
+| no `G_t` | 321.43 | 325.84 | 294.89 | — | — | 22.39 | 2.003 |
+| `G_t`, both locks in place | 316.42 | 308.24 | 287.81 | 0.9995 | 3.10 | 22.39 | 2.009 |
+| **`G_t`, locks removed** | **297.71** | 292.26 | **272.82** | **0.9079** | **18.59** | 18.49 | **2.391** |
+
+The head now carries **half the total message** (18.59 against 18.49) and improves `d = 24` by
+7.4 % on validation and 7.5 % on test.
+
+**This changes the verdict on §22.2 from flat to conditional.** The earlier reading — "the
+B.3.3 global head is dead weight" — is wrong as stated. The head works, but only when it is
+initialised and regularised *differently from the other factors of the graph*. Under uniform
+treatment, which is what the source does and what any naive implementation does, it collapses
+to one row replicated `m` times. That is a stronger and more useful statement than the flat
+negative: it names the condition under which the authors' proposal works, and the trap that
+kills it.
+
+**Move 3, and the 2×2 it required.** The cosine floor was raised from 0.1 to 0.5 on the damped
+`d = 32` record. Because `G_t` was carried in at the same time, the missing cell was run:
+
+| `d=32`, `α_Z=0.25` | no `G_t` | with `G_t` |
+|---|---|---|
+| **floor 0.1** | 248.29 / 226.62 | 267.51 / 245.69 |
+| **floor 0.5** | 251.80 / 230.80 | **241.89 / 219.95** |
+
+(val / test.) Each intervention **alone makes things worse** — `G_t` by 7.7 %, the floor by
+1.4 % — and **together they help**, 2.6 % below the record. The mechanism is consistent with
+the `H(Q_g)` readings: `G_t` needs a long stretch of high learning rate for the rows of `B'` to
+separate, and a floor of 0.1 cuts that stretch short. Under damping the head re-collapses
+partially in both cases (0.9886 and 0.9741 against 0.9079 at `d = 24` undamped), because
+damping slows `q`, and the gradient through `q` is the only term that separates the rows — so
+moves 1 and 2 compete for the same dynamics rather than composing.
+
+**How strongly this may be claimed: not very, yet.** These are single seeds. 248.29 vs 251.80
+is 1.4 % and is almost certainly noise against the seed spread already measured. 241.89 vs
+248.29 is 2.6 % and may also be. The only difference clearly outside noise is `G_t`'s 7.7 %
+damage at floor 0.1. The interaction claim needs replication, which is running.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the
