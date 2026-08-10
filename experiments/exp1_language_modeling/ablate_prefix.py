@@ -28,6 +28,7 @@ import torch
 
 from src import CausalPTDecoder
 from src.data import load_ptb, sequential_batches
+from src.gpt import GPT, GPTConfig
 
 
 def _stats(base_logits: torch.Tensor, alt_logits: torch.Tensor) -> dict:
@@ -43,7 +44,7 @@ def _stats(base_logits: torch.Tensor, alt_logits: torch.Tensor) -> dict:
 
 
 @torch.no_grad()
-def ablate(model: CausalPTDecoder, data: torch.Tensor, block_size: int, batch_size: int,
+def ablate(model, data: torch.Tensor, block_size: int, batch_size: int,
            n_batches: int, seed: int = 0, device: str = "cpu") -> dict:
     model.eval().to(device)
     g = torch.Generator().manual_seed(seed)
@@ -81,15 +82,21 @@ def main() -> None:
 
     ck = torch.load(a.checkpoint, map_location="cpu", weights_only=False)
     cfg = ck["cfg"]
-    model = CausalPTDecoder(cfg)
+    if isinstance(cfg, GPTConfig):
+        model = GPT(cfg)
+        desc = (f"GPT n_embd={cfg.n_embd} n_layer={cfg.n_layer} "
+                f"shared_block={cfg.shared_block}")
+    else:
+        model = CausalPTDecoder(cfg)
+        desc = (f"PT d={cfg.d} h={cfg.h} T={cfg.n_iters} readout={cfg.readout} "
+                f"word_unary={cfg.word_unary}")
     model.load_state_dict(ck["state_dict"])
 
     corpus = load_ptb()
     block_size = ck["args"]["block_size"]
     out = ablate(model, corpus.valid, block_size, a.batch_size, a.batches, device=a.device)
 
-    print(f"{Path(a.checkpoint).name}  (d={cfg.d} h={cfg.h} T={cfg.n_iters} "
-          f"readout={cfg.readout} word_unary={cfg.word_unary})")
+    print(f"{Path(a.checkpoint).name}  ({desc})")
     for cond in ("shuffled", "constant"):
         print(f"  {cond:>9}: KL {out[f'{cond}/kl_mean']:.4f} (max {out[f'{cond}/kl_max']:.4f})"
               f"   max|dlogit| {out[f'{cond}/max_abs_dlogit']:.4f}"

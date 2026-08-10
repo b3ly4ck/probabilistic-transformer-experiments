@@ -97,6 +97,7 @@ def sequential_batches(
 def unigram_perplexity(
     train: torch.Tensor, evaluate: torch.Tensor, vocab_size: int,
     block_size: int, batch_size: int, ignore_first: int = 0, limit: Optional[int] = None,
+    add_k: float = 0.0,
 ) -> float:
     """Perplexity of the maximum-likelihood unigram model, on the identical token set.
 
@@ -104,8 +105,13 @@ def unigram_perplexity(
     val ppl 664 against a unigram baseline of 687 and the gap was mistaken for learning
     until the samples were read; anything that does not clear this number by a wide margin
     has not learned to use context.
+
+    ``add_k`` is add-k smoothing, needed only when the evaluation split can contain types the
+    training split never shows. It is 0 for PTB, whose vocabulary is built from train so no
+    zero count can occur, and 1 for the synthetic chains of the scale bisection, where a
+    state may go unvisited and an unsmoothed estimate would report an infinite baseline.
     """
-    counts = torch.bincount(train, minlength=vocab_size).double()
+    counts = torch.bincount(train, minlength=vocab_size).double() + add_k
     logp = (counts / counts.sum()).clamp_min(1e-12).log()
     total, n = 0.0, 0
     for block in sequential_batches(evaluate, batch_size, block_size, limit):

@@ -18,12 +18,18 @@ from pathlib import Path
 import torch
 
 from src import CausalPTDecoder, PTConfig
+from src.gpt import GPT, GPTConfig
 from src.data import load_ptb, random_batch, unigram_perplexity
 from src.train import TrainConfig, evaluate, train
 
 
 def build_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
+    p.add_argument("--model", default="pt", choices=("pt", "gpt", "looped"))
+    p.add_argument("--n-layer", type=int, default=4, help="GPT/Looped only")
+    p.add_argument("--n-head", type=int, default=4, help="GPT/Looped only")
+    p.add_argument("--n-embd", type=int, default=160, help="GPT/Looped only")
+    p.add_argument("--dropout", type=float, default=0.0)
     p.add_argument("--d", type=int, default=256)
     p.add_argument("--h", type=int, default=8)
     p.add_argument("--rank", type=int, default=64)
@@ -63,7 +69,7 @@ def build_args() -> argparse.Namespace:
 
 def main() -> None:
     a = build_args()
-    out = Path(__file__).parent / f"{a.tag}_{a.readout}.json"
+    out = Path(__file__).parent / f"{a.tag}_{a.model}.json"
 
     corpus = load_ptb()
     tcfg = TrainConfig(
@@ -82,6 +88,18 @@ def main() -> None:
         corpus.train, corpus.valid, corpus.vocab_size,
         a.block_size, a.batch_size, ignore_first=1, limit=a.eval_blocks,
     )
+
+    if a.model in ("gpt", "looped"):
+        cfg = GPTConfig(
+            vocab_size=corpus.vocab_size, block_size=a.block_size, n_layer=a.n_layer,
+            n_head=a.n_head, n_embd=a.n_embd, dropout=a.dropout,
+            shared_block=(a.model == "looped"),
+        )
+        model = GPT(cfg)
+        print(f"corpus: vocab {corpus.vocab_size}, tokens {corpus.sizes()}")
+        print(f"unigram val ppl on the identical token set: {base:.2f}")
+        print(f"model: {cfg}")
+        return _run(a, cfg, model, corpus, tcfg, base, out)
 
     cfg = PTConfig(
         vocab_size=corpus.vocab_size,
@@ -104,13 +122,18 @@ def main() -> None:
     print(f"corpus: vocab {corpus.vocab_size}, tokens {corpus.sizes()}")
     print(f"unigram val ppl on the identical token set: {base:.2f}")
     print(f"model: {cfg}")
+    return _run(a, cfg, model, corpus, tcfg, base, out)
+
+
+def _run(a, cfg, model, corpus, tcfg, base, out):
+
 
     t0 = time.time()
     hist = train(model, corpus.train, corpus.valid, tcfg, random_batch)
     wall = time.time() - t0
 
     if a.save_ckpt:
-        ck = Path("checkpoints") / f"{a.tag}_{a.readout}.pt"
+        ck = Path("checkpoints") / f"{a.tag}_{a.model}.pt"
         ck.parent.mkdir(exist_ok=True)
         torch.save({"cfg": cfg, "state_dict": model.state_dict(), "args": vars(a)}, ck)
         print(f"checkpoint {ck}")
