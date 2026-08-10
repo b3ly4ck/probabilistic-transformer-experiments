@@ -826,8 +826,12 @@ applied to the content stream. Everything else at the record configuration (`h=2
 | `d=32`, `α_Z=1` | 641.50 | 664.95 | 582.92 | 5.33 | 0.281 | 16,448 |
 | `d=32`, `α_Z=0.5` | 531.10 | 554.91 | 483.35 | 4.90 | 0.701 | 16,448 |
 | **`d=32`, `α_Z=0.25`** | **248.29** | **225.43** | **226.62** | 1.31 | **2.851** | 16,448 |
-| `d=48`, `α_Z=0.25` | 344.31 | 354.42 | 315.90 | 2.89 | 1.668 | 24,672 |
-| `d=64`, `α_Z=0.25` | 271.41 | 253.69 | 249.64 | 2.56 | 2.694 | 32,896 |
+| `d=48`, `α_Z=0.25` | 344.31 | 354.42 | 315.90 | 2.89 | 1.668 | 36,960 |
+| `d=64`, `α_Z=0.25` | 271.41 | 253.69 | 249.64 | 2.56 | 2.694 | 65,664 |
+
+(Correction 2026-08-11: the d=48 and d=64 non-embedding counts in this table were first
+recorded as 24,672 and 32,896 from memory; the slurm parameter dumps of jobs 940915/940916
+say 36,960 and 65,664. Values above are the sourced ones.)
 
 **A 21 % improvement on both validation and test**, and the ablation KL rises 2.182 → 2.851, so
 the model uses *more* context rather than merely scoring better. The gap to the GPT baseline
