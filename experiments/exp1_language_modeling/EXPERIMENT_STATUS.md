@@ -762,6 +762,58 @@ That is the finding, and it is a finding about the construction rather than abou
 label bottleneck of Part IV stops being a caveat and becomes a measured boundary between
 `d = 24` and `d = 32`.
 
+### The B.3.3 global head `G_t` — 2026-08-10, jobs 940872 / 940879
+
+Enabled on the working configuration (`h = 2`, `lr = 0.02`, `b` frozen, 15000 steps, MFVI
+readout, `m = 64`). Verified against Wu & Tu Eq. 46 before running: one `B' ∈ R^{m×d}` with no
+channel axis, message `σ(q B'ᵀ/λ_G) B'` added once per round rather than once per channel;
+`B'` added to the L2 term alongside `T` and `r`; the message split into its arc and global
+components at every evaluation.
+
+| configuration | val ppl | train ppl | test ppl | `msg/unary` | ablation KL | `H(Q_g)`/max | `B'` row spread vs init |
+|---|---|---|---|---|---|---|---|
+| `d=16`, no `G_t` | **315.46** | 314.09 | **285.33** | 0.98 | 2.182 | — | — |
+| `d=16`, `m=64` | 348.59 | 350.14 | 315.33 | 1.27 | 1.730 | **1.0000** | **0.19×** |
+| `d=24`, no `G_t` | 321.43 | 325.84 | 294.89 | 2.26 | 2.003 | — | — |
+| `d=24`, `m=64` | 316.42 | 308.24 | 287.81 | 1.67 | 2.009 | 0.9995 | **9.68×** |
+
+**R1 fails: `G_t` costs 10 % on the best configuration.** R3 (`m = 256`) was therefore not run,
+per the pre-agreed rule.
+
+**The two widths fail differently, and the checkpoints say how.** At `d = 16` the rows of `B'`
+*collapse*: their spread falls from 0.0197 at initialisation to 0.0037, five times tighter,
+while the within-row structure stays large (0.904). The logit range over the 64 features under
+a one-hot `q` is 0.05, so `Q_g` is uniform to four decimals at every evaluation. `B'` has
+learned one row and replicated it 64 times.
+
+That is a self-locking degeneracy with an analytic explanation: with `Q_g` uniform the message
+is the row mean, so `∂message/∂B'[k] = 1/m` is **identical for every `k`**; the only asymmetric
+term arrives through the softmax and is of the order of the spread itself. While the spread is
+small the symmetric term dominates, nothing differentiates the rows, and the L2 term pulls them
+closer. Gradient descent cannot leave that point from a standard initialisation.
+
+At `d = 24` the opposite happens — the row spread *grows* 9.68× and the logit range reaches
+0.51 — so the head is **not** dead there. But a range of 0.5 over 64 categories is still a
+nearly uniform softmax (0.9995), so the message stays close to the row mean regardless.
+
+**Verdict for §22.2, stated carefully.** "Dead weight" is right for `d = 16` and wrong for
+`d = 24`. The accurate statement is that the head never escapes a near-uniform `Q_g`, so its
+message stays close to a constant; whether the rows differentiate depends on `d`; and the net
+effect on generalisation is within single-seed noise at best and −10 % at worst. At no width
+does it deliver the gain for which §22.2 proposes it as the graph-faithful feed-forward
+analogue. Note also that R2's *train* perplexity improves 5.4 % against its own baseline while
+validation improves only 1.6 % — the head adds fitting capacity that does not transfer.
+
+Combined with the earlier measurement that `G_t`'s contribution to the **exact** readout is a
+position- and prefix-independent constant by construction, the global head fails under both
+readouts, for two different reasons: by construction under exact inference, by optimisation
+under mean field.
+
+**A defect found while reading the checkpoints:** `ptb_attack` wrote `attack_d{d}_pt.pt`
+without the run tag, so the `G_t` run overwrote the reference checkpoint at the same `d`. Fixed
+to include the tag. The numbers above are unaffected — they come from the logs and the JSON —
+but the earlier `d = 16` reference checkpoint is gone and would need re-running to inspect.
+
 ### Next, in order
 
 Steps 1–4 above are done. Three successive diagnoses — the word unary, label saturation, the

@@ -77,7 +77,9 @@ def run(corpus, d, a, log):
         m = dg.get("msg_over_unary", float("nan"))
         if m > MSG_CEILING and first_out is None:
             first_out = ("msg_over_unary", step, round(m, 2))
-    ck = Path("checkpoints") / f"attack_d{d}_pt.pt"
+    # the tag must be in the name: without it two runs at the same d overwrite each
+    # other, which is how the G_t run of 2026-08-10 replaced its own reference.
+    ck = Path("checkpoints") / f"{a.tag}_d{d}_pt.pt"
     torch.save({"cfg": cfg, "state_dict": model.state_dict(),
                 "args": {"block_size": a.block_size}}, ck)
     return {
