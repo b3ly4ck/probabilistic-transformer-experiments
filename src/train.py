@@ -136,6 +136,11 @@ def _diagnostics(model, block: torch.Tensor) -> dict:
                 "root_mass_over_uniform": last["root_mass_over_uniform"],
             }
         )
+        # message decomposition — which carrier grew, if a run degrades
+        for k in ("arc_msg_norm", "glob_msg_norm", "glob_over_unary",
+                  "qg_entropy_frac", "max_abs_B_glob"):
+            if k in last:
+                out[k] = last[k]
     if hasattr(model, "arc_scores"):
         out["max_abs_T"] = float(model.arc_scores().abs().max())
         qbar = model.content_stream(block)

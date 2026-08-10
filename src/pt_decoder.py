@@ -48,6 +48,8 @@ the readout's keys) and is **not** the mainline — see EXPERIMENT_STATUS of exp
 
 from typing import List, Optional, Tuple
 
+import math
+
 import torch
 import torch.nn as nn
 
@@ -170,7 +172,12 @@ class CausalPTDecoder(nn.Module):
             VtV = torch.einsum("khbr,khbs->khrs", self.V, self.V)
             n_entries = self.U.shape[0] * self.U.shape[1] * self.cfg.d * self.cfg.d
             arc = (UtU * VtV).sum() / n_entries
-        return arc + (self.r_root**2).mean()
+        total = arc + (self.r_root**2).mean()
+        if self.B_glob is not None:
+            # Same lesson as r: an unpenalised carrier absorbs the message. B' is a
+            # candidate constant-carrier of exactly r's kind, so it is penalised alongside.
+            total = total + (self.B_glob**2).mean()
+        return total
 
     # ------------------------------------------------------- messages, vectorised --
 
@@ -261,14 +268,20 @@ class CausalPTDecoder(nn.Module):
             return self._content_serial(idx, trace=trace)
         return self._content_parallel(idx, trace=trace)
 
-    def _iteration_stats(self, q, Sw, G, alpha) -> dict:
-        """Message-scale diagnostics for one content-stream iteration."""
+    def _iteration_stats(self, q, Sw, G, alpha, G_arc=None, qg=None) -> dict:
+        """Message-scale diagnostics for one content-stream iteration.
+
+        ``G`` is the total message; ``G_arc`` the arc part alone and ``qg`` the global-head
+        posterior, when the head is enabled. The two components are reported separately so
+        that a run which degrades shows *which* carrier grew — the same failure mode that
+        the root column produced when only ``T`` was penalised.
+        """
         allowed = alpha > 0
         ent = -(alpha * torch.where(allowed, alpha.log(), torch.zeros_like(alpha))).sum(-1)
         support = allowed.sum(-1).clamp(min=1).to(alpha.dtype)
         g_norm = G.norm(dim=-1)
         s_norm = Sw.norm(dim=-1)
-        return {
+        out = {
             "G_norm": float(g_norm.mean()),
             "Sw_norm": float(s_norm.mean()),
             "ratio": float((g_norm / s_norm.clamp(min=1e-12)).mean()),
@@ -282,6 +295,18 @@ class CausalPTDecoder(nn.Module):
             "root_mass": float(alpha[..., 0].mean()),
             "root_mass_over_uniform": float((alpha[..., 0] * support).mean()),
         }
+        if G_arc is not None:
+            arc_n = G_arc.norm(dim=-1)
+            glob_n = (G - G_arc).norm(dim=-1)
+            out["arc_msg_norm"] = float(arc_n.mean())
+            out["glob_msg_norm"] = float(glob_n.mean())
+            out["glob_over_unary"] = float((glob_n / s_norm.clamp(min=1e-12)).mean())
+        if qg is not None:
+            ent = -(qg * qg.clamp(min=1e-30).log()).sum(-1)
+            out["qg_entropy"] = float(ent.mean())
+            out["qg_entropy_frac"] = float(ent.mean() / max(math.log(qg.shape[-1]), 1e-12))
+            out["max_abs_B_glob"] = float(self.B_glob.abs().max())
+        return out
 
     def _content_parallel(self, idx: torch.Tensor, trace: Optional[list] = None) -> torch.Tensor:
         """Layer-parallel schedule (Part II §12.3 "Scheduling").
@@ -294,10 +319,11 @@ class CausalPTDecoder(nn.Module):
         T = self.arc_scores()  # materialised once for the whole pass
         q = torch.softmax(Sw / self.cfg.lambda_Z, dim=-1)  # Wu & Tu Eq. 7
         for _ in range(self.cfg.n_iters):
-            G, alpha = self._arc_message(q, self.contract(q, T))
-            G = G + self._global_message(q)[0]
+            G_arc, alpha = self._arc_message(q, self.contract(q, T))
+            g_msg, qg = self._global_message(q)
+            G = G_arc + g_msg
             if trace is not None:
-                trace.append(self._iteration_stats(q, Sw, G, alpha))
+                trace.append(self._iteration_stats(q, Sw, G, alpha, G_arc=G_arc, qg=qg))
             q = torch.softmax((Sw + G) / self.cfg.lambda_Z, dim=-1)
         return q
 

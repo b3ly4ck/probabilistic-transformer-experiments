@@ -37,6 +37,13 @@ class PTConfig:
     rank: Optional[int] = 64
     gamma: int = 3
     n_global: int = 0  # m; B.3.3 single-split global head. 0 disables it.
+    allow_exact_global_head: bool = False
+    # Under the exact readout G_t's direct contribution to log mu is
+    # LSE_k B'[k, .] — a position- and prefix-independent d-vector, measured constant to
+    # 1e-12 on 2026-08-09. A *run* in that mode therefore measures a label prior, not a
+    # feed-forward analogue, so n_global > 0 with readout="exact" is refused. The flag is
+    # the narrow escape hatch for the tests that assert exactly that constancy; it must not
+    # be set in an experiment.
     word_unary: bool = True  # the factor b; §16(c) allows dropping it (b == 0)
     freeze_word_unary: bool = False
     # Clamp b to the corpus log-unigram and never update it. b is a free per-word parameter
@@ -83,6 +90,13 @@ class PTConfig:
             raise ValueError(f"unknown readout {self.readout!r}")
         if self.gamma < 0:
             raise ValueError("gamma must be >= 0")
+        if self.n_global > 0 and self.readout == "exact" and not self.allow_exact_global_head:
+            raise ValueError(
+                "n_global > 0 with readout='exact': the global head's contribution to the "
+                "exact readout is a position- and prefix-independent constant (§22.2, "
+                "measured to 1e-12), so G_t is alive only under MFVI. Use readout='mfvi', "
+                "or set allow_exact_global_head=True if you are testing that constancy."
+            )
         if self.rank is not None and self.rank < 1:
             raise ValueError("rank must be >= 1 or None")
         if self.rank is not None and self.rank > self.d:

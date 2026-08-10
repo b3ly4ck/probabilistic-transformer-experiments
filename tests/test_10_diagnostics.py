@@ -12,6 +12,7 @@ only the parameters can grow, which is what the original's L2 penalty on the ter
 scores controls (Wu & Tu §4.2, Table 2: 5e-4 on PTB).
 """
 
+import pytest
 import torch
 
 from src.diagnostics import (
@@ -69,7 +70,7 @@ def test_global_head_term_is_constant_under_the_exact_readout(idx):
     matrix reach the exact readout *directly*. The two models are given the identical
     contracted prefix so that the readout contribution is isolated.
     """
-    m = toy_model(readout="exact", n_global=9)
+    m = toy_model(readout="exact", n_global=9, allow_exact_global_head=True)
     term = global_head_readout_term(m)
     assert term.shape == (m.cfg.d,)
 
@@ -88,7 +89,7 @@ def test_global_head_still_moves_the_readout_through_the_content_stream(idx):
     the content stream, reshapes q_bar, and so moves log mu position by position. Only
     the two effects together describe what it does.
     """
-    m = toy_model(readout="exact", n_global=9)
+    m = toy_model(readout="exact", n_global=9, allow_exact_global_head=True)
     plain = toy_model(readout="exact", n_global=0)
     plain.load_state_dict({k: v for k, v in m.state_dict().items() if k != "B_glob"})
 
@@ -101,7 +102,7 @@ def test_global_head_still_moves_the_readout_through_the_content_stream(idx):
 
 def test_global_head_is_not_constant_in_the_content_stream(idx):
     """The complement: it does carry context where it is supposed to."""
-    m = toy_model(n_global=9, init_std=0.5)
+    m = toy_model(readout="mfvi", n_global=9, init_std=0.5)
     q = m.content_stream(idx)
     msg, _ = m._global_message(q)
     assert msg.std(dim=1).max() > 0, "the global message was identical at every position"
@@ -198,3 +199,68 @@ def test_loss_alignment_option_drops_the_leading_slots(idx):
         logits[:, 1:].reshape(-1, m.cfg.vocab_size), idx[:, 1:].reshape(-1)
     )
     assert torch.allclose(aligned, manual, atol=1e-12, rtol=0)
+
+
+# ------------------------------------------------------ B.3.3 single-split global head --
+
+
+def test_global_head_is_one_matrix_shared_across_channels():
+    """Wu & Tu Eq. 46: a single ``B' ∈ R^{m×d}``, one ``G_i`` per word — not one per channel.
+
+    B.3.2 (dep-split) gives each channel its own global head; B.3.3 (single-split), which
+    §22.2 adopts, gives one. A per-channel matrix would be a different model with ``h`` times
+    the parameters, and it would multiply the message by ``h``.
+    """
+    m = toy_model(readout="mfvi", n_global=5)  # != vocab_size, so S cannot be confused for B'
+    assert m.B_glob.shape == (5, m.cfg.d), "B' must be (m, d) with no channel axis"
+    assert sum(1 for p in m.parameters() if p.shape == (5, m.cfg.d)) == 1
+
+
+def test_global_message_is_added_once_per_round_not_once_per_channel(idx):
+    """The message is ``σ(q B'ᵀ/λ_G) B'`` added once; ``h`` must not scale it."""
+    m2 = toy_model(readout="mfvi", n_global=7, h=2)
+    m8 = toy_model(readout="mfvi", n_global=7, h=8)
+    m8.B_glob.data.copy_(m2.B_glob.data)
+    q = torch.softmax(m2.S[idx], dim=-1)
+    msg2, qg2 = m2._global_message(q)
+    msg8, qg8 = m8._global_message(q)
+    assert torch.allclose(msg2, msg8, atol=1e-12), "the global message scaled with h"
+    assert torch.allclose(qg2, qg8, atol=1e-12)
+
+    # and it is the GFU operator of Eq. 62, not something else
+    manual = torch.softmax(q @ m2.B_glob.T / m2.cfg.lambda_G, dim=-1) @ m2.B_glob
+    assert torch.allclose(msg2, manual, atol=1e-12)
+
+
+def test_global_head_is_penalised_like_the_other_carriers():
+    """The r lesson: an unpenalised carrier absorbs the message. B' must be in the term."""
+    m = toy_model(readout="mfvi", n_global=7, init_std=0.6)
+    before = float(m.arc_regulariser())
+    with torch.no_grad():
+        m.B_glob *= 4.0
+    assert float(m.arc_regulariser()) > before, "B' does not enter the regularisation term"
+    m.zero_grad(set_to_none=True)
+    m.arc_regulariser().backward()
+    assert m.B_glob.grad is not None and m.B_glob.grad.abs().max() > 0
+
+
+def test_exact_readout_with_a_global_head_is_refused_by_default():
+    """A run in that mode would measure a label prior; the escape hatch is tests only."""
+    from src import PTConfig
+
+    with pytest.raises(ValueError, match="constant"):
+        PTConfig(vocab_size=10, d=8, rank=None, n_global=4, readout="exact")
+    PTConfig(vocab_size=10, d=8, rank=None, n_global=4, readout="mfvi")
+    PTConfig(vocab_size=10, d=8, rank=None, n_global=4, readout="exact",
+             allow_exact_global_head=True)
+
+
+def test_message_decomposition_is_traced_separately(idx):
+    """If a run degrades we must see which component grew."""
+    m = toy_model(readout="mfvi", n_global=7, init_std=0.5)
+    trace = message_scale_report(m, idx)
+    for t in trace:
+        assert {"arc_msg_norm", "glob_msg_norm", "glob_over_unary",
+                "qg_entropy_frac", "max_abs_B_glob"} <= set(t)
+        assert t["glob_msg_norm"] > 0
+        assert 0.0 <= t["qg_entropy_frac"] <= 1.0 + 1e-9

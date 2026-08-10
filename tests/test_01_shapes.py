@@ -51,7 +51,7 @@ def test_message_shapes(idx):
 
 
 def test_global_head_shapes(idx):
-    m = toy_model(n_global=5)
+    m = toy_model(readout="mfvi", n_global=5)
     qbar = m.content_stream(idx)
     msg, qg = m._global_message(qbar)
     assert msg.shape == qbar.shape

@@ -56,7 +56,7 @@ def test_predictive_slot_free_energy_converges(idx):
 
 def test_free_energy_non_increasing_with_the_global_head(idx):
     """The B.3.3 global head is one more leaf off Z_t; it must not break coordinate descent."""
-    m = toy_model(n_global=5)
+    m = toy_model(readout="mfvi", n_global=5)
     curve = _predictive_curve(m, idx, idx.shape[1], tau=8)
     diffs = torch.stack(curve[1:]) - torch.stack(curve[:-1])
     assert diffs.max() <= TOL

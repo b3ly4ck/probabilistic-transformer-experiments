@@ -56,7 +56,7 @@ def test_exact_slot_readout_equals_brute_force(idx):
 
 def test_exact_readout_with_global_head_equals_brute_force(idx):
     """The global head is one more leaf off Z_t, so the star is still a tree."""
-    m = toy_model(readout="exact", n_global=3)
+    m = toy_model(readout="exact", n_global=3, allow_exact_global_head=True)
     Bk = m.contract(m.content_stream(idx))
     t = idx.shape[1]
     B_full = m._slot_keys(Bk, t).detach()

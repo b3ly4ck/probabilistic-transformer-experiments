@@ -42,7 +42,7 @@ def test_head_posterior_support_is_the_head_domain(idx):
 
 
 def test_slot_posteriors_normalised(idx):
-    m = toy_model(n_global=4)
+    m = toy_model(readout="mfvi", n_global=4)
     qbar = m.content_stream(idx)
     Bk = m.contract(qbar)
     for t in range(idx.shape[1] + 1):

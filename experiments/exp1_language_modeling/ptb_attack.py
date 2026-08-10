@@ -49,7 +49,7 @@ def run(corpus, d, a, log):
     torch.manual_seed(a.seed)
     cfg = PTConfig(vocab_size=corpus.vocab_size, d=d, h=a.h, rank=min(a.rank, d), gamma=3,
                    n_iters=3, readout="mfvi", vocab_chunk=1024,
-                   freeze_word_unary=a.freeze_b)
+                   freeze_word_unary=a.freeze_b, n_global=a.n_global)
     model = CausalPTDecoder(cfg)
     if a.freeze_b:
         counts = torch.bincount(corpus.train, minlength=corpus.vocab_size).double()
@@ -85,7 +85,13 @@ def run(corpus, d, a, log):
         "val_ppl": round(final, 2), "val_ppl_min": round(best, 2),
         "test_ppl": round(test["ppl"], 2),
         "train_ppl": round(hist.train_ppl[-1], 2) if hist.train_ppl else float("nan"),
+        "n_global": a.n_global,
         "msg_over_unary": round(diag.get("msg_over_unary", float("nan")), 2),
+        "arc_msg_norm": round(diag.get("arc_msg_norm", float("nan")), 3),
+        "glob_msg_norm": round(diag.get("glob_msg_norm", float("nan")), 3),
+        "glob_over_unary": round(diag.get("glob_over_unary", float("nan")), 3),
+        "qg_entropy_frac": round(diag.get("qg_entropy_frac", float("nan")), 4),
+        "max_abs_B_glob": round(diag.get("max_abs_B_glob", float("nan")), 3),
         "label_entropy": round(diag.get("label_entropy", float("nan")), 3),
         "label_entropy_max": round(math.log(d), 3),
         "ablation_kl": abl["shuffled/kl_mean"],
@@ -101,6 +107,9 @@ def main() -> None:
     p.add_argument("--ladder", type=int, nargs="+", default=[16, 24, 32, 48])
     p.add_argument("--h", type=int, default=2, help="from the d x h deconfound: 2 wins at every d")
     p.add_argument("--rank", type=int, default=64)
+    p.add_argument("--n-global", type=int, default=0,
+                   help="m of the B.3.3 single-split global head. MFVI only — the "
+                        "exact readout's contribution is a measured constant.")
     p.add_argument("--lr", type=float, default=2e-2)
     p.add_argument("--warmup", type=int, default=100)
     p.add_argument("--steps", type=int, default=6000)
@@ -129,6 +138,11 @@ def main() -> None:
               f"test {row['test_ppl']:8.2f}  msg/unary {row['msg_over_unary']:7.2f}  "
               f"H(q) {row['label_entropy']:.3f}/{row['label_entropy_max']:.2f}  "
               f"ablate KL {row['ablation_kl']:.3e}", flush=True)
+        if a.n_global:
+            print(f"       arc msg {row['arc_msg_norm']:.3f}  glob msg {row['glob_msg_norm']:.3f}"
+                  f"  glob/unary {row['glob_over_unary']:.3f}"
+                  f"  H(Q_g)/max {row['qg_entropy_frac']:.4f}"
+                  f"  max|B'| {row['max_abs_B_glob']:.3f}", flush=True)
 
         in_band = row["msg_over_unary"] <= MSG_CEILING
         alive = row["ablation_kl"] > 1e-3
