@@ -24,3 +24,6 @@ slurm-*.out
 .env
 .DS_Store
 *.lock
+
+# Claude Code worktrees and session state
+.claude/
