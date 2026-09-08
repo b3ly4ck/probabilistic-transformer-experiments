@@ -525,7 +525,8 @@ Wu \& Tu's Table 2 fixes $\niter = 3$ and neither paper varies it inside a confi
 trains. Varying it here, one seed per cell in the damped configuration at $\nlab = 32$ where the
 seed spread is $\ReproDampedSd$: $\niter = 1$ gives $241.3$, $2$ gives $246.5$, $3$ gives
 $248.3$ and $8$ gives $275.3$. The predictive rounds $\tau$ behave the same way, $242.1$ at
-$\tau=1$ against $248.3$ at $\tau=2$.
+$\tau=1$ against $248.3$ at $\tau=2$ --- the same $248.3$, because the base configuration is
+$\niter=3, \tau=2$ and both sweeps pass through it.
 
 \textbf{Perplexity increases monotonically with inference depth.} The step from $\niter=1$ to
 $\niter=3$ is about one seed standard deviation and we do not read it alone; the span to
