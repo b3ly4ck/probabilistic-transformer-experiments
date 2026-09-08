@@ -696,12 +696,20 @@ happens without retuning anything (\Cref{tab:wt2}, \Cref{app:datasets}). The
 hyperparameters of this model may need to change with the dataset as well as with the model
 size, and a paper that tunes on one corpus and reports on one corpus cannot tell the difference.
 
-\textbf{The correction transfers, and it transfers most clearly as variance.} At $\nlab = 32$
-with nothing retuned, the source head temperature gives $343.1 \pm 24.7$ and the standardised
-one $306.6 \pm 0.6$ --- a better mean, and a seed spread forty times tighter, on a corpus whose
-unigram baseline is $964.8$ and whose add-one bigram is $692.5$. The same two things the
-correction does on PTB it does here: it lowers the mean a little and it makes the model
-reproducible. Nothing about the constants was adjusted for the larger vocabulary or the longer
-training split, which is the only sense in which this is a test of transfer rather than a second
-tuning exercise.
+\textbf{Both halves of the width finding transfer.} With nothing retuned, on a corpus whose
+unigram baseline is $964.8$ and whose add-one bigram is $692.5$: at $\nlab = 32$ the source head
+temperature gives $\WtSrcNarrow \pm \WtSrcNarrowSd$ and the standardised one
+$\WtStdNarrow \pm \WtStdNarrowSd$, and at $\nlab = 64$, $\WtSrcWide \pm \WtSrcWideSd$ against
+$\WtStdWide \pm \WtStdWideSd$. \emph{The corrected arm is better at both widths, its seed spread at
+$\nlab = 32$ is an order of magnitude tighter, and it is the only one of the two that improves
+when the model is widened} --- $\WtSrcNarrow$ to $\WtSrcWide$ is within a spread, $\WtStdNarrow$ to
+$\WtStdWide$ is not. That is the mechanism of \Cref{sec:exp-width} reproducing on a second corpus
+with a vocabulary three times larger, which is the strongest evidence we have that it is a
+property of the model rather than of the Penn Treebank.
+
+The gap to a transformer transfers too, and is no smaller: a causal transformer at
+$d_{\text{model}} = 32$ reaches $\WtGptNarrow$ here with $50{,}880$ non-embedding parameters against
+the causal PT's $\WtStdWide$ at $65{,}664$. Nothing about the constants was adjusted for the
+larger vocabulary or the longer training split, which is the only sense in which this is a test
+of transfer rather than a second tuning exercise.
 \TODO{exp8: the remaining widths and the third seed of the standardised arm.}
