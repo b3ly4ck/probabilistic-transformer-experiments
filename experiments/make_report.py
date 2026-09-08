@@ -46,6 +46,8 @@ GRIDS = {
     "baselines": "experiments/exp2_scaling/spec_baselines*.json",
     "pt_scaling": "experiments/exp2_scaling/spec_pt*.json",
     "width": "experiments/exp4_width_transfer/spec_width*.json",
+    "gain": "experiments/exp4_width_transfer/spec_gain*.json",
+    "lr_transfer": "experiments/exp4_width_transfer/spec_lr_transfer*.json",
     "init": "experiments/exp5_init/spec_init*.json",
     "open": "experiments/exp3_readout/spec_open*.json",
     "repro": "experiments/exp3_readout/repro_check*.json",
@@ -183,6 +185,56 @@ def section_width(md: List[str], out: Path) -> None:
 
 
 # ---------------------------------------------------------------------- the rest --
+
+
+def section_gain(md: List[str], out: Path) -> None:
+    md.append("\n## The standardised-attention gain, three seeds (Experiment 4b)\n")
+    rows = load("gain")
+    if rows:
+        agg = []
+        for d in sorted({get_path(r, "cell.d") for r in rows}):
+            for g in sorted({get_path(r, "cell.qk_gain") for r in rows}):
+                cells = [r for r in rows if r["cell"]["d"] == d and r["cell"]["qk_gain"] == g]
+                if not cells:
+                    continue
+                v = sorted(r["val_ppl"] for r in cells)
+                mean = sum(v) / len(v)
+                sd = (sum((x - mean) ** 2 for x in v) / (len(v) - 1)) ** 0.5 if len(v) > 1 else 0.0
+                agg.append({"d": d, "qk_gain": g, "n": len(v), "mean": round(mean, 1),
+                            "sd": round(sd, 1), "min": round(min(v), 1), "max": round(max(v), 1),
+                            "dead": sum(1 for x in v if x > 0.95 * UNIGRAM_PTB)})
+        md.append(markdown_table(agg, ["d", "qk_gain", "n", "mean", "sd", "min", "max", "dead"]))
+        md.append("\n`dead` counts seeds that finished above 95% of the unigram baseline, i.e. "
+                  "that never learned; a mean over a mix of learned and dead runs is not a "
+                  "measure of anything, so the count is reported beside it.\n")
+        plot_heatmap(rows, "cell.d", "cell.qk_gain", "val_ppl", out / "fig_gain.png",
+                     agg="mean", x_label="label-set size $d$",
+                     y_label="standardised-attention gain", v_label="validation perplexity")
+    else:
+        md.append("_grid empty_\n")
+
+    md.append("\n## Learning-rate transfer across width (Experiment 4c)\n")
+    rows = load("lr_transfer")
+    if not rows:
+        md.append("_grid empty_\n")
+        return
+    for arm in ("fixed", "qkn2"):
+        sub = [r for r in rows if get_path(r, "cell.tags.arm") == arm]
+        emit(md, f"arm `{arm}`", sorted(sub, key=lambda r: (r["cell"]["d"], r["cell"]["lr"])),
+             ["cell.d", "cell.lr", "val_ppl", "test_ppl", "train_ppl",
+              "diag_final.msg_over_unary", "diag_final.q_sharpness", "ablation_kl"])
+        if sub:
+            best = []
+            for d in sorted({r["cell"]["d"] for r in sub}):
+                cells = [r for r in sub if r["cell"]["d"] == d]
+                b = min(cells, key=lambda r: r["val_ppl"])
+                best.append({"d": d, "argmin lr": b["cell"]["lr"], "val": round(b["val_ppl"], 1)})
+            md.append(f"\n**argmin over lr, arm `{arm}`** -- the quantity that transfers or "
+                      f"does not\n")
+            md.append(markdown_table(best, ["d", "argmin lr", "val"]))
+            plot_heatmap(sub, "cell.d", "cell.lr", "val_ppl", out / f"fig_lr_{arm}.png",
+                         x_label="label-set size $d$", y_label="learning rate",
+                         v_label="validation perplexity")
 
 
 def section_init(md: List[str], out: Path) -> None:
@@ -346,7 +398,7 @@ def main() -> None:
         "new shard lands.\n",
     ]
 
-    for fn in (section_repro, section_scaling, section_width, section_init, section_open,
+    for fn in (section_repro, section_scaling, section_width, section_gain, section_init, section_open,
                section_switches, section_factored, section_transfer):
         try:
             fn(md, out)

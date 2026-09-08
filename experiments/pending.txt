@@ -1,8 +1,8 @@
+experiments.exp4_width_transfer.spec_lr_transfer --shard 0/3
+experiments.exp4_width_transfer.spec_lr_transfer --shard 1/3
+experiments.exp4_width_transfer.spec_lr_transfer --shard 2/3
 experiments.exp4_width_transfer.spec_width --shard 3/6
-experiments.exp4_width_transfer.spec_gain --shard 0/4
-experiments.exp4_width_transfer.spec_gain --shard 1/4
-experiments.exp4_width_transfer.spec_gain --shard 2/4
-experiments.exp4_width_transfer.spec_gain --shard 3/4
+experiments.exp4_width_transfer.spec_width --shard 4/6
 experiments.exp5_init.spec_init --shard 1/4
 experiments.exp5_init.spec_init --shard 2/4
 experiments.exp5_init.spec_init --shard 3/4
