@@ -116,7 +116,7 @@ The second is the seed. Over three seeds on one device the undamped configuratio
 $610.9 / 408.8 / 367.5$, that is $\ReproUndampedMean \pm \ReproUndampedSd$: \textbf{a standard
 deviation of \ReproUndampedPct\% of its own mean}. The earlier figure sits comfortably inside that range.
 
-These are one phenomenon seen twice. In this configuration any perturbation at the last bit ---
+These are one phenomenon seen twice, and \Cref{fig:repro} shows it happening. In this configuration any perturbation at the last bit ---
 a different reduction order, a different seed --- moves the outcome by hundreds of perplexity.
 The earlier number was therefore both exactly reproducible on the hardware that produced it and
 not a measurement of anything.
@@ -135,6 +135,17 @@ improvement in reproducibility, and reproducibility is what lets any later compa
 anything at all. Every headline number below is a three-seed mean with its spread, and every
 grid cell carries a count of seeds that failed to learn, because a mean taken over a mixture of
 learned and collapsed runs measures neither.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_repro_seeds.png}
+\caption{Why no single-seed number from the undamped region is reported here. Six runs of one
+configuration differing only in seed: the three undamped ones separate by more than $200$
+perplexity and do not reconverge, while the three damped ones are indistinguishable after
+$3{,}000$ steps. Curves are the validation trace; the numbers in the text are each run's
+best-validation checkpoint, which is why a curve may end above the figure quoted for it.}
+\label{fig:repro}
+\end{figure}
 
 \begin{table*}[t]
 \centering
