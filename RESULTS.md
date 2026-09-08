@@ -487,6 +487,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  32 |  64 |    0.020 | False | normal    |   2 |  248.200 |  0.400 |      0.995 |      1.456 |
 |  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
 |  32 |  64 |    0.100 | False | normal    |   1 |  249.500 |  0.000 |      0.958 |      1.593 |
+|  32 |  64 |    0.100 | True  | normal    |   2 |  243.100 | 10.900 |      1.000 |      0.247 |
 |  32 |  64 |    0.500 | False | normal    |   1 |  244.600 |  0.000 |      0.884 |      0.849 |
 |  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 | 12.200 |      0.978 |      0.276 |
 
@@ -522,23 +523,23 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | residual        | 136.700 |           7.500 |   0.001 |  200064 |
 | weight_sharing  | 141.800 |          12.500 |   0.003 |   50112 |
 | ffn             | 144.400 |          15.100 |   0.001 |   67200 |
-| readout         | 687.500 |         558.200 |   0.003 |  204160 |
+| readout         | 686.800 |         557.600 |   0.001 |  204160 |
 | state           | 693.500 |         564.300 |   0.003 |  200064 |
 
 ### S2 -- benefit of restoring one transformer property inside PT
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
+| attn_value      | 358.700 |          36.800 |   0.010 |   12432 |
 | attn_query_proj | 369.900 |          25.600 |   0.010 |   12432 |
 | weight_sharing  | 387.600 |           7.900 |   0.010 |   20800 |
 | position        | 430.100 |         -34.600 |   0.003 |    8256 |
-| attn_value      | 468.500 |         -73.000 |   0.003 |   12432 |
 | norm            | 501.900 |        -106.400 |   0.010 |    8528 |
 | ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
+| readout         | 537.500 |        -142.000 |   0.010 |    4176 |
 | state           | 686.800 |        -291.300 |   0.001 |    8272 |
 | attn_out_proj   | 686.900 |        -291.400 |   0.001 |   12432 |
 | residual        | 687.100 |        -291.600 |   0.001 |    8272 |
-| readout         | 688.800 |        -293.300 |   0.001 |    4176 |
 
 ### L -- the cumulative ladder, transformer to PT
 
@@ -635,6 +636,10 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \MBLastNonemb       | 147{,}840 |
 | \MBLastRatioGpt     | 1.53      |
 | \MBLastRatioLooped  | 1.48      |
+| \OwnLow             | -0.058    |
+| \OwnLp              | -0.087    |
+| \OwnPt              | -0.090    |
+| \OwnTf              | -0.086    |
 | \PTbestLab          | 192       |
 | \PTbestNonemb       | 147{,}840 |
 | \PTbestRank         | 48        |

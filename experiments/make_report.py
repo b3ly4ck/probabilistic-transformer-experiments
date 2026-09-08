@@ -1093,6 +1093,13 @@ def emit_exponents(out: Path, md: List[str]) -> None:
         macros[f"ExpTri{k}"] = f"{r[0].exponent:.3f}"
     macros["ExpTriLo"] = sci(tlo)
     macros["ExpTriHi"] = sci(thi)
+    # The fit over each curve's own full range. Section 4 quotes these first, as the reading the
+    # windowed comparison then withdraws, so they have to be as live as the numbers correcting
+    # them -- and they are the fits most exposed to drift, being over every point there is.
+    for k, (nm, P) in C.items():
+        f = fit_power_law([a for a, _ in P], [b for _, b in P])
+        if f:
+            macros[f"Own{k}"] = f"{f.exponent:.3f}"
     _latex_table(out / "table_exponents_trio.tex",
                  ["", "$n$", "exponent", "ppl across the range"], three, "@{}lrrr@{}")
     md.append(f"\n### All three on one window ({tlo:,.0f}--{thi:,.0f})\n\n" + markdown_table(
