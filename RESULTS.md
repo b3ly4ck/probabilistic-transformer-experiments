@@ -481,22 +481,25 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ## The B.3.3 global head, three seeds in the stable configuration (Exp. 5b)
 
-|   d |   m | init std | in L2 | init dist |   n | val mean |      sd | H(Q_g)/max | glob/unary |
-| --: | --: | -------: | ----- | --------- | --: | -------: | ------: | ---------: | ---------: |
-|  32 |   0 |       -- | True  | normal    |   3 |  243.200 |   5.300 |      0.000 |      0.000 |
-|  32 |  64 |    0.020 | False | normal    |   3 |  249.300 |   1.900 |      0.992 |      1.516 |
-|  32 |  64 |    0.020 | True  | normal    |   3 |  242.500 |   5.400 |      1.000 |      0.231 |
-|  32 |  64 |    0.100 | False | normal    |   3 |  254.100 |   4.400 |      0.976 |      1.480 |
-|  32 |  64 |    0.100 | True  | normal    |   3 |  246.600 |   9.800 |      1.000 |      0.250 |
-|  32 |  64 |    0.500 | False | normal    |   3 |  248.400 |   3.500 |      0.942 |      1.190 |
-|  32 |  64 |    0.500 | True  | normal    |   3 |  250.300 |   9.900 |      0.973 |      0.267 |
-|  64 |   0 |       -- | True  | normal    |   2 |  460.500 | 344.600 |      0.000 |      0.000 |
-|  64 |  64 |    0.020 | False | normal    |   3 |  493.200 | 233.400 |      0.993 |      1.128 |
-|  64 |  64 |    0.020 | True  | normal    |   3 |  225.800 |  10.200 |      1.000 |      0.221 |
-|  64 |  64 |    0.100 | False | normal    |   2 |  223.400 |   6.200 |      0.968 |      1.605 |
-|  64 |  64 |    0.100 | True  | normal    |   2 |  225.100 |  14.200 |      1.000 |      0.201 |
-|  64 |  64 |    0.500 | False | normal    |   2 |  218.600 |   3.600 |      0.952 |      1.231 |
-|  64 |  64 |    0.500 | True  | normal    |   3 |  228.000 |  11.600 |      1.000 |      0.204 |
+|   d |   m | init std | in L2 | init dist  |   n | val mean |      sd | H(Q_g)/max | glob/unary |
+| --: | --: | -------: | ----- | ---------- | --: | -------: | ------: | ---------: | ---------: |
+|  32 |   0 |       -- | True  | normal     |   3 |  243.200 |   5.300 |      0.000 |      0.000 |
+|  32 |  64 |    0.020 | False | normal     |   3 |  249.300 |   1.900 |      0.992 |      1.516 |
+|  32 |  64 |    0.020 | True  | normal     |   3 |  242.500 |   5.400 |      1.000 |      0.231 |
+|  32 |  64 |    0.100 | False | normal     |   3 |  254.100 |   4.400 |      0.976 |      1.480 |
+|  32 |  64 |    0.100 | True  | normal     |   3 |  246.600 |   9.800 |      1.000 |      0.250 |
+|  32 |  64 |    0.500 | False | normal     |   3 |  248.400 |   3.500 |      0.942 |      1.190 |
+|  32 |  64 |    0.500 | True  | normal     |   3 |  250.300 |   9.900 |      0.973 |      0.267 |
+|  64 |   0 |       -- | True  | normal     |   3 |  378.700 | 281.800 |      0.000 |      0.000 |
+|  64 |  16 |    0.100 | False | normal     |   2 |  221.200 |   0.200 |      0.981 |      1.428 |
+|  64 |  64 |    0.020 | False | normal     |   3 |  493.200 | 233.400 |      0.993 |      1.128 |
+|  64 |  64 |    0.020 | True  | normal     |   3 |  225.800 |  10.200 |      1.000 |      0.221 |
+|  64 |  64 |    0.020 | True  | orthogonal |   1 |  219.100 |   0.000 |      1.000 |      0.237 |
+|  64 |  64 |    0.020 | True  | uniform    |   1 |  272.900 |   0.000 |      1.000 |      0.238 |
+|  64 |  64 |    0.100 | False | normal     |   2 |  223.400 |   6.200 |      0.968 |      1.605 |
+|  64 |  64 |    0.100 | True  | normal     |   3 |  372.400 | 255.300 |      1.000 |      0.200 |
+|  64 |  64 |    0.500 | False | normal     |   3 |  221.400 |   5.400 |      0.929 |      1.375 |
+|  64 |  64 |    0.500 | True  | normal     |   3 |  228.000 |  11.600 |      1.000 |      0.204 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -510,8 +513,8 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | ------------ | --------------------- | --: | ----- |
 | d48_anomaly  | 304.50 +- 50.99 (n=3) |   3 | 2,1,0 |
 | freeze_b_off | 346.62 +- 13.76 (n=2) |   2 | 1,0   |
-| freeze_b_on  | 315.46 +- 0.00 (n=1)  |   1 | 0     |
-| record_d32   | 255.30 +- 6.27 (n=2)  |   2 | 2,1   |
+| freeze_b_on  | 331.76 +- 23.06 (n=2) |   2 | 0,2   |
+| record_d32   | 252.96 +- 6.00 (n=3)  |   3 | 2,1,0 |
 
 ### Grid S -- budget vs. schedule
 
@@ -528,6 +531,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | T_iters1  | 241.306 |       241.487 |  220.176 |   215.161 |                     1.229 |       3.015 |  347.000 |
 | T_tau1    | 242.105 |       242.105 |  221.038 |   217.676 |                     1.205 |       3.176 |  447.700 |
 | T_iters2  | 246.497 |       246.497 |  225.495 |   225.057 |                     1.384 |       2.761 |  423.100 |
+| T_tau2    | 248.295 |       248.295 |  226.616 |   225.428 |                     1.313 |       2.851 |  509.200 |
 
 ### Grid G -- the relative positional encoding
 
@@ -538,14 +542,16 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ### Grid X -- the exact readout, trained
 
-| cell.name  | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
-| ---------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
-| X_d32_mfvi | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 494.900 |
+| cell.name   | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| ----------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| X_d32_exact | 348.807 |       349.380 |  319.996 |   333.393 |                     0.941 |       2.055 | 848.400 |
+| X_d32_mfvi  | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 494.900 |
 
 ### Grid L -- the L2 coefficient on the arc scores
 
 | cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
 | --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| L_l20.005 | 249.794 |       249.794 |  227.580 |   233.756 |                     0.716 |       2.922 | 555.200 |
 | L_l20.05  | 697.047 |       697.447 |  641.265 |   741.198 |                     0.020 |       0.000 | 498.300 |
 
 ### Readout swap: the same trained weights scored under the other readout
@@ -560,6 +566,8 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | S_steps15000_floor1  | mfvi         | 250.706 | exact        |     8596.715 |  228.187 |      8226.701 |
 | T_iters8             | mfvi         | 275.335 | exact        |     3540.833 |  253.314 |      3309.624 |
 | G_gamma1             | mfvi         | 249.714 | exact        |     3678.681 |  226.001 |      3400.048 |
+| X_d32_exact          | exact        | 348.807 | mfvi         |     1018.763 |  319.996 |       913.268 |
+| L_l20.005            | mfvi         | 249.794 | exact        |     5488.080 |  227.580 |      5064.069 |
 | R_freezeb_off_s0     | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
 | R_d48_s1             | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
 | R_record_s2          | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
@@ -572,6 +580,9 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | R_record_s1          | mfvi         | 250.863 | exact        |     2170.500 |  229.453 |      2026.479 |
 | S_steps6000_floor0.1 | mfvi         | 293.700 | exact        |      969.879 |  268.326 |       894.924 |
 | T_iters2             | mfvi         | 246.497 | exact        |     1940.320 |  225.495 |      1836.752 |
+| T_tau2               | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
+| R_record_s0          | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
+| R_freezeb_on_s2      | mfvi         | 348.070 | exact        |     1531.901 |  313.101 |      1430.394 |
 
 ## The switch ladder (Experiment 6)
 
@@ -579,10 +590,10 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | anchor | val | test | non-emb | best lr |
 |---|---|---|---|---|
 | all-transformer | 129.2 | 118.2 | 200,064 | 0.001 |
-| all-PT | 395.5 | 358.8 | 8,272 | 0.003 |
+| all-PT | 354.5 | 322.7 | 8,272 | 0.01 |
 
 
-The ladder spans **266.2 perplexity**; every delta below is a share of that.
+The ladder spans **225.3 perplexity**; every delta below is a share of that.
 
 
 ### S1 -- cost of one PT property in an otherwise ordinary decoder
@@ -604,16 +615,16 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
-| weight_sharing  | 298.800 |          96.700 |   0.030 |   20800 |
-| attn_value      | 358.700 |          36.800 |   0.010 |   12432 |
-| attn_query_proj | 369.900 |          25.600 |   0.010 |   12432 |
-| attn_out_proj   | 380.000 |          15.500 |   0.003 |   12432 |
-| position        | 430.100 |         -34.600 |   0.003 |    8256 |
-| norm            | 501.900 |        -106.400 |   0.010 |    8528 |
-| ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
-| readout         | 537.500 |        -142.000 |   0.010 |    4176 |
-| state           | 686.800 |        -291.300 |   0.001 |    8272 |
-| residual        | 687.100 |        -291.600 |   0.001 |    8272 |
+| weight_sharing  | 298.800 |          55.700 |   0.030 |   20800 |
+| attn_value      | 358.700 |          -4.200 |   0.010 |   12432 |
+| attn_query_proj | 369.900 |         -15.400 |   0.010 |   12432 |
+| attn_out_proj   | 380.000 |         -25.500 |   0.003 |   12432 |
+| position        | 430.100 |         -75.600 |   0.003 |    8256 |
+| norm            | 501.900 |        -147.400 |   0.010 |    8528 |
+| ffn             | 530.700 |        -176.200 |   0.003 |   41360 |
+| readout         | 537.500 |        -182.900 |   0.010 |    4176 |
+| state           | 686.800 |        -332.300 |   0.001 |    8272 |
+| residual        | 687.100 |        -332.600 |   0.001 |    8272 |
 
 ### L -- the cumulative ladder, transformer to PT
 
