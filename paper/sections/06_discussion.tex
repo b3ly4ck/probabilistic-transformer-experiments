@@ -12,8 +12,10 @@ transformer exists, it is forced rather than chosen at every step where a choice
 available, and next-token prediction in it is inference over a variable the model already had.
 Weight tying, the language-model bias, the \textsc{[mask]}-style query and a
 mixture-of-softmaxes readout are consequences of that, not additions to it. What we do not
-claim is a perplexity win. \TODO{one sentence stating what the numbers actually showed, written
-after they exist.}
+claim is a perplexity win. At bracketing budgets the model is about a factor of $1.6$ behind a
+causal transformer on this corpus, and per parameter over the range where all three models are
+measured it gains less than either baseline. That is a smaller gap than we reported before and
+it is arrived at honestly; it is not a win, and we have tried not to write it as one.
 
 \paragraph{The bottleneck is not where it looks.}
 It is tempting to read the model as bottlenecked by its $\nlab$ discrete labels, and to expect a
