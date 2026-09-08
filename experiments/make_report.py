@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from src.analysis import (
     aggregate_seeds,
     best_by,
+    default_failed,
     fit_power_law,
     get_path,
     load_rows,
@@ -835,6 +836,10 @@ def mean_over_seeds(rows: Sequence[Dict[str, Any]], key_fields: Sequence[str]
         m, sd = _mean_sd([r["val_ppl"] for r in g])
         rep["_n_seeds"] = len(g)
         rep["_val_sd"] = sd
+        # Seeds that landed on the unigram are counted, not averaged away. A group of three in
+        # which one seed collapsed has a mean that describes no run that happened, so the count
+        # travels with the row and every caller that reports a comparison can refuse to make one.
+        rep["_n_dead"] = sum(1 for r in g if default_failed(r))
         out.append(rep)
     return out
 
@@ -851,21 +856,33 @@ def emit_matched_budget(out: Path, md: List[str]) -> None:
     curves = {m: sorted((r["params"]["non_embedding"], r["val_ppl"])
                         for r in bw if r["cell"]["model"] == m)
               for m in ("gpt", "looped")}
+    # A cell that finished on the unigram baseline did not train; averaging it into a ratio
+    # against a baseline that did would report a training collapse as a scaling result, which
+    # is exactly the confusion the 2026-08 report was corrected for. Such a row stays in the
+    # table -- deleting it would hide the width ceiling the paper argues exists -- but it
+    # carries no ratio, and it is marked.
     pts = mean_over_seeds(low, ["cell.d", "cell.rank"])
     table, mdrows = [], []
     for r in sorted(pts, key=lambda r: r["params"]["non_embedding"]):
         n, v = r["params"]["non_embedding"], r["val_ppl"]
+        dead = r.get("_n_dead", 0) > 0
         g, l = _loginterp(curves["gpt"], n), _loginterp(curves["looped"], n)
-        table.append([f"$\\nlab={r['cell']['d']}$, $\\krank={r['cell']['rank']}$", n,
-                      f"{v:.1f} $\\pm$ {r['_val_sd']:.1f}",
-                      f"{g:.1f}" if g else "---", f"{v / g:.2f}" if g else "---",
-                      f"{l:.1f}" if l else "---", f"{v / l:.2f}" if l else "---"])
-        mdrows.append({"config": f"d={r['cell']['d']}, r={r['cell']['rank']}", "non-emb": n,
+        val = (f"{v:.1f} $\\pm$ {r['_val_sd']:.1f}" if not dead
+               else f"\\textit{{{r['_n_dead']}/{r['_n_seeds']} collapsed}}")
+        table.append([f"$\\nlab={r['cell']['d']}$, $\\krank={r['cell']['rank']}$", n, val,
+                      f"{g:.1f}" if g else "---",
+                      f"{v / g:.2f}" if g and not dead else "---",
+                      f"{l:.1f}" if l else "---",
+                      f"{v / l:.2f}" if l and not dead else "---"])
+        mdrows.append({"config": f"d={r['cell']['d']}, r={r['cell']['rank']}"
+                                 + (f"  ({r['_n_dead']}/{r['_n_seeds']} collapsed)"
+                                    if dead else ""),
+                       "non-emb": n,
                        "n": r["_n_seeds"], "PT": round(v, 1), "sd": round(r["_val_sd"], 1),
                        "transformer": round(g, 1) if g else None,
-                       "ratio": round(v / g, 2) if g else None,
+                       "ratio": round(v / g, 2) if g and not dead else None,
                        "looped": round(l, 1) if l else None,
-                       "ratio ": round(v / l, 2) if l else None})
+                       "ratio ": round(v / l, 2) if l and not dead else None})
     _latex_table(out / "table_matched.tex",
                  ["causal PT", "non-emb.", "val ppl", "transformer", "ratio", "looped", "ratio"],
                  table, "lrrrrrr")
