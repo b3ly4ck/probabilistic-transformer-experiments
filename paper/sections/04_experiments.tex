@@ -581,10 +581,10 @@ is the best of the learning rates run for that rung, and the two dotted referenc
 tuned endpoints. The shape is the finding --- six switches that cost nothing between them, a
 step at the feed-forward block, and a spike at the simplex state that the readout flip then
 partly recovers, which is what a two-difference interaction looks like when a ladder can only
-flip one at a time. Values are in \Cref{tab:switches}. The last rung is the all-PT model and
-should therefore land on the lower reference; it currently sits above it because the anchor has
-been tuned over four learning rates and the top rungs over two, which is the same
-not-yet-converged sweep that makes the S2 column unreadable, seen from the side.}
+flip one at a time. Values are in \Cref{tab:switches}. The last rung flips all ten and
+therefore \emph{is} the all-PT model, which is why it lands on the lower reference: the ladder
+and its endpoint are the same run, and the figure closing on it is a consistency check rather
+than a result.}
 \label{fig:ladder}
 \end{figure}
 
