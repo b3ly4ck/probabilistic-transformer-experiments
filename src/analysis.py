@@ -1125,6 +1125,66 @@ def _row_label(row: Dict[str, Any], label: Union[None, str, Callable[[Dict[str, 
     return str(get_path(row, "cell.name", "cell"))
 
 
+def plot_ladder(
+    rungs: Sequence[Tuple[int, str, float]],
+    out_path: Union[str, os.PathLike],
+    anchors: Optional[Tuple[float, float]] = None,
+    y_label: str = "validation perplexity (per token, lower is better)",
+) -> str:
+    """The cumulative switch ladder: rung index against perplexity.
+
+    Not a scaling plot, and it was drawn with the scaling helper, which forces a logarithmic
+    x-axis. A *count* of switches from 1 to 10 on a log axis puts rungs 1 and 2 a third of the
+    width apart and rungs 9 and 10 almost on top of each other, which misreads the shape of the
+    curve the figure exists to show. Linear in the rung index, therefore, with the name of the
+    switch flipped at each step under its tick -- the reader's question at every point of this
+    figure is "which one was that", and the table is two pages away.
+
+    The y-axis stays logarithmic: the ladder spans roughly 130 to 700 perplexity and the
+    interesting structure is at the bottom.
+
+    ``rungs`` is ``(index, switch name, value)``; ``anchors`` is the (transformer, PT) pair,
+    drawn as horizontal references so that the cliff can be read against the span it is a
+    fraction of.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    rungs = sorted(rungs, key=lambda r: r[0])
+    xs = [r[0] for r in rungs]
+    ys = [r[2] for r in rungs]
+    fig, ax = plt.subplots(figsize=(6.4, 3.9))
+
+    if anchors is not None:
+        a_tr, a_pt = anchors
+        for value, text, colour in ((a_tr, "all-transformer", "0.45"),
+                                    (a_pt, "all-PT", "0.45")):
+            ax.axhline(value, color=colour, linestyle=(0, (1, 2)), linewidth=1.1)
+            ax.annotate(f"{text} {value:.0f}", xy=(0.99, value),
+                        xycoords=("axes fraction", "data"),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha="right", va="bottom", fontsize=8, color="0.3")
+
+    ax.plot(xs, ys, "-o", color="#27496d", markersize=5,
+            markerfacecolor="white", markeredgewidth=1.3, linewidth=1.4, zorder=3)
+    ax.set_yscale("log")
+    ax.set_xlim(min(xs) - 0.5, max(xs) + 0.5)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([r[1].replace("_", "\n") for r in rungs], fontsize=7.5)
+    ax.tick_params(axis="x", length=0)
+    _log_ticks(ax.yaxis, ys + ([] if anchors is None else list(anchors)))
+    ax.set_xlabel("switches flipped, cumulatively, from a causal transformer towards the PT")
+    ax.set_ylabel(y_label)
+    ax.grid(True, axis="y", which="both", linewidth=0.4, alpha=0.4)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}")
+    return str(out_path)
+
+
 def plot_traces(
     rows: Sequence[Dict[str, Any]],
     out_path: Union[str, os.PathLike],

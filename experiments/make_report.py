@@ -34,6 +34,7 @@ from src.analysis import (
     load_rows,
     markdown_table,
     plot_heatmap,
+    plot_ladder,
     plot_scaling,
     plot_traces,
     scaling_frontier,
@@ -607,11 +608,11 @@ def section_switches(md: List[str], out: Path) -> None:
         emit(md, "L -- the cumulative ladder, transformer to PT",
              table, ["rung", "switch flipped", "val", "step", "best lr", "non-emb"],
              "`step` is the change from the previous rung, so the column locates the cliff.")
-        plot_scaling([("cumulative ladder",
-                       [(get_path(r, "cell.tags.rung"), r["val_ppl"]) for r in L])],
-                     out / "fig_switch_ladder.png",
-                     x_label="switches flipped towards the causal PT (count)",
-                     frontier=False, fit=False)
+        plot_ladder(
+            [(get_path(r, "cell.tags.rung"), get_path(r, "cell.tags.switch") or "?",
+              r["val_ppl"]) for r in L],
+            out / "fig_switch_ladder.png",
+            anchors=((a_tr["val_ppl"], a_pt["val_ppl"]) if (a_tr and a_pt) else None))
 
     if a_pt:
         md.append("\n**Endpoint residue.** The all-PT rung is an approximation of the real "

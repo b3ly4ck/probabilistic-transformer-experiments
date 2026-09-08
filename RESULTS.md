@@ -494,6 +494,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  64 |  64 |    0.020 | True  | normal    |   1 |  233.300 |   0.000 |      1.000 |      0.199 |
 |  64 |  64 |    0.100 | False | normal    |   1 |  227.700 |   0.000 |      0.938 |      1.524 |
 |  64 |  64 |    0.100 | True  | normal    |   1 |  235.200 |   0.000 |      1.000 |      0.202 |
+|  64 |  64 |    0.500 | True  | normal    |   1 |  240.600 |   0.000 |      0.999 |      0.242 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -512,8 +513,9 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ### Grid S -- budget vs. schedule
 
-_no rows yet_
-
+| cell.name           | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| ------------------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| S_steps15000_floor1 | 250.706 |       250.706 |  228.187 |   226.605 |                     1.089 |       2.945 | 555.600 |
 
 ### Grid T -- inference depth T and tau
 
@@ -540,15 +542,16 @@ _no rows yet_
 
 Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one extra pass.
 
-| cell.name        | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
-| ---------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
-| R_freezeb_on_s0  | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
-| R_freezeb_off_s1 | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
-| R_d48_s2         | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
-| R_freezeb_off_s0 | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
-| R_d48_s1         | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
-| R_record_s2      | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
-| T_iters1         | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
+| cell.name           | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
+| ------------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
+| R_freezeb_on_s0     | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
+| R_freezeb_off_s1    | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
+| R_d48_s2            | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
+| S_steps15000_floor1 | mfvi         | 250.706 | exact        |     8596.715 |  228.187 |      8226.701 |
+| R_freezeb_off_s0    | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
+| R_d48_s1            | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
+| R_record_s2         | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
+| T_iters1            | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
 
 ## The switch ladder (Experiment 6)
 
