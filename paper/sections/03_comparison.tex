@@ -155,22 +155,29 @@ merely expository: \Cref{sec:exp-switches} implements each as a switch and measu
 costs, so that ``the causal PT is worse than a transformer'' becomes a statement about
 identified components rather than about architectures as wholes.
 
+Each is named here as \Cref{sec:exp-switches} names it, so that the list and the ladder can be
+read against each other.
+
 \begin{itemize}\itemsep0pt
-  \item \textbf{Parameters shared across iterations.} The property a Looped transformer
-        \citep{dehghani2019universal,giannou2023looped,yang2024looped} also has, and the reason
-        a comparison against a standard decoder alone cannot attribute any difference to
-        structure.
-  \item \textbf{No feed-forward structure.} Inherited from the encoder model. The in-graph
-        substitute --- the global variables of \Cref{sec:variants} --- is measured rather than
-        assumed in \Cref{sec:exp-ablations}.
-  \item \textbf{No output projection and keys tied to values} (\Cref{sec:vs-attention}).
-  \item \textbf{No query projection}: the query is the evolving belief itself.
-  \item \textbf{No residual stream and no layer normalisation}; the unary is re-injected and
-        the simplex bounds the state instead.
-  \item \textbf{Relative, clipped positions} rather than a learned absolute embedding.
-  \item \textbf{The output is a posterior, not a projection}: no parameter exists outside the
-        factor graph (\Cref{sec:output}), and the readout is a mixture rather than a linear map
-        (\Cref{sec:cmp-readout}).
+  \item \textbf{Parameters shared across iterations} (\texttt{weight\_sharing}). The property a
+        Looped transformer \citep{dehghani2019universal,giannou2023looped,yang2024looped} also
+        has, and the reason a comparison against a standard decoder alone cannot attribute any
+        difference to structure.
+  \item \textbf{No feed-forward structure} (\texttt{ffn}). Inherited from the encoder model. The
+        in-graph substitute --- the global variables of \Cref{sec:variants} --- is measured
+        rather than assumed in \Cref{sec:exp-ablations}.
+  \item \textbf{No output projection} (\texttt{attn\_out\_proj}) \textbf{and keys tied to
+        values} (\texttt{attn\_value}), both in \Cref{sec:vs-attention}.
+  \item \textbf{No query projection} (\texttt{attn\_query\_proj}): the query is the evolving
+        belief itself.
+  \item \textbf{No residual stream} (\texttt{residual}) \textbf{and no layer normalisation}
+        (\texttt{norm}); the unary is re-injected instead, and the state is confined to the
+        simplex (\texttt{state}) rather than bounded by a normalisation.
+  \item \textbf{Relative, clipped positions} (\texttt{position}) rather than a learned absolute
+        embedding.
+  \item \textbf{The output is a posterior, not a projection} (\texttt{readout}): no parameter
+        exists outside the factor graph (\Cref{sec:output}), and the readout is a mixture rather
+        than a linear map (\Cref{sec:cmp-readout}).
 \end{itemize}
 
 \begin{table}[t]
