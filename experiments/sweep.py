@@ -361,7 +361,20 @@ def run_sweep(
             print(f"resume: {len(existing)} rows already in {out_path}", flush=True)
         except Exception:
             existing = []
-    done = {json.dumps(r["cell"], sort_keys=True, default=str) for r in existing}
+    # Only *successful* rows count as done. A failed cell must be retried on the next
+    # submission, and it is a real failure mode: on 2026-09-08 three jobs landed on one node,
+    # the second and third could not allocate the GPU, and one shard wrote fifteen error rows
+    # in ninety seconds. Had those counted as done, the shard would have been permanently
+    # empty and the grid would have had a hole nobody noticed.
+    done = {
+        json.dumps(r["cell"], sort_keys=True, default=str)
+        for r in existing
+        if "error" not in r
+    }
+    n_failed = sum(1 for r in existing if "error" in r)
+    if n_failed:
+        print(f"resume: {n_failed} failed rows will be retried", flush=True)
+        existing = [r for r in existing if "error" not in r]
 
     corpora: Dict[str, Corpus] = {}
     unigrams: Dict[str, float] = {}
@@ -403,6 +416,19 @@ def run_sweep(
 
             traceback.print_exc()
             row = {"cell": asdict(c), "error": f"{type(exc).__name__}: {exc}"}
+            rows.append(row)
+            out_path.write_text(json.dumps({"meta": meta, "rows": rows}, indent=1))
+            # A CUDA failure is not a property of the cell: the context is poisoned and every
+            # remaining cell will fail the same way in seconds, turning one bad allocation
+            # into a shard full of error rows and a wasted slurm slot. Die loudly instead, so
+            # the job exits non-zero and can simply be resubmitted -- the completed rows are
+            # already on disk and `resume` will pick up exactly where this stopped.
+            if isinstance(exc, RuntimeError) and "CUDA" in str(exc):
+                raise RuntimeError(
+                    f"CUDA failure on cell {c.name}; aborting the shard so it can be "
+                    f"resubmitted rather than filling the grid with error rows"
+                ) from exc
+            continue
         rows.append(row)
         out_path.write_text(json.dumps({"meta": meta, "rows": rows}, indent=1))
         if "error" not in row:
