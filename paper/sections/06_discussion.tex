@@ -27,8 +27,10 @@ is one point of $\Delta^{\nlab-1}$ against a transformer's $\R^{d_{\text{model}}
 width, with the simplex geometry as the genuine difference. What is left is the \emph{dynamics}:
 whether attention-only iterations with tied parameters and bounded states can put as much usable
 information into those $\nlab$ numbers as a transformer stack puts into $d_{\text{model}}$. Our
-switch ladder is built to answer exactly that question rather than argue about it.
-\TODO{state where the ladder put the cost.}
+switch ladder is built to answer exactly that question rather than argue about it, and it puts
+the cost squarely there: every difference in the \emph{static} description of the model --- tied
+key and value, no query or output projection, relative positions --- is free, while the two that
+concern what the state \emph{is} and how it moves are not.
 
 \paragraph{Hyperparameters are the practical obstacle, and they are analysable.}
 The most useful thing we can report to anyone who wants to build on this is that the causal
