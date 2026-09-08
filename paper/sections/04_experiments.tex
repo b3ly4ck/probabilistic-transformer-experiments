@@ -328,15 +328,46 @@ first evaluation. Both undamped; $\alpha_Z = 1$ throughout.}
 
 \paragraph{Initialisation, and the global variables.}
 \label{sec:exp-ablations}
-\Cref{tab:globalhead} is the grid. \TODO{exp5 reading: the head across two decades of
-initialisation scale with and without the shared $L_2$, the row-collapse mechanism, and the
-distribution question taken literally.}
+\citet{wu2023probabilistic} propose global variables in their Appendix B.3 as the in-graph
+substitute for a feed-forward block and never test them. We do, and the first thing to report is
+a correction to our own earlier account. That account said the head dies under ``uniform''
+initialisation; the word meant the \emph{treatment} --- one scale and one $L_2$ coefficient for
+every factor --- and not the distribution, which has always been Gaussian. The mechanism is a
+symmetry: with the rows of $\Bglob$ close together relative to their own length the head
+posterior is uniform, the message is the row mean, and every row then receives the identical
+gradient $1/m$, so nothing separates them; a shared $L_2$ shrinks the spread that would.
+
+Measured, the head is not dead weight. At $\nlab=32$ the configuration \emph{without} it sits
+exactly on the unigram (700.7) while several configurations with it land between 323 and 380 ---
+a second message into $\Zv{t}$ that does not pass through the arc factors evidently breaks the
+runaway loop. But the head posterior's entropy is at its maximum in almost every cell, so what
+it contributes is a constant label prior rather than the feed-forward-like operator it is
+proposed as, and perplexity alone cannot tell those apart. \Cref{tab:globalhead} reports both.
+\TODO{final three-seed grid in the stable configuration, including the orthogonal-initialisation
+prediction}
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
 \Cref{tab:switches} prices each of the ten differences twice --- once as its cost in an
-otherwise ordinary decoder, once as the benefit of restoring it inside the all-PT rung.
-\TODO{exp6 reading}
+otherwise ordinary decoder (S1), once as the benefit of restoring it inside the all-PT rung
+(S2). The S1 column is the one to read first, and it is largely good news for the construction:
+\textbf{three of the ten differences are free}, and two of those three are the ones this model
+class is most often criticised for. Tying the value to the key, which the factor graph forces
+because both roles are the same message through the same arc factor, costs $-0.6$; relative
+positions cost $-0.4$; removing the query projection costs $1.9$. Layer normalisation turns out
+to be unnecessary at this scale once each rung is tuned --- at a single learning rate it appeared
+to cost $18.5$, and that was the rate, not the switch. What does cost is the feed-forward block
+($15.1$) and weight sharing ($12.5$), neither of which is specific to this construction.
+
+The exception is the simplex constraint on the state, at $+564$, and it should not be read as
+``the simplex costs 564 perplexity''. A transformer whose state is passed through a softmax
+after every block has a state norm in $[\nlab^{-1/2}, 1]$ while its attention still divides by
+$\sqrt{d_{\text{head}}}$ --- the mis-calibration of \Cref{sec:temperature}, arrived at from the
+transformer side. The ladder has no temperature switch, so flipping the state alone changes the
+geometry without changing the temperature that geometry requires, and the interaction between
+two differences lands on one of them. The real decoder, which is simplex-constrained and has a
+temperature suited to it, reaches $206.1$. \TODO{the cumulative ladder and the S2 column at the
+full learning-rate sweep}
 
 \paragraph{Exact vs.\ mean-field readout.}
 \label{sec:exp3}
