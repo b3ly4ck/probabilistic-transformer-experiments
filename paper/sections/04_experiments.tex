@@ -90,7 +90,10 @@ is a tree, so \Cref{eq:exact-readout} must agree with brute-force enumeration of
 it does, to $10^{-12}$ in float64, including with a global variable folded in as an extra leaf,
 and the \texttt{logcumsumexp} scan agrees with slot-by-slot assembly for
 $\clip \in \{0,1,2,4,9\}$. The worked example of the output-mechanism note reproduces digit for
-digit. \TODO{state the factored-label brute-force agreement once exp7 lands}
+digit. The factored-label variant is checked the same way: at $K=2$, an enumeration over
+$(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$ written from the raw parameters agrees with
+its closed form to $10^{-10}$, and setting $K=1$ reproduces the flat decoder to $6.9\times
+10^{-18}$.
 
 \paragraph{A methodological finding first: variance.}
 \label{sec:exp-repro}
@@ -284,7 +287,16 @@ parameters and a fifth of the seed variance --- and $\krank = 12$ gives $257.8 \
 configuration at a comparable budget. The reason is structural: the arc score reaches inference
 only contracted against a belief, $\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, so what
 is usable is its rank on the affine hull of the reachable beliefs (\Cref{tab:rank}), and those are measurably
-concentrated. \TODO{the low-rank ladder at full budget}
+concentrated.
+
+Run as a full ladder at the baselines' budget, low rank does two things at once. The curve sits
+uniformly \emph{below} the $\krank = \nlab$ one --- $223.1 \pm 5.6$ at 18{,}624 non-embedding
+parameters against $372 \pm 277$ for $\krank = 96$ at 147{,}648 --- and \textbf{the width ceiling
+disappears}: where both earlier ladders became unstable at $\nlab \geq 96$, this one trains
+stably to $\nlab = 192$ and turns over only at $256$, on capacity rather than on collapse. Seed
+spreads across the ladder are $1.5$ to $5.6$. Nothing in the source prescribes $\krank = \nlab$;
+it is what Wu \& Tu's Table 2 rule $\min(64,\nlab)$ produces at every width used here, and it
+was carried along unexamined --- by us as much as by anyone.
 
 \textbf{We report what this repair costs, because it is not free.} A query-dependent temperature
 is still a temperature, and $\lamH$ is a free per-variable message weight in the source, so
