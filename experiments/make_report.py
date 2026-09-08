@@ -142,7 +142,31 @@ def section_scaling(md: List[str], out: Path) -> None:
             curves.append(("causal PT, standardised temp.", bpt))
         if blow:
             curves.append(("causal PT, + low rank", blow))
+        # Report the fitted exponent twice: over each curve's own range, and over the range
+        # where all three models are actually measured. They differ a lot, because the
+        # baselines extend into the regime where this corpus rather than the parameter count
+        # binds and their flat points drag the fitted slope down. Quoting only the first
+        # invites the reading that the causal PT scales like a transformer, which the second
+        # refutes.
         if curves:
+            md.append("\n**Fitted power-law exponents on the "
+                      + ("non-embedding" if xkey.endswith("non_embedding") else "total")
+                      + " axis**\n")
+            rowsx = []
+            for label, data in curves:
+                fr = scaling_frontier(data, x=xkey, y="val_ppl")
+                P = [(float(get_path(r, xkey)), float(r["val_ppl"])) for r in fr]
+                full = fit_power_law([a for a, _ in P], [b for _, b in P])
+                lo, hi = 4e3, 1.5e5
+                Q = [q for q in P if lo <= q[0] <= hi]
+                comm = fit_power_law([a for a, _ in Q], [b for _, b in Q])
+                rowsx.append({
+                    "curve": label, "n": len(P),
+                    "own range": f"{full.exponent:+.3f} (r2 {full.r2:.2f})" if full else "--",
+                    "n (common)": len(Q),
+                    "4k-150k": f"{comm.exponent:+.3f} (r2 {comm.r2:.2f})" if comm else "--"})
+            md.append(markdown_table(rowsx, ["curve", "n", "own range", "n (common)",
+                                             "4k-150k"]))
             p = plot_scaling(
                 curves, out / fname, x=xkey, x_label=xlabel,
                 hline=(UNIGRAM_PTB, "unigram baseline 688.8"),

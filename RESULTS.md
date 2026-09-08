@@ -95,6 +95,12 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | pt         |         160 |            4 |     32 |   0.020 | 255.663 |  234.663 |   245.198 |                 4160 |       334160 |     15000 |         8 |
 | pt         |         160 |            4 |     64 |   0.020 | 230.453 |  210.824 |   205.675 |                 8320 |       658320 |     14500 |         8 |
 
+**Fitted power-law exponents on the non-embedding axis**
+
+
+_section section_scaling failed: TypeError: float() argument must be a string or a real number, not 'NoneType'_
+
+
 ## Width transfer (Experiment 4)
 
 
@@ -496,9 +502,11 @@ The ladder spans **557.9 perplexity**; every delta below is a share of that.
 
 | rung | switch flipped |     val |    step | best lr | non-emb |
 | ---: | -------------- | ------: | ------: | ------: | ------: |
-|    3 | norm           | 157.100 |  27.900 |   0.001 |   49744 |
+|    1 | weight_sharing | 144.100 |  14.800 |   0.001 |   50112 |
+|    3 | norm           | 157.100 |  13.100 |   0.001 |   49744 |
 |    6 | attn_value     | 158.600 |   1.500 |   0.001 |   37264 |
-|    9 | state          | 688.800 | 530.200 |   0.001 |    4176 |
+|    7 | ffn            | 213.300 |  54.700 |   0.001 |    4176 |
+|    9 | state          | 688.800 | 475.500 |   0.001 |    4176 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
