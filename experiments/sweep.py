@@ -69,6 +69,8 @@ class Cell:
     n_iters: int = 3
     tau: int = 2
     readout: str = "mfvi"
+    n_components: int = 1  # K; 1 uses CausalPTDecoder, K > 1 uses FactoredPTDecoder
+    channel_assignment: str = "roundrobin"
     n_global: int = 0
     b_glob_init_std: Optional[float] = None
     regularise_global_head: bool = True
@@ -186,6 +188,8 @@ def build_model(c: Cell, vocab_size: int):
     cfg = PTConfig(
         vocab_size=vocab_size,
         d=c.d,
+        n_components=c.n_components,
+        channel_assignment=c.channel_assignment,
         h=c.h,
         rank=rank,
         gamma=c.gamma,
@@ -213,6 +217,13 @@ def build_model(c: Cell, vocab_size: int):
         # allocates half a gigabyte per chunk for nothing. 32768/d keeps the tile constant.
         vocab_chunk=max(128, 32768 // c.d),
     )
+    # K = 1 is bitwise the flat decoder (asserted in tests/test_18_factored.py), but the
+    # mainline class is the one the 96 validation checks run against, so use it when K = 1
+    # and reach for the factored subclass only when the experiment actually asks for it.
+    if c.n_components > 1:
+        from src.factored import FactoredPTDecoder
+
+        return FactoredPTDecoder(cfg), cfg
     return CausalPTDecoder(cfg), cfg
 
 
