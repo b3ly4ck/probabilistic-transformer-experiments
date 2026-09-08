@@ -63,7 +63,7 @@ them past their optimum, and scoring each at its own best step is the standard p
 
 \paragraph{Learning rate.}
 Each baseline point is the better of two learning rates ($10^{-3}$ and $3\times10^{-3}$), and
-each rung of the switch ladder of \Cref{sec:exp-switches} the best of three. The causal PT
+each rung of the switch ladder of \Cref{sec:exp-switches} the best of four. The causal PT
 runs at $2\times10^{-2}$, twenty times the value in the source's Table 2; that this is
 necessary, and that it interacts with the label-set size, is itself a finding
 (\Cref{sec:exp-width}). A comparison in which one model is tuned and the other is not measures
@@ -87,9 +87,9 @@ Two checks test the derivation rather than the code and belong here; the rest ar
 toy graph, and the check carries a mutation test --- a sign-flipped head update fails it while
 every shape, normalisation and causality check passes unchanged. And on a single slot the graph
 is a tree, so \Cref{eq:exact-readout} must agree with brute-force enumeration of the slot joint:
-it does, to $10^{-12}$ in float64, including with a global variable folded in as an extra leaf,
-and the \texttt{logcumsumexp} scan agrees with slot-by-slot assembly for
-$\clip \in \{0,1,2,4,9\}$. The worked example of the output-mechanism note reproduces digit for
+it does, to $6.7\times10^{-16}$ in float64 (\Cref{app:validation}). The same enumeration agrees
+with a global variable folded in as an extra leaf, and the \texttt{logcumsumexp} scan agrees
+with slot-by-slot assembly for $\clip \in \{0,1,2,4,9\}$; both are asserted at $10^{-12}$. The worked example of the output-mechanism note reproduces digit for
 digit. The factored-label variant is checked the same way: at $K=2$, an enumeration over
 $(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$ written from the raw parameters agrees with
 its closed form to $10^{-10}$, and setting $K=1$ reproduces the flat decoder to $6.9\times
