@@ -457,13 +457,12 @@ proposed as --- including in the cells where its message is \emph{larger} than t
 posterior from an informative one, which is why \Cref{tab:globalhead} reports the entropy beside
 it. On Prof.\ Tu's question directly: Gaussian initialisation at three scales spanning
 $25\times$, with and without the head in the shared $L_2$, changes nothing that matters.
-\textbf{The distribution, which is the question as it was asked.} Every factor in this model
-has always been drawn from a Gaussian; the word ``uniform'' in our earlier account named the
-\emph{treatment}, one scale and one $L_2$ coefficient for every factor, and not the draw. Taking
-the question literally anyway, at $\nlab=64$ with $\nglob=64$ head values at the treatment where
-all three can be compared: Gaussian gives $225.8$ over three seeds, a semi-orthogonal draw
-$219.5$ over two, and a matched-variance uniform draw $249.1$ over two, with one of those two
-seeds at $272.9$. \textbf{The orthogonal draw sits inside the Gaussian cell's own seed range}
+\textbf{The distribution, which is the question as it was asked.} Having distinguished the
+treatment from the draw, we varied the draw as well. At $\nlab=64$ with $\nglob=64$ head values,
+at initialisation scale $0.02$ inside the shared $L_2$ --- the one treatment at which all three
+draws were run --- Gaussian gives $225.8$ over three seeds, a semi-orthogonal draw $219.5$ over
+two, and a matched-variance uniform draw $249.1$ over two, with one of those two seeds at
+$272.9$. \textbf{The orthogonal draw sits inside the Gaussian cell's own seed range}
 ($214.1$ to $233.3$), so on this evidence the draw does not matter, with a hint that the uniform
 one is worse.
 
