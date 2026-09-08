@@ -140,3 +140,39 @@ What this does to the write-up:
 3. The A40-pinned control (job 998682) is still worth running, but it is now a secondary
    question: with `sd = 130` across seeds on one GPU, a difference between two GPUs needs no
    further explanation.
+
+### The hardware half, answered for free (2026-09-08)
+
+The A40-pinned control was cancelled after three hours queued behind a busy node — and did not
+need to run, because a cell of an unrelated grid landed on one. `C_normal_d16` of
+`exp5_init/spec_init.py` is bit-for-bit the same configuration, and it ran on `ai_gpu06`, an
+**A40**. Its validation trace:
+
+```
+2026-08, job 940848, A40:    711.7 516.1 693.9 633.5 598.1 546.0 491.9 473.2 452.6 439.9 434.4 430.0
+2026-09, spec_init, A40:     711.7 516.1 693.9 633.5 598.1 546.0 491.9 473.2 452.6 439.9 434.4 430.0
+2026-09, repro_check, TITAN: 711.6 640.3 686.0 676.0 682.1 657.7 716.5 610.9 621.5 639.9 646.4 645.0
+```
+
+**Identical to every printed digit on the same GPU model, and divergent on another.** The two
+traces already differ at the first evaluation, in the third significant figure (711.70 against
+711.61), so the split happens inside the first 500 steps and is then amplified to a difference of
+215 perplexity.
+
+So the complete picture is:
+
+1. the mathematics is unchanged (arms A and B of the reproduction check agree digit for digit);
+2. the harness is faithful (arm C agrees with them);
+3. **the run is deterministic within a GPU model and different across GPU models**, because the
+   only thing that differs is the order of floating-point reductions;
+4. **and it is chaotic in the seed**, with a spread of 130 perplexity across three seeds on one
+   device.
+
+(3) and (4) are the same phenomenon seen two ways: in this configuration any perturbation at the
+last bit — a different reduction order, a different seed — moves the outcome by hundreds of
+perplexity. The 2026-08 number was therefore both *exactly reproducible* on the hardware that
+produced it and *not a measurement of anything*, which is a sharper statement than either half
+alone and the one the paper makes.
+
+It also settles a practical point for anyone building on this: a perplexity from the undamped
+region of this model must be quoted with a seed spread and a device, or not quoted.
