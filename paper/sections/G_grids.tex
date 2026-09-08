@@ -16,7 +16,7 @@ over a mixture of runs that learned and runs that did not measures neither.
 \label{app:grid-exponents}
 
 \begin{table*}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_exponents_full}
 \caption{The pairwise exponent comparison of \Cref{sec:exp-scaling} with the two things the
 main-text table omits for width: how many frontier points each fit rests on, and the range the
@@ -31,7 +31,7 @@ one out; they are reported rather than dropped, with that stated.}
 \label{app:grid-gain}
 
 \begin{table}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_gain}
 \caption{Validation perplexity by label-set size and standardisation gain, three seeds per cell,
 undamped, 6{,}000 steps. The argmin is $1$ at every width and the working range is the same at
@@ -44,7 +44,7 @@ the gain and on the size of the head domain, and not on $\nlab$.}
 \label{app:grid-lr}
 
 \begin{table*}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_lr}
 \caption{Validation perplexity against learning rate at four widths, under the source head
 temperature and under the standardised one, undamped, one seed, 6{,}000 steps. The argmin moves
@@ -57,7 +57,7 @@ temperature changes is not where the optimal learning rate sits.}
 \label{app:grid-rank}
 
 \begin{table}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_rank}
 \caption{Validation perplexity against the Kruskal rank of the arc scores, three seeds,
 standardised temperature, undamped, 6{,}000 steps. At $\nlab = 96$, halving the rank improves
@@ -69,7 +69,7 @@ perplexity while halving the arc parameters and cutting the seed variance by a f
 \label{app:grid-switches}
 
 \begin{table}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_switches}
 \caption{Each of the ten differences priced twice: S1 is the transformer with that one property
 replaced by the causal PT's, S2 is the all-PT rung with that one property restored to the
@@ -86,7 +86,7 @@ anchors printed above them rather than against each other.}
 \label{app:grid-init}
 
 \begin{table}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_init}
 \caption{Gaussian against a matched-variance uniform draw and a semi-orthogonal one, at the
 source head temperature, undamped, \textbf{one seed per cell}. This table is included so that
@@ -103,7 +103,7 @@ which re-asks the same question at three seeds in the configuration
 
 % Eight columns and, once the grid finishes, fifty-four rows: this one spans both columns.
 \begin{table*}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_globalhead}
 \caption{The Appendix B.3.3 global head across initialisation scale, $L_2$ treatment,
 distribution and feature count, three seeds, in the configuration the width experiment selected.
@@ -118,12 +118,27 @@ clean cell in this grid has a ratio below $1.11$ and every reported range above 
 \label{tab:globalhead}
 \end{table*}
 
+\subsection{Factored labels}
+\label{app:grid-factored}
+
+\begin{table}[h]
+\centering\small
+\input{figures/table_factored}
+\caption{Factored labels, seed means keyed as the prediction is stated. Family \textbf{W} holds
+the total label width fixed, which is the comparison \Cref{app:factored} predicts should be flat
+in $K$ under the mean-field readout; family \textbf{P} walks an iso-parameter diagonal on which
+$\nlab$ rises with $K$, so a gain there is a gain from label width at a fixed arc budget and not
+from factoring as such. The distinction matters because the source states the parameter count as
+independent of $K$, which holds of the word--label factors and not of the arc factors.}
+\label{tab:factored}
+\end{table}
+
 \subsection{WikiText-2 transfer}
 \label{app:grid-wt2}
 
 % Six columns with paired mean-and-spread entries: this one spans both columns.
 \begin{table*}[h]
-\centering\footnotesize
+\centering\small
 \input{figures/table_wt2}
 \caption{Every hyperparameter selected on the Penn Treebank and applied to WikiText-2 unchanged
 --- no grid is re-run on the second corpus, which is the point of the test. The unigram baseline
