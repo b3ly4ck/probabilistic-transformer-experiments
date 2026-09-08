@@ -99,7 +99,7 @@ it may be read. Then the comparison the model exists to support: how it scales a
 transformer and a looped one (\Cref{sec:exp-scaling}), and what it costs at matched budget.
 Then four questions about the model's own parameterisation --- its width
 (\Cref{sec:exp-width}), its initialisation and the global variables
-(\Cref{sec:exp-ablations}), the two constants with no gentle regime (\Cref{sec:exp-knobs}), and
+(\Cref{sec:exp-ablations}), the two constants nobody had varied (\Cref{sec:exp-knobs}), and
 its inference depth (\Cref{sec:exp-depth}). Last, two questions internal to the construction:
 which readout to use (\Cref{sec:exp3}) and whether factoring the label variable buys anything
 (\Cref{sec:exp-factored}), and whether any of it transfers to a second corpus
@@ -581,14 +581,14 @@ not-yet-converged sweep that makes the S2 column unreadable, seen from the side.
 \label{fig:ladder}
 \end{figure}
 
-\paragraph{Two knobs with no gentle regime.}
+\paragraph{Two constants nobody had varied.}
 \label{sec:exp-knobs}
 Two of the source's constants had never been varied inside a configuration that trains, and they
 behave very differently. The $L_2$ coefficient on the arc scores, which Wu \& Tu's Table 2 sets
 at $5\times10^{-4}$, has a genuine interior optimum there: $0$, $5\times10^{-5}$,
 $5\times10^{-4}$, $5\times10^{-3}$ and $5\times10^{-2}$ give $273.3$, $255.6$, $248.3$, $249.8$
-and $697.0$. Removing it costs $25$ perplexity, an order of magnitude either side of the
-source's value costs nothing, and two orders above destroys the model --- at $5\times10^{-2}$
+and $697.0$. Removing it costs $25$ perplexity, an order of magnitude above the
+source's value costs $1.5$ and an order below costs $7$, and two orders above destroys the model --- at $5\times10^{-2}$
 the arc message is $2\,\%$ of the word unary and the prefix-ablation KL is exactly zero, which
 is to say the arc factors have been regularised out and the model is a unigram with extra steps.
 The source's constant is well chosen and the paper has no quarrel with it.
