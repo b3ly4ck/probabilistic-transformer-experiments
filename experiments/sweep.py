@@ -208,7 +208,10 @@ def build_model(c: Cell, vocab_size: int):
         arc_init_std=c.arc_init_std,
         root_init_std=c.root_init_std,
         init_dist=c.init_dist,
-        vocab_chunk=1024,
+        # The exact readout materialises a (B, n, chunk, d) tensor inside its log-sum-exp over
+        # the vocabulary, so the chunk width has to come down as d goes up or a wide cell
+        # allocates half a gigabyte per chunk for nothing. 32768/d keeps the tile constant.
+        vocab_chunk=max(128, 32768 // c.d),
     )
     return CausalPTDecoder(cfg), cfg
 
@@ -253,6 +256,32 @@ def run_cell(c: Cell, corpus: Corpus, unigram: float, device: str, log) -> Dict[
     diag = hist.diag[-1] if hist.diag else {}
     params = model.num_parameters()
 
+    # --- Experiment 3, for free: score the *same trained weights* under the other readout.
+    # Part III offers two ways to turn the slot posterior into a word distribution -- the
+    # mean-field readout of 17.1 and the exact sum-product readout of 17.2 -- and Part IV
+    # 23.3 walks the recommendation from one to the other. The two are the same model; only
+    # the inference at prediction time differs, so swapping them at evaluation costs one
+    # extra pass and measures exactly the price of the mean-field approximation. It is only
+    # meaningful at lambda_W = 1 (17.2 Check 5): any other value makes the swap measure a
+    # temperature instead. n_global > 0 is excluded because the global head's contribution to
+    # the exact readout is a measured constant (22.2).
+    swap: Dict[str, Any] = {}
+    if c.model == "pt" and c.lambda_W == 1.0 and c.n_global == 0:
+        other = "exact" if c.readout == "mfvi" else "mfvi"
+        try:
+            model.cfg.readout = other
+            ev = evaluate(model, corpus.valid, tcfg)
+            te = evaluate(model, corpus.test, tcfg)
+            swap = {
+                "swap_readout": other,
+                "swap_val_ppl": round(ev["ppl"], 3),
+                "swap_test_ppl": round(te["ppl"], 3),
+            }
+        except Exception as exc:
+            swap = {"swap_readout": other, "swap_error": f"{type(exc).__name__}: {exc}"}
+        finally:
+            model.cfg.readout = c.readout
+
     if c.save_ckpt:
         Path("checkpoints").mkdir(exist_ok=True)
         torch.save(
@@ -286,6 +315,7 @@ def run_cell(c: Cell, corpus: Corpus, unigram: float, device: str, log) -> Dict[
         "host": socket.gethostname(),
         "device": device,
     }
+    row.update(swap)
     return row
 
 
