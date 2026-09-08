@@ -371,10 +371,17 @@ otherwise ordinary decoder (S1), once as the benefit of restoring it inside the 
 \textbf{three of the ten differences are free}, and two of those three are the ones this model
 class is most often criticised for. Tying the value to the key, which the factor graph forces
 because both roles are the same message through the same arc factor, costs $-0.6$; relative
-positions cost $-0.4$; removing the query projection costs $1.9$. Layer normalisation turns out
-to be unnecessary at this scale once each rung is tuned --- at a single learning rate it appeared
-to cost $18.5$, and that was the rate, not the switch. What does cost is the feed-forward block
+positions cost $-0.4$; removing the query projection costs $1.9$. Layer normalisation costs nothing
+measurable here once each rung is tuned --- at a single learning rate it appeared to cost
+$18.5$, and that was the rate, not the switch. What does cost is the feed-forward block
 ($15.1$) and weight sharing ($12.5$), neither of which is specific to this construction.
+
+\textbf{The ladder is one seed per cell}, unlike every other result in this paper, because
+$128$ cells at three seeds was not affordable. Differences of a point or two in the S1 column
+should therefore be read as ``not distinguishable from zero'' rather than as small effects with
+a sign; the ones we draw conclusions from --- the three free switches against the $12$--$15$ of
+the feed-forward block and weight sharing, and the cliff at the simplex state --- are larger
+than the seed spread we measure elsewhere in the same regime.
 
 The exception is the simplex constraint on the state, at $+564$, and it should not be read as
 ``the simplex costs 564 perplexity''. A transformer whose state is passed through a softmax
