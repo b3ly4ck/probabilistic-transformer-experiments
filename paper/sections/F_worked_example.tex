@@ -152,6 +152,25 @@ individual attachment is local. What the model has learned is closer to a stack 
 operators than to a dependency parser, which is a coherent thing to be and is not the thing the
 construction was designed to be.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_attachment.png}
+\caption{Where the head posterior attaches, against what uniform attention over the prefix would
+give. Note the log scale: by distance $5$ the posterior is four orders of magnitude below
+uniform. The decay stops exactly at distance $3$ --- which is where the clipped distance table
+stops giving a distance its own parameters ($\clip = 3$), everything beyond sharing one bucket.
+The model uses the distances it can name and ignores the rest.}
+\label{fig:attachment}
+\end{figure}
+
+\Cref{fig:attachment} adds one more thing, and it points at a fix rather than only a defect. The
+profile does not decay smoothly: it falls across distances $1, 2, 3$ and then collapses. That is
+exactly the structure of the clipped distance table, which gives distances $1..\clip$ their own
+arc-score matrices and shares a single bucket for everything beyond. \textbf{The head posterior
+uses the distances that have their own parameters and essentially ignores the one bucket that
+would let it reach further.} Whether raising $\clip$ moves the profile is a one-line experiment,
+and it is the first thing we would try.
+
 \paragraph{Prior against posterior.}
 Part~IV's contraction bound predicts that the divergence between a slot's predictive and observed
 beliefs is small on predictable tokens and grows with the surprisal of the word actually
