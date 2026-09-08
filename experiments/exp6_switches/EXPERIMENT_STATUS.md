@@ -81,6 +81,7 @@ dominating is a finding that points at a specific repair.
 | date | commit | job | shard | notes |
 |---|---|---|---|---|
 | 2026-09-08 | 2afa95d | queued | 0-5 of 6 | 96 cells |
+| 2026-09-09 | 8ea5d06 | 998840-999014 | 0-5 of 6 | **124/128 cells, 0 errors.** Learning-rate grid extended to four rates (1e-3, 3e-3, 1e-2, 3e-2) after the PT end proved dead at the first two. **S1 is complete and every rung's optimum is interior**, so the column is readable: three switches free (attn_value -0.6, position -0.4, norm -0.7), two cost (ffn +15.1, weight_sharing +12.5), two are cliffs (readout +557.6, state +564.3). The readout cliff is the evaluation-time swap of exp3 reached from the other side -- the mixture readout transplanted into an ordinary decoder does not train at any rate, train ppl 736.6. **S2 is not yet readable**: six of ten rungs are best at the highest rate run, and so is the all-PT anchor, which falls monotonically across the whole sweep -- 687.2, 395.5, 354.5, 296.7 -- without turning over. An optimum at a grid boundary is a lower bound on the tuning, not a tuned number. Extending the sweep upwards is the obvious next step and is not run. The endpoint residue against the corrected decoder has fallen from ~170 to ~77 as the anchor tuned, and carries a second confound found later: this ladder runs T=4, h=4 where the decoder runs T=3, h=2, and exp3 has since shown that iterations cost. |
 
 ## Partial reading (2026-09-08, learning rates 1e-3 and 3e-3 of four)
 
