@@ -54,8 +54,18 @@ Empirically we ask whether syntactic structure pays for itself. A comparison aga
 decoder cannot settle this, because our model differs from one in two ways at once: it reuses a
 single parameter set across inference iterations, and it has a syntactic factor graph. A looped
 transformer, in which one block is applied repeatedly with shared weights, has the first without
-the second, so the comparison against it is the one that isolates structure. Following
-\citet{wu2023probabilistic}, our aim is not to compete with transformers on perplexity; a gap is
-expected, since all predictive information passes through the label variables and the readout
-inherits their rank. \TODO{one sentence of measured result.} We hope this work extends the
-probabilistic account of contextual representation from analysis to generation.
+the second, so the comparison against it is the one that isolates structure. We also make the
+comparison finer, by building the ladder of ten independent switches that interpolates between a
+causal transformer and this model and measuring what each difference costs on its own.
+
+We had expected to report a gap and to attribute it to the label variables. Two things changed
+that. The readout bottleneck turns out to be the ordinary softmax bottleneck at matched width,
+no worse in kind or degree than a transformer's own output head, and the exact readout escapes
+even that at no parameter cost. And the model's sensitivity to its own width has a mechanism:
+the attention temperature the encoder model prescribes is exactly right at the uniform belief
+and mis-calibrated by up to a factor of the label-set size away from it, which is where training
+takes it within a few hundred steps. Correcting that revives label-set sizes at which the
+prescribed parameterisation sits on the unigram baseline. \TODO{one sentence of measured
+result.} Following \citet{wu2023probabilistic}, our aim is not to win on perplexity but to
+establish that the probabilistic account of contextual representation survives the move to
+generation, and to say precisely what it costs.

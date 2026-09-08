@@ -17,7 +17,7 @@ transfer test only, on WikiText-2 \citep{merity2017pointer} (33{,}278 types; 2{,
 per line and fixed 64-token blocks cut from the joined stream, so that a difference between the
 two corpora cannot be a difference between two tokenisers (\Cref{app:datasets}). The reference
 every number is read against is the maximum-likelihood unigram of the training split, scored on
-the identical token set: \textbf{688.8} on PTB and \textbf{\TODO{wt2 unigram}} on WikiText-2.
+the identical token set: \textbf{688.8} on PTB and \textbf{964.8} on WikiText-2.
 
 \textbf{Every hyperparameter is selected on PTB and transferred to WikiText-2 unchanged.} This
 follows the advice of \citet{kuang2026scaling}, whose method for transferring hyperparameters
