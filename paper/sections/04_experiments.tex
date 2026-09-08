@@ -192,41 +192,40 @@ restored the model's scaling exponent to a transformer's. \textbf{That reading i
 fitting each curve over a different range}, and the way it is wrong is worth stating: the
 baselines extend to $1.2\times10^{6}$ non-embedding parameters, well into the regime where this
 corpus and not the parameter count is binding, and those flat points drag their fitted slopes
-down. There is no single window on which all four curves can
-be compared: their intersection holds two points of the looped frontier, and a power law through
-two points is a line through two points. So each comparison is made on the range the two curves
-in it actually share, and only exponents fitted on the \emph{same} window are ever set beside
-each other.
+down. Two exponents may only be compared if they were fitted
+on the same window, and on this corpus that constraint bites hard: the looped transformer comes
+out at $\ExpTfvLpLp$ over the transformer's range and $\ExpLpvPtLp$ over the causal PT's, from
+the same runs. Three of the four curves --- transformer, looped, and the causal PT at low rank
+--- are measured over one common range, \ExpTriLo{} to \ExpTriHi{} non-embedding parameters, and
+that is where the comparison is made:
 
 \begin{center}\small
-\input{figures/table_exponents}
+\input{figures/table_exponents_trio}
 \end{center}
 
 \noindent
-Read down the table and the ordering is the same in every pair: \textbf{the standard transformer
-is steeper than the looped one, and the looped one is steeper than the causal PT.} Sharing
-parameters across depth costs most of the slope --- $\ExpTfvLpTf$ to $\ExpTfvLpLp$ --- which is
-what \Cref{tab:three-point} predicts, since the looped model has the sharing and none of the
-structure. But it does not account for all of it. On the range the causal PT shares with the
-looped transformer the two are $\ExpLpvPtLp$ and $\ExpLpvPtPt$, and at low rank, over a range
-more than twice as wide, $\ExpLpvLowLp$ and $\ExpLpvLowLow$. In both of those comparisons the
-two exponents stay separated when any single point is dropped from either fit
-(\Cref{tab:exponents-full}); the transformer-against-causal-PT row rests on three points a side
-and cannot be checked that way, which is a reason to read the low-rank row of the table and not
-that one.
+\textbf{Both differences are in the same direction, and the first is much the larger.} Sharing
+parameters across depth costs $\ExpTriTf$ against $\ExpTriLp$ --- which is what
+\Cref{tab:three-point} predicts, since the looped model has the sharing and none of the
+structure --- and the syntactic structure costs a further $\ExpTriLp$ against $\ExpTriLow$.
+Of the gap between the transformer's exponent and the causal PT's, then, roughly four fifths
+opens with the sharing and one fifth with the structure. That split is a difference of fits over
+four, three and eight points and should be read as an order of magnitude, not a measurement; the
+ordering behind it is the robust part. In particular the causal PT does not scale \emph{like} a
+looped transformer, which is the reading the earlier fits invited: it is shallower than one, by
+a smaller but consistent margin.
 
-We therefore do \emph{not} claim that the causal PT scales like a looped transformer. Weight
-sharing is the larger part of its shallow slope and the syntactic structure is a further,
-smaller part --- and the second part is the one this model class is responsible for. How much of
-the vertical offset the structure costs, as opposed to the slope, is what the switch ladder
-below is for.
+The corrected-PT curve cannot join that table --- on the range where it, the transformer and the
+looped model are all measured, the looped frontier has two points, and a power law through two
+points is a line through two points. It enters instead through the pairwise comparisons in
+\Cref{tab:exponents-full}, each fitted on the range its own two curves share, where the same
+ordering holds in all five pairs and the two leave-one-out ranges are disjoint in every pair
+that has enough points to compute one. What does \emph{not} appear anywhere in our conclusions
+is a fit over each curve's own full range, which is what one would report by default and which
+here reverses the reading entirely.
 
-A caution about all six of these numbers. Fitted exponents on this corpus are strongly
-window-dependent: the looped transformer comes out at $\ExpTfvLpLp$ against the transformer's
-range and $\ExpLpvPtLp$ against the causal PT's, from the same runs. Quoting any of them without
-its window would be meaningless, which is why the window is a column of the table and not a
-footnote, and why the exponents from a fit over each curve's own full range --- which is what
-one would report by default --- appear nowhere in our conclusions.
+How much of the vertical offset the structure costs, as opposed to the slope, is what the switch
+ladder below is for.
 
 \Cref{tab:main} makes the budget comparison
 directly. \textbf{The gap is smallest where the models are smallest and widens with budget},

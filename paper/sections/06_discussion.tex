@@ -15,10 +15,9 @@ mixture-of-softmaxes readout are consequences of that, not additions to it. What
 claim is a perplexity win. At bracketing budgets the model is a factor of $\MBFirstRatioGpt$ to
 $\MBLastRatioGpt$ behind a causal transformer on this corpus, and per parameter it gains less
 than either baseline on every range where the comparison can be made. Where the exponents put
-the cause is worth being exact about: sharing parameters across depth accounts for most of the
-shallow slope --- a looped transformer gives up $\ExpTfvLpTf$ for $\ExpTfvLpLp$ against a
-standard one --- but not for all of it, since on their own shared range the causal PT is
-shallower than the looped transformer in turn. The structure costs something beyond the sharing,
+the cause is worth being exact about: on the one range where all three are measured, sharing
+parameters across depth accounts for most of the shallow slope --- $\ExpTriTf$ against
+$\ExpTriLp$ --- and the syntactic structure for the rest, $\ExpTriLp$ against $\ExpTriLow$. The structure costs something beyond the sharing,
 and it is the part this model class is answerable for. That is a smaller gap than we reported
 before and it is arrived at honestly; it is not a win, and we have tried not to write it as one.
 
