@@ -58,6 +58,22 @@ the two results say that the small-scale gaps reported for this model class have
 partly artefacts of tuning, and that the interesting question is which parameterisation makes
 each variant transfer.
 
+It is also worth saying which of this model's knobs turned out to matter, since a reader
+inheriting seven of them where a transformer has one will want to know where to spend a budget.
+\textbf{Four are decisive}: the head temperature (\Cref{sec:exp-width} --- the difference
+between training and sitting on the unigram), the learning rate (twenty times the source's
+value, and interacting with width), the Kruskal rank of the arc scores (better perplexity at an
+eighth of the parameters), and the label-set size itself. \textbf{One is decisive in the wrong
+direction}: the iteration count, where fewer is better (\Cref{sec:exp-depth}). \textbf{Two are
+close to inert} over the ranges we swept: the relative-position clip $\clip$, and the $L_2$
+coefficient on the arc scores, which changes nothing between $5\times10^{-4}$ and
+$5\times10^{-3}$ and then destroys the model at $5\times10^{-2}$ --- inert until it is fatal,
+with no useful gradient in between. These were measured at different budgets and are an ordering
+rather than a ranking, but the ordering is the practical content of
+\citet{kuang2026scaling}'s observation restated from the decoder side: what matters are the two
+knobs that set the \emph{scale} of the messages and the one that sets their \emph{rank}, and
+those are exactly the ones the source fixes by a rule that does not transfer.
+
 \paragraph{The missing feed-forward block is missing, and the in-graph substitute does not
 substitute.} Two of our experiments meet here and neither says this alone. The switch ladder
 prices the feed-forward block at $15.1$ perplexity in an otherwise ordinary decoder --- the
