@@ -5,6 +5,68 @@ and which decisions were made and why. Organised by component, most recent chang
 
 ## Recent changes
 
+**2026-09-08 — the reviewers' programme, and a width mechanism.** Prof. Tu and Penghao Kuang
+reviewed the 2026-08 report and asked for four things: a fair matched-budget comparison against
+the Looped Transformer, scaling curves against parameter count, the initialisation scheme
+examined, and Haoyi Wu's ten-switch PT-versus-transformer ablation adapted to the decoder. All
+four are built and running; the mechanism found along the way is the session's main result.
+
+**The finding.** Wu & Tu fix the head-update temperature at `lambda_H = 1/d`. The head logit is
+`<q_i, B^(c)_{j,.}>` where *both* vectors are expectations under label distributions, so their
+Euclidean norms range over `[1/sqrt(d), 1]`. At initialisation both beliefs are near uniform and
+`1/d` is exactly right; after training sharpens them the same division leaves an `O(d sigma_T)`
+logit. **The temperature is calibrated for a limit the model leaves within a few hundred steps,
+and the error is linear in the width.** Correcting it (standardising the head logits over the
+head domain) revives widths that sit exactly on the unigram under the source parameterisation,
+and restores the model's scaling exponent to a transformer's: fitted power laws give -0.086 for
+a causal transformer, -0.087 for a Looped one, **-0.082 for the corrected causal PT** and -0.061
+for the same model with the constants carried across widths unchanged. What remains is a
+vertical offset of about 1.6x, against 2.17x in the 2026-08 report.
+
+**The methodological finding, which changes how earlier numbers must be read.** The 2026-08
+record configuration has a **seed standard deviation of 130 perplexity** (462.4 +- 130.2 over
+three seeds) and is *deterministic within a GPU model but different across models* — the same
+code and seed reproduces the August trace to every printed digit on an A40 and lands 215
+perplexity away on a TITAN RTX. So 430.04 was both exactly reproducible on its own hardware and
+not a measurement. Damping cuts the spread to 0.65. No single-seed number from the undamped
+region is now reported, and the earlier frozen-`b` comparison (a difference of 43 against a
+spread of 130) is withdrawn.
+
+**Three results that change the configuration to report.**
+
+* **The Kruskal rank inverts.** Every run in this project used `rank = d`, inherited from
+  Wu & Tu's Table 2 rule. At `d = 96`, `rank = 48` gives 242.6 +- 3.3 against `rank = 96`'s
+  275.6 +- 27.1 — better perplexity at half the arc parameters and an eighth of the seed
+  variance. `d = 32, rank = 8` reaches 255.7 at **4,160** non-embedding parameters, a quarter of
+  the 2026-08 record's budget.
+* **The gain of the corrected temperature transfers**: argmin 1 at every width tested, the same
+  working range [1,2] at every width, which is what standardisation predicts. But the width
+  ceiling *moves* rather than lifting — `d >= 96` is unstable again.
+* **Learning-rate transfer is not what the temperature fixes**: the argmin moves one grid step
+  over an eightfold width range under *both* temperatures. This result and
+  Kuang et al. (arXiv:2604.25409, muP for the PT encoder) are about different quantities.
+
+**Baselines are complete and reframe Experiment 2.** 48/48 cells. The transformer's own curve is
+flat above ~2e5 non-embedding parameters on PTB, and at matched non-embedding budget the Looped
+Transformer *beats* the standard one below ~5e4. Weight sharing is a saving at this scale, not a
+handicap — so a PT deficit cannot be charged to sharing, and PT-versus-Looped is the sharper
+test rather than the more forgiving one.
+
+**Built this session.** `experiments/sweep.py` (one grid runner for every model, per-cell row
+writing, shard locking, resume); `experiments/requeue.py` and `watchdog.sh` (dead shards return
+automatically); `experiments/make_report.py` (every figure and table of the preprint regenerated
+from the committed JSONs); `src/switches.py` (the ten-switch ladder, all-transformer numerically
+equal to `src/gpt.py`); `src/factored.py` (`FactoredPTDecoder`, the note's flagship widening,
+`K = 1` bitwise the flat model, exact readout checked against brute-force enumeration at `K = 2`);
+`src/analysis.py`; WikiText-2 through the same code path as PTB; `PTConfig.temp_mode` and
+`init_dist`; `TrainConfig.keep_best`. 12 test files, all passing.
+
+**The preprint** is on branch `article` in the `pt-article` worktree: Sections 1-7 written,
+Appendices A-G, both figures drawn, every bibliography entry re-verified against the ACL
+Anthology or the arXiv API. Main body currently 14 pages against an 8-page budget; the cut plan
+is in `paper/PAPER_STATUS.md`.
+
+
 **2026-08-10 — the causal PT decoder learns on PTB.** Validation perplexity **315.5**, test
 **285.3**, against a unigram baseline of 688.8 and a pre-registered gate of 344.4. Output is
 demonstrably context-dependent (prefix-ablation KL 2.18 against exactly 0.0000 in every
