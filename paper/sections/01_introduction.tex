@@ -67,8 +67,9 @@ and mis-calibrated by up to a factor of the label-set size away from it, which i
 takes it within a few hundred steps. Correcting that revives label-set sizes at which the
 prescribed parameterisation sits on the unigram baseline. The resulting model reaches a
 validation perplexity of $208.8$ on the Penn Treebank against $445.2$ for a bigram and $133.9$
-for a causal transformer at a comparable budget; its label variables carry syntactic categories
-that nothing supervised, and its head variables --- the part that was supposed to carry
-dependency structure --- have learned locality instead. Following \citet{wu2023probabilistic},
+for a causal transformer at a comparable budget; its label variables carry syntactic categories that nothing
+supervised, and its head variables attach at a mean distance of eleven positions where uniform
+attention would give seventeen --- though which of those two properties appears depends on the
+parameterisation, which is itself a result. Following \citet{wu2023probabilistic},
 our aim is not to win on perplexity but to establish that the probabilistic account of
 contextual representation survives the move to generation, and to say precisely what it costs.

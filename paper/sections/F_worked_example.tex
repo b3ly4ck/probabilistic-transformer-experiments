@@ -135,44 +135,52 @@ $32$-value bottleneck produced. Not every label is interpretable, and we do not 
 roughly a third of them resist any reading we can offer, which matches what
 \citet{wu2023probabilistic} report for the encoder.
 
-\paragraph{Where the head posterior looks --- a negative result.}
-The head variable is the model's dependency attachment, and this is where the interpretation
-does \emph{not} hold up. Averaged over validation, the posterior puts $0.976$ of its positional
-mass at distance $1$ and $0.486$ of its total mass on \textsc{root}; the mean attachment distance
-is $1.05$. \textbf{The model has learned locality, not dependency structure.} Its attention is a
-bigram attachment with a large sink, which is enough to beat a unigram baseline by a wide margin
-and is not what the construction is for. We report this because it bounds the interpretability
-claim to the label variables, and because it identifies where a reader should look for the next
-improvement: a head posterior that never leaves distance $1$ is not using the arc factors the
-model is built around.
+\paragraph{Where the head posterior looks.}
+The head variable is the model's dependency attachment, and this is where the configuration
+matters more than anything else in this paper. We probed two trained models: the one this
+project's earlier work selected ($\nlab=32$, the source head temperature, damped) and the one
+\Cref{sec:exp-width} selects ($\nlab=96$, $\krank=12$, standardised temperature, undamped).
 
-It does not, however, make the model a bigram. An add-one bigram on this corpus reaches $445.2$
-on the identical token set and the model reaches $217.6$ --- better by a factor of two. The
-resolution is that locality \emph{composes}: the belief at position $t$ is computed from the
-belief at $t-1$, which was itself computed from $t-2$, so $\niter$ iterations of a
-distance-one attachment give a receptive field of $\niter$ positions even though every
-individual attachment is local. What the model has learned is closer to a stack of local
-operators than to a dependency parser, which is a coherent thing to be and is not the thing the
-construction was designed to be.
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & earlier & selected \\
+\midrule
+\textsc{root} mass                & $0.486$ & $0.277$ \\
+mean attachment distance          & $1.05$  & $11.06$ \\
+mass at distance 1                & $0.976$ & $0.327$ \\
+mass beyond distance 3            & $0.001$ & $0.497$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The earlier model had \emph{not} learned attachment: it put $0.976$ of its positional mass at
+distance one and essentially nothing past three, which is a bigram attachment with a large sink.
+The selected model has. Its mean attachment distance is $11.1$ against $17.0$ for uniform
+attention over the same prefixes, it is $5.2$ times uniform at distance one, and it still places
+half its mass beyond distance three. That is what a preference for nearby heads looks like when
+it is a preference rather than a collapse.
+
+\textbf{We report both because the difference is the point.} The same probe on the same corpus
+gives opposite answers about whether this model class learns dependency structure, and what
+separates them is the head temperature and the arc-score rank --- the two things
+\Cref{sec:exp-width} is about. A reader who takes an interpretability result from a probabilistic
+transformer without knowing which parameterisation produced it is not being told very much.
+\Cref{fig:attachment} draws the selected model's profile against the uniform reference.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_attachment.png}
-\caption{Where the head posterior attaches, against what uniform attention over the prefix would
-give. Note the log scale: by distance $5$ the posterior is four orders of magnitude below
-uniform. The decay stops exactly at distance $3$ --- which is where the clipped distance table
-stops giving a distance its own parameters ($\clip = 3$), everything beyond sharing one bucket.
-The model uses the distances it can name and ignores the rest.}
+\caption{Where the head posterior attaches in the configuration of \Cref{sec:exp-width}
+($\nlab=96$, $\krank=12$), against what uniform attention over the same prefixes would give.
+The posterior is $5.2$ times uniform at distance one and falls below it further out, but half
+its mass still lies beyond distance three and its mean attachment distance is $11.1$ against
+uniform's $17.0$: a preference for nearby heads rather than a collapse onto the previous word.
+The steep part covers exactly the distances the clipped table gives their own arc scores
+($\clip=3$); everything beyond shares one bucket.}
 \label{fig:attachment}
 \end{figure}
-
-\Cref{fig:attachment} adds one more thing, and it points at a fix rather than only a defect. The
-profile does not decay smoothly: it falls across distances $1, 2, 3$ and then collapses. That is
-exactly the structure of the clipped distance table, which gives distances $1..\clip$ their own
-arc-score matrices and shares a single bucket for everything beyond. \textbf{The head posterior
-uses the distances that have their own parameters and essentially ignores the one bucket that
-would let it reach further.} Whether raising $\clip$ moves the profile is a one-line experiment,
-and it is the first thing we would try.
 
 \paragraph{Prior against posterior.}
 Part~IV's contraction bound predicts that the divergence between a slot's predictive and observed
@@ -182,6 +190,10 @@ observed. Measured over 4{,}032 slots, the correlation is positive but weak
 $2.58$ on the most surprising. The direction the theory predicts is there; its strength is not
 something the bound claims and we do not read one into it.
 
-\NOTE{These readings are from the 2026-08 record checkpoint ($\nlab=32$, damped, source head
-temperature), which is the trained model that existed when the probes were written. The probe
-is being re-run on the configuration \Cref{sec:exp-width} selects.}
+The label lexicon above is from the $\nlab=32$ model, where $32$ labels over a $10{,}000$-word
+vocabulary give each label enough words to be readable. At $\nlab=96$ the same probe finds
+fewer clean categories and more fragments --- adverbs (\textit{hastily, mildly, extremely,
+widely}), gerunds (\textit{completing, entering, joining, contemplating}), units
+(\textit{bottle, par, pound, capita, bushel}) and time nouns (\textit{century, decade, phase,
+1970s}) survive, but a majority resist reading. Interpretability and capacity pull in opposite
+directions along the width axis, and we did not find a width where both are best.

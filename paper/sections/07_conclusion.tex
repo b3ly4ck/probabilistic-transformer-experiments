@@ -12,7 +12,7 @@ by unclamping a variable the model already had, which makes tied embeddings, the
 and a mixture-of-softmaxes readout consequences of the construction rather than additions to it.
 Empirically the model trains, reaches roughly $1.6$ times a causal transformer's perplexity at a
 comparable budget, and learns label variables that carry recognisable syntactic categories
-without supervision --- while its head variables, the ones the dependency reading rests on, do
-not learn attachment. We hope this extends the probabilistic account of contextual representation
+without supervision --- though whether its head variables learn attachment or collapse onto the
+previous word turns out to depend on the same temperature the scaling does. We hope this extends the probabilistic account of contextual representation
 from analysis to generation, and that saying where it fails is as useful as saying where it
 holds.

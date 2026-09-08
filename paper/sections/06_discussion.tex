@@ -54,18 +54,20 @@ than embarrassing. It prices one specific consequence of the discipline this mod
 imposes, and it is the same price a transformer pays knowingly when it puts a layer
 normalisation in front of its attention.
 
-\paragraph{The interpretation survives on one axis and not the other.}
-Probing a trained model directly (\Cref{app:interpretability}) gives the clearest statement of
-what this construction has and has not bought. Its label variables carry recognisable syntactic
-categories that nothing supervised --- infinitives, third-person present verbs, prepositions,
-person names, units --- which is the property no transformer of comparable size offers and the
-reason to care about the model class at all. Its head variables do not carry attachment: the
-posterior sits at distance one. A model whose attention has collapsed to a bigram is not using
-the arc factors it is built around, so the honest reading is that the label side of the
-construction is doing the work and the dependency side is, so far, decoration. That is a
-sharper target for future work than any perplexity gap.
+\paragraph{The interpretation is real and it is parameterisation-dependent.}
+Probing trained models directly (\Cref{app:interpretability}) gives the clearest statement of
+what this construction buys, and the clearest warning about how to read such statements. In the
+configuration \Cref{sec:exp-width} selects, the head posterior attaches at a mean distance of
+$11.1$ positions against $17.0$ for uniform attention --- a genuine preference for nearby heads
+--- and the prior-to-posterior divergence at a slot correlates with the surprisal of the word
+observed there at $r = 0.47$, which is the qualitative content of the construction's own
+contraction bound. In the configuration our earlier work selected, the same probe finds the
+attention collapsed onto the previous word and the correlation at $r = 0.16$. Same model class,
+same corpus, opposite readings. Interpretability results from this family should be quoted with
+the parameterisation that produced them, and we would not have known that without running the
+probe twice.
 
-\paragraph{Extensions.}
+\paragraph{Extensions.}\paragraph{Extensions.}
 Three directions follow from what we measured rather than from what we hoped: factored labels
 with the exact readout, which is the strongest graph-faithful head available and whose gain is
 predicted to exist only there (\Cref{sec:exp-factored}); continuous or vector-valued label

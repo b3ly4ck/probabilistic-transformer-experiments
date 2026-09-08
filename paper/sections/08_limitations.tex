@@ -46,16 +46,18 @@ model reads the label posterior directly. We measure the residue --- the differe
 endpoint and the real decoder at the same width, corpus, loop and budget --- and it bounds how
 much weight the per-switch attributions can carry.
 
-\paragraph{The head variables have not learned dependency structure.}
-The construction's interpretive claim has two halves and only one of them survives measurement.
-Several label variables are recognisably syntactic with nothing supervising them
-(\Cref{app:interpretability}). The head posterior is not: it places $0.976$ of its positional
-mass at distance $1$ and $0.486$ of its total mass on \textsc{root}, so what the model has
-learned is locality with a large sink, not attachment. Everything this paper says about the arc
-factors is therefore a statement about a mechanism the trained model barely exercises, and a
-reader should not take the dependency reading of $\Hv{}{}$ on trust from the derivation.
+\paragraph{What the latent variables learn depends on the parameterisation, and we cannot have
+both.}
+The interpretive claim survives, but not uniformly. In the configuration this paper selects the
+head posterior does learn a preference for nearby heads --- mean attachment distance $11.1$
+against $17.0$ for uniform attention, with half its mass beyond distance three --- while in the
+configuration our earlier work selected it had collapsed onto the previous word
+(\Cref{app:interpretability}). The label variables run the other way: at $\nlab=32$ a majority
+carry readable syntactic categories, and at the $\nlab=96$ that gives the better perplexity most
+of them do not. We did not find a setting where capacity and interpretability are both best, and
+we report the probe on both models rather than the one that flatters the claim.
 
-\paragraph{No single sequence-level joint.}
+\paragraph{No single sequence-level joint.}\paragraph{No single sequence-level joint.}
 Giving up the global energy (\Cref{sec:obstruction}) is what makes the model causal, and it means
 quantities defined by a sentence-level joint --- a partition function, an exact sequence
 likelihood under bidirectional evidence --- are simply unavailable. The model is a valid directed
