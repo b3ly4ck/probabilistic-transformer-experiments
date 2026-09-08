@@ -381,14 +381,27 @@ symmetry: with the rows of $\Bglob$ close together relative to their own length 
 posterior is uniform, the message is the row mean, and every row then receives the identical
 gradient $1/m$, so nothing separates them; a shared $L_2$ shrinks the spread that would.
 
-Measured, the head is not dead weight. At $\nlab=32$ the configuration \emph{without} it sits
-exactly on the unigram (700.7) while several configurations with it land between 323 and 380 ---
-a second message into $\Zv{t}$ that does not pass through the arc factors evidently breaks the
-runaway loop. But the head posterior's entropy is at its maximum in almost every cell, so what
-it contributes is a constant label prior rather than the feed-forward-like operator it is
-proposed as, and perplexity alone cannot tell those apart. \Cref{tab:globalhead} reports both.
-\TODO{final three-seed grid in the stable configuration, including the orthogonal-initialisation
-prediction}
+Measured twice, in two configurations, the head answers two different questions --- and the
+second answer withdraws the first. Under the \emph{source} head temperature at $\nlab = 32$,
+where the model collapses, the configuration without the head sits on the unigram ($700.7$)
+while several with it land between $323$ and $380$: a second message into $\Zv{t}$ that does not
+pass through the arc factors evidently breaks the runaway loop, and on that evidence the head
+looks load-bearing. Re-run in the configuration \Cref{sec:exp-width} selects --- standardised
+temperature, undamped, three seeds --- \textbf{the effect is gone}. Without the head,
+$243.2 \pm 5.3$; with it, across three initialisation scales and both $L_2$ treatments,
+between $243.6$ and $254.1$, every one of them equal to or worse than no head at all.
+
+So the head was not adding capacity, it was rescuing a pathology, and the temperature correction
+removes the pathology more cheaply. The diagnostic says the same thing from inside: the head
+posterior's entropy is between $0.94$ and $1.000$ of its maximum in every cell of the grid, so
+what the head sends is a near-constant label prior and not the feed-forward-like operator it is
+proposed as --- including in the cells where its message is \emph{larger} than the word unary
+($1.19$ to $1.52$ times, outside the shared $L_2$). Perplexity alone cannot tell a uniform
+posterior from an informative one, which is why \Cref{tab:globalhead} reports the entropy beside
+it. On Prof.\ Tu's question directly: Gaussian initialisation at three scales spanning
+$25\times$, with and without the head in the shared $L_2$, changes nothing that matters.
+\TODO{the $\nlab=64$ arm, the capacity axis $m \in \{16,256\}$, and the orthogonal draw, whose
+prediction is registered in the spec.}
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
