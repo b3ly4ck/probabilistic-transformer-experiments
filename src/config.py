@@ -36,6 +36,19 @@ class PTConfig:
     h: int = 16
     rank: Optional[int] = 64
     gamma: int = 3
+    n_components: int = 1  # K; §22.2 "factored labels". 1 is the flat model of Part III.
+    channel_assignment: str = "roundrobin"  # "roundrobin" | "diagonal"
+    # §22.2 replaces the single label variable Z_t by K variables Z_t^(1..K), each over
+    # d' = d // K values, so that the *total* label width stays d and the word-label factor
+    # S keeps its |V| x d = |V| K d' shape (read as K contiguous blocks of width d'). Each
+    # head channel c is assigned a child component k(c) — whose belief queries the channel
+    # and receives its message — and a head component k'(c) — whose prefix belief is
+    # contracted into the channel's keys. The document does not fix that assignment; the two
+    # named here are this project's choices, see `src/factored.py`.
+    #   "roundrobin": k(c) = c mod K, k'(c) = (c // K) mod K. At h = K^2 every (child, head)
+    #                 component pair occurs exactly once.
+    #   "diagonal":   k'(c) = k(c) = c mod K. Components never mix.
+    # K = 1 collapses both to the flat model, tensor for tensor.
     n_global: int = 0  # m; B.3.3 single-split global head. 0 disables it.
     allow_exact_global_head: bool = False
     # Under the exact readout G_t's direct contribution to log mu is
@@ -159,13 +172,23 @@ class PTConfig:
                 "measured to 1e-12), so G_t is alive only under MFVI. Use readout='mfvi', "
                 "or set allow_exact_global_head=True if you are testing that constancy."
             )
+        if self.n_components < 1:
+            raise ValueError("n_components must be >= 1")
+        if self.d % self.n_components != 0:
+            raise ValueError(
+                f"n_components {self.n_components} does not divide d {self.d}: the K label "
+                "variables partition the total width d into equal blocks d' = d // K, so "
+                "that S keeps its |V| x d shape and K = 1 is the flat model"
+            )
+        if self.channel_assignment not in ("roundrobin", "diagonal"):
+            raise ValueError(f"unknown channel_assignment {self.channel_assignment!r}")
         if self.rank is not None and self.rank < 1:
             raise ValueError("rank must be >= 1 or None")
-        if self.rank is not None and self.rank > self.d:
+        if self.rank is not None and self.rank > self.d_label:
             raise ValueError(
-                f"rank {self.rank} exceeds d {self.d}: the Kruskal form T = U V^T cannot "
-                "have rank above d, and costs more parameters than a full T already at "
-                "2*rank >= d"
+                f"rank {self.rank} exceeds d' {self.d_label}: the Kruskal form T = U V^T "
+                "cannot have rank above the width of one label variable, and costs more "
+                "parameters than a full T already at 2*rank >= d'"
             )
 
     @property
@@ -174,5 +197,21 @@ class PTConfig:
         return self.gamma + 1
 
     @property
+    def d_label(self) -> int:
+        """``d'`` — the label-set size of **one** label variable ``Z^(k)``.
+
+        ``d`` is the *total* width ``D = K d'`` throughout, so that ``S`` is ``|V| x d``
+        whatever ``K`` is (§22.2: "parameters |V|Kd' = |V|D at total width D = Kd' —
+        identical to a flat label of width D"). At ``K = 1`` this is ``d``.
+        """
+        return self.d // self.n_components
+
+    @property
     def lam_H(self) -> float:
-        return self.lambda_H if self.lambda_H is not None else 1.0 / self.d
+        """Wu & Tu App. A.5 default ``1/d`` — read on the *label variable's* own width.
+
+        For the flat model ``d_label == d`` and this is literally the source's value. Under
+        factoring the belief entering a head logit is a distribution over ``d'`` labels, so
+        ``1/d'`` is the same rule applied to the variable that is actually there.
+        """
+        return self.lambda_H if self.lambda_H is not None else 1.0 / self.d_label

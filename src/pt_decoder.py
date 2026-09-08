@@ -59,15 +59,31 @@ NEG_INF = float("-inf")
 
 
 class CausalPTDecoder(nn.Module):
+    # One label variable per position. :class:`src.factored.FactoredPTDecoder` sets this
+    # True; the guard below stops `n_components > 1` from silently building a flat model
+    # of the wrong width.
+    supports_factored_labels = False
+
     def __init__(self, cfg: PTConfig):
         super().__init__()
+        if cfg.n_components != 1 and not self.supports_factored_labels:
+            raise ValueError(
+                f"n_components={cfg.n_components} but {type(self).__name__} implements the "
+                "single-label model of Part III. Use src.factored.FactoredPTDecoder for the "
+                "factored labels of §22.2."
+            )
         self.cfg = cfg
-        d, h, V, K = cfg.d, cfg.h, cfg.vocab_size, cfg.n_dist
+        h, V, K = cfg.h, cfg.vocab_size, cfg.n_dist
+        # ``d`` is the *total* label width; ``d_label`` is the width of one label variable
+        # and equals ``d`` for this class. :class:`src.factored.FactoredPTDecoder` is the
+        # same constructor with ``d_label = d // n_components``; every tensor below that is
+        # indexed by a *label* is sized in ``d_label``, and ``S`` alone is sized in ``d``.
+        d = cfg.d_label
 
         # --- the factor list ---
         # word-label factor S: read as unary when W_t is observed, as emission when it
         # is free. One tensor, both roles: tying is forced (§16(b)), not chosen.
-        self.S = nn.Parameter(torch.empty(V, d))
+        self.S = nn.Parameter(torch.empty(V, cfg.d))
         # word unary b: the bias of the LM head, as a factor (§16(c)).
         self.b = nn.Parameter(torch.zeros(V)) if cfg.word_unary else None
         # root/sink column r^(c): the ROOT entry of the contracted arc score.
@@ -198,7 +214,9 @@ class CausalPTDecoder(nn.Module):
         else:
             UtU = torch.einsum("khar,khas->khrs", self.U, self.U)
             VtV = torch.einsum("khbr,khbs->khrs", self.V, self.V)
-            n_entries = self.U.shape[0] * self.U.shape[1] * self.cfg.d * self.cfg.d
+            # ``T = U V^T`` has ``n_dist * h * d_label^2`` entries; read the width off the
+            # factors themselves so the mean stays a mean under label factoring too.
+            n_entries = self.U.shape[0] * self.U.shape[1] * self.U.shape[2] * self.V.shape[2]
             arc = (UtU * VtV).sum() / n_entries
         total = arc + (self.r_root**2).mean()
         if self.B_glob is not None and self.cfg.regularise_global_head:
@@ -239,7 +257,11 @@ class CausalPTDecoder(nn.Module):
             # ||q||_2 * sqrt(d) is 1 at the uniform belief and sqrt(d) at a one-hot, so this
             # is exactly Wu & Tu's temperature at initialisation and a strictly weaker
             # sharpening away from it.
-            qn = query.norm(dim=-1) * math.sqrt(self.cfg.d)  # (..., n) or (B,)
+            # ``d`` here is the width of the *querying* label variable — ``d_label``, which
+            # is ``cfg.d`` for the flat model and ``d/K`` under label factoring. ``query``
+            # may carry a channel axis (the factored decoder passes a per-channel query);
+            # the unsqueeze loop below lines up whatever leading axes it has.
+            qn = query.norm(dim=-1) * math.sqrt(self.cfg.d_label)  # (..., n) or (B,)
             qn = qn.clamp(min=1e-12)
             # query has one fewer leading axis than `full` (no channel axis) and `full`
             # carries the head domain last: line them up by unsqueezing.
@@ -458,7 +480,7 @@ class CausalPTDecoder(nn.Module):
 
         Returns ``(B, h, 1 + t, d)`` with ROOT at index 0.
         """
-        h, d = self.cfg.h, self.cfg.d
+        h, d = self.cfg.h, self.cfg.d_label
         if t == 0:
             return self.r_root.view(1, h, 1, d).expand(batch, h, 1, d)
         return self._slot_keys(torch.cat(keys[:t], dim=3), t)
@@ -469,7 +491,7 @@ class CausalPTDecoder(nn.Module):
         ``Bk`` is ``(n_dist, B, h, m, d)`` with ``m >= t``; returns ``(B, h, 1+t, d)``.
         """
         device = Bk.device
-        h, d = self.cfg.h, self.cfg.d
+        h, d = self.cfg.h, self.cfg.d_label
         j = torch.arange(t, device=device)
         bucket = self.bucket_of(t - j)  # (t,)
         sel = Bk[bucket, :, :, j, :]  # (t, B, h, d)
@@ -494,6 +516,18 @@ class CausalPTDecoder(nn.Module):
     def exact_log_mu(self, Bk: torch.Tensor) -> torch.Tensor:
         """``log μ_t(a) = Σ_c LSE_{j ∈ D_t} B^(c)_{j,a}`` for every slot, ``(B, n, d)``.
 
+        The channel sum is the last step; :meth:`_channel_log_mu` stops just before it,
+        which is where the factored decoder branches (there the sum runs only over the
+        channels assigned to one label component).
+        """
+        log_mu = self._channel_log_mu(Bk).sum(dim=1)  # (B, n, d)
+        if self.B_glob is not None:
+            log_mu = log_mu + torch.logsumexp(self.B_glob, dim=0)
+        return log_mu
+
+    def _channel_log_mu(self, Bk: torch.Tensor) -> torch.Tensor:
+        """``LSE_{j ∈ D_t} B^(c)_{j,a}`` per channel, ``(B, h, n, d_label)``.
+
         §23.3: seeded with ``r^(c)_a`` and, in the far bucket, a causal prefix
         log-sum-exp — one ``logcumsumexp`` scan, ``O(n d h)``, fully parallel. The
         near buckets of the RPE table each contain exactly one position, so they are
@@ -516,24 +550,32 @@ class CausalPTDecoder(nn.Module):
                 near[:, :, delta:, :] = Bk[k][:, :, : n - delta, :]
             terms.append(near)
 
-        log_mu = torch.logsumexp(torch.stack(terms, dim=0), dim=0).sum(dim=1)  # (B, n, d)
-        if self.B_glob is not None:
-            log_mu = log_mu + torch.logsumexp(self.B_glob, dim=0)
-        return log_mu
+        return torch.logsumexp(torch.stack(terms, dim=0), dim=0)  # (B, h, n, d)
 
     def _logits_from_log_mu(self, log_mu: torch.Tensor) -> torch.Tensor:
-        """``logits(w) = b_w + LSE_a ( S_{w,a} + log μ(a) )`` — §17.2, chunked over ``V``."""
-        d = log_mu.shape[-1]
-        lead = log_mu.shape[:-1]
+        """``logits(w) = b_w + LSE_a ( S_{w,a} + log μ(a) )`` — §17.2, chunked over ``V``.
+
+        The chunking is the practical warning of §26 ("chunk the LSE readout over the
+        vocabulary like a fused cross-entropy, or the memory of the |V| x d intermediate
+        will dominate"); the per-chunk arithmetic is :meth:`_chunk_logits`, which is the
+        only part the factored readout replaces.
+        """
         out = []
         for s in range(0, self.cfg.vocab_size, self.cfg.vocab_chunk):
-            S_c = self.S[s : s + self.cfg.vocab_chunk]  # (c, d)
-            view = (1,) * len(lead) + S_c.shape
-            out.append(torch.logsumexp(log_mu.unsqueeze(-2) + S_c.view(view), dim=-1))
+            out.append(self._chunk_logits(log_mu, self.S[s : s + self.cfg.vocab_chunk]))
         logits = torch.cat(out, dim=-1)
         if self.b is not None:
             logits = logits + self.b
         return logits
+
+    def _chunk_logits(self, log_mu: torch.Tensor, S_c: torch.Tensor) -> torch.Tensor:
+        """``LSE_a ( S_{w,a} + log μ(a) )`` for one slice of the vocabulary.
+
+        ``log_mu`` is ``(..., d)``, ``S_c`` is ``(chunk, d)``; the result is ``(..., chunk)``.
+        """
+        lead = log_mu.shape[:-1]
+        view = (1,) * len(lead) + S_c.shape
+        return torch.logsumexp(log_mu.unsqueeze(-2) + S_c.view(view), dim=-1)
 
     def _word_prior(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """``Q_W^(0) ∝ exp(b)`` and the prior word message ``s̄_a = Σ_w Q_W^(0)(w) S_{w,a}``.
