@@ -93,11 +93,13 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | cell.model | cell.n_embd | cell.n_layer | cell.d | cell.lr | val_ppl | test_ppl | train_ppl | params.non_embedding | params.total | best_step | cell.rank |
 | ---------- | ----------: | -----------: | -----: | ------: | ------: | -------: | --------: | -------------------: | -----------: | --------: | --------: |
 | pt         |         160 |            4 |     32 |   0.020 | 256.806 |  235.759 |   241.802 |                 4160 |       334160 |     15000 |         8 |
+| pt         |         160 |            4 |     48 |   0.020 | 238.779 |  217.879 |   217.835 |                 9312 |       499312 |     14500 |        12 |
 | pt         |         160 |            4 |     64 |   0.020 | 231.963 |  212.031 |   205.717 |                 8320 |       658320 |     14500 |         8 |
+| pt         |         160 |            4 |     64 |   0.020 | 223.364 |  205.667 |   193.797 |                16512 |       666512 |     14500 |        16 |
 | pt         |         160 |            4 |     96 |   0.020 | 223.149 |  204.382 |   184.631 |                18624 |       988624 |     15000 |        12 |
 | pt         |         160 |            4 |    128 |   0.020 | 214.604 |  195.763 |   171.472 |                33024 |      1323024 |     15000 |        16 |
-| pt         |         160 |            4 |    192 |   0.020 | 211.758 |  192.520 |   153.692 |                74112 |      2004112 |     15000 |        24 |
-| pt         |         160 |            4 |    256 |   0.020 | 208.754 |  189.022 |   128.639 |               131584 |      2701584 |     10500 |        32 |
+| pt         |         160 |            4 |    192 |   0.020 | 206.929 |  188.280 |   148.554 |                74112 |      2004112 |     15000 |        24 |
+| pt         |         160 |            4 |    256 |   0.020 | 206.095 |  187.466 |   127.215 |               131584 |      2701584 |     10500 |        32 |
 
 **Fitted power-law exponents on the non-embedding axis**
 
@@ -107,7 +109,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            |   9 | -0.087 (r2 0.87) |          5 | -0.107 (r2 0.95) |
 | causal PT, source constants   |   3 | -0.080 (r2 1.00) |          3 | -0.080 (r2 1.00) |
 | causal PT, standardised temp. |   5 | -0.090 (r2 1.00) |          5 | -0.090 (r2 1.00) |
-| causal PT, + low rank         |   6 | -0.055 (r2 0.88) |          6 | -0.055 (r2 0.88) |
+| causal PT, + low rank         |   7 | -0.060 (r2 0.90) |          7 | -0.060 (r2 0.90) |
 
 **Fitted power-law exponents on the total axis**
 
@@ -117,7 +119,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            |   9 | -0.158 (r2 0.86) |          0 | --      |
 | causal PT, source constants   |   3 | -0.160 (r2 1.00) |          0 | --      |
 | causal PT, standardised temp. |   5 | -0.177 (r2 1.00) |          0 | --      |
-| causal PT, + low rank         |   6 | -0.099 (r2 0.94) |          0 | --      |
+| causal PT, + low rank         |   8 | -0.101 (r2 0.92) |          0 | --      |
 
 ## Width transfer (Experiment 4)
 
@@ -497,6 +499,7 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | attn_value      | 128.700 |          -0.600 |   0.001 |  183424 |
 | position        | 128.900 |          -0.400 |   0.001 |  200128 |
 | attn_query_proj | 131.100 |           1.900 |   0.001 |  183424 |
+| attn_out_proj   | 131.500 |           2.300 |   0.003 |  183424 |
 | residual        | 136.700 |           7.500 |   0.001 |  200064 |
 | weight_sharing  | 141.800 |          12.500 |   0.003 |   50112 |
 | ffn             | 144.400 |          15.100 |   0.001 |   67200 |
@@ -506,14 +509,14 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
+| position        | 430.100 |         -34.600 |   0.003 |    8256 |
 | attn_query_proj | 473.400 |         -77.900 |   0.003 |   12432 |
-| position        | 530.600 |        -135.100 |   0.001 |    8256 |
-| norm            | 560.100 |        -164.600 |   0.003 |    8528 |
+| weight_sharing  | 479.900 |         -84.400 |   0.003 |   20800 |
+| norm            | 501.900 |        -106.400 |   0.010 |    8528 |
+| ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
 | state           | 686.800 |        -291.300 |   0.001 |    8272 |
-| ffn             | 686.900 |        -291.400 |   0.001 |   41360 |
 | attn_out_proj   | 686.900 |        -291.400 |   0.001 |   12432 |
 | residual        | 687.100 |        -291.600 |   0.001 |    8272 |
-| weight_sharing  | 687.200 |        -291.700 |   0.001 |   20800 |
 | readout         | 688.800 |        -293.300 |   0.001 |    4176 |
 
 ### L -- the cumulative ladder, transformer to PT
@@ -525,10 +528,11 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 |    1 | weight_sharing  | 144.100 |  14.800 |   0.001 |   50112 |
 |    3 | norm            | 157.100 |  13.100 |   0.001 |   49744 |
 |    4 | attn_out_proj   | 151.600 |  -5.500 |   0.001 |   45584 |
-|    5 | attn_query_proj | 156.100 |   4.500 |   0.001 |   41424 |
-|    6 | attn_value      | 158.600 |   2.500 |   0.001 |   37264 |
+|    5 | attn_query_proj | 146.300 |  -5.300 |   0.003 |   41424 |
+|    6 | attn_value      | 158.600 |  12.300 |   0.001 |   37264 |
 |    7 | ffn             | 213.300 |  54.700 |   0.001 |    4176 |
 |    9 | state           | 688.800 | 475.500 |   0.001 |    4176 |
+|   10 | readout         | 687.200 |  -1.600 |   0.001 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -545,13 +549,15 @@ _not run yet_
 
 ## Matched-budget comparison
 
-| config      | non-emb |   n |      PT |    sd | transformer | ratio |  looped | ratio  |
-| ----------- | ------: | --: | ------: | ----: | ----------: | ----: | ------: | -----: |
-| d=32, r=8   |    4160 |   3 | 256.800 | 1.500 |          -- |    -- | 204.700 |  1.250 |
-| d=64, r=8   |    8320 |   3 | 232.000 | 1.600 |          -- |    -- | 178.500 |  1.300 |
-| d=96, r=12  |   18624 |   3 | 223.100 | 5.600 |     178.500 | 1.250 | 157.600 |  1.420 |
-| d=128, r=16 |   33024 |   3 | 214.600 | 2.000 |     155.900 | 1.380 | 147.700 |  1.450 |
-| d=192, r=24 |   74112 |   2 | 211.800 | 5.300 |     139.600 | 1.520 | 139.100 |  1.520 |
-| d=256, r=32 |  131584 |   1 | 208.800 | 0.000 |     132.600 | 1.570 | 136.200 |  1.530 |
+| config      | non-emb |   n |      PT |     sd | transformer | ratio |  looped | ratio  |
+| ----------- | ------: | --: | ------: | -----: | ----------: | ----: | ------: | -----: |
+| d=32, r=8   |    4160 |   3 | 256.800 |  1.500 |          -- |    -- | 204.700 |  1.250 |
+| d=64, r=8   |    8320 |   3 | 232.000 |  1.600 |          -- |    -- | 178.500 |  1.300 |
+| d=48, r=12  |    9312 |   2 | 238.800 | 12.300 |          -- |    -- | 174.800 |  1.370 |
+| d=64, r=16  |   16512 |   1 | 223.400 |  0.000 |     184.100 | 1.210 | 159.800 |  1.400 |
+| d=96, r=12  |   18624 |   3 | 223.100 |  5.600 |     178.500 | 1.250 | 157.600 |  1.420 |
+| d=128, r=16 |   33024 |   3 | 214.600 |  2.000 |     155.900 | 1.380 | 147.700 |  1.450 |
+| d=192, r=24 |   74112 |   3 | 206.900 |  9.200 |     139.600 | 1.480 | 139.100 |  1.490 |
+| d=256, r=32 |  131584 |   3 | 206.100 |  4.800 |     132.600 | 1.550 | 136.200 |  1.510 |
 
 Baselines are interpolated in log-log space at the causal PT's own parameter count, and left blank outside the range where they were measured -- extrapolating a baseline into a region it was not run in would be inventing the comparison.
