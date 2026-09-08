@@ -710,18 +710,35 @@ accounting supports once corrected, and it is the one that matters to anyone cho
 configuration.
 
 \textbf{And the readout ordering of \Cref{sec:exp3} is not fixed: it depends on $K$, in the
-direction the note predicted.} Along the same diagonal, the exact readout's penalty relative to
-the mean-field one falls monotonically --- $+52.2$ at $K=1$, $+29.9$ at $K=2$, and $-3.7$ at
-$K=4$, where it has gone. This is the interaction \Cref{app:factored} registers in advance: the
-product-of-mixtures readout has more to express as the label variable is split, and the flat
-model has nothing corresponding to express. We state the trend and not the crossover, because
-the last point rests on two seeds against three and $3.7$ is a third of the mean-field cell's
-own spread; what the three points support is that the penalty shrinks with $K$, which no other
-experiment in this paper would have found. It is also the only place where the exact readout is
-the \emph{stable} one --- seeds $226.1$ and $227.4$ against the mean-field cell's $222.8$ to
-$243.1$.
-\TODO{the third seed at $K=4$, and family W --- fixed total width, which is the comparison the
-note's prediction is literally about.}
+direction the note predicted.} The exact readout's penalty relative to the mean-field one falls
+monotonically along \emph{both} diagonals, three seeds everywhere:
+
+\begin{center}\small
+\begin{tabular}{@{}l@{\ \ }r@{\ \ }r@{\ \ }r@{}}
+\toprule
+arc budget & $K=1$ & $K=2$ & $K=4$ \\
+\midrule
+$8{,}256$   & $+52.2$ & $+30.0$ & $-3.5$ \\
+$32{,}896$  & ---     & $+21.7$ & $-6.2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+This is the interaction \Cref{app:factored} registers in advance, and it is the one prediction in
+this paper that was written down before the run and then found. The reading it suggests is that
+the exact readout was never being punished for being richer: at $K=1$ the product of $K$ mixtures
+\emph{is} a single mixture, so the richer family has nothing extra to express, and splitting the
+label variable is what gives it something. The $K=1$ cell of the second diagonal is a split seed
+group and carries no mean, which is why that entry is blank.
+
+Two further things the diagonals show. At $K=4$ the exact readout is also the \emph{stable} one
+--- $\pm 0.8$ and $\pm 4.6$ against the mean-field cells' $\pm 11.0$ and $\pm 9.4$ --- so it is
+not buying its parity with variance. And the crossover is small: $3.5$ and $6.2$ perplexity, on
+the order of a seed spread each, so what we claim is the trend across three points on two
+independent budgets and not the sign of the last cell taken alone.
+\TODO{family W's own cells at fixed total width, where the arc budget falls as $1/K^2$; the two
+that are not shared with family P are still running.}
 
 \subsubsection{Transfer to a second corpus.}
 \label{sec:exp-wt2}
