@@ -102,7 +102,15 @@ LADDER_ORDER = [
 # anchor sits on the unigram (687.2) at 1e-3, and exp4c puts the causal PT's argmin at 2e-2 to
 # 4e-2. 3e-2 is appended rather than inserted so that the cell ordering -- and therefore the
 # shard assignment `k % n` -- of the 96 cells already run is unchanged and they resume-skip.
-LRS = [1e-3, 3e-3, 1e-2, 3e-2]
+#
+# 1e-1 appended for the same reason, and to answer a specific objection to the finished grid.
+# With four rates the all-PT anchor is best at the top of them (687.2, 395.5, 354.5, 296.7,
+# falling monotonically and not turning over), and so are six of the ten S2 rungs. An optimum at
+# a grid boundary is a lower bound on the tuning, not a tuned number, so every S2 magnitude was
+# provisional in size. This rate is expected to be useless at the transformer end -- 3e-2
+# already gives 459.6 there -- and that is not a problem, because every rung is scored as the
+# best of its rates.
+LRS = [1e-3, 3e-3, 1e-2, 3e-2, 1e-1]
 STEPS = 15000
 
 

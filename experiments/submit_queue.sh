@@ -43,7 +43,12 @@ while :; do
     esac
     if out=$(eval "$cmd" 2>&1); then
       echo "$(date +%H:%M:%S) submitted [$line] -> $out"
-      grep -vxF "$line" "$PENDING" > "$PENDING.tmp" && mv "$PENDING.tmp" "$PENDING"
+      # `grep -v` exits 1 when it filters out *every* line, which is exactly what happens on
+      # the last item in the queue -- so `&& mv` was skipped, the line survived, and the queue
+      # resubmitted its final entry once a minute forever. Observed on 2026-09-09: the same
+      # factored shard submitted twice in 68 seconds, both refused by the shard lock.
+      grep -vxF "$line" "$PENDING" > "$PENDING.tmp" || true
+      mv "$PENDING.tmp" "$PENDING"
     else
       echo "$(date +%H:%M:%S) refused [$line]: $out"
     fi
