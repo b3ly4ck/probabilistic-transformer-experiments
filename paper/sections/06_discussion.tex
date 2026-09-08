@@ -13,8 +13,10 @@ available, and next-token prediction in it is inference over a variable the mode
 Weight tying, the language-model bias, the \textsc{[mask]}-style query and a
 mixture-of-softmaxes readout are consequences of that, not additions to it. What we do not
 claim is a perplexity win. At bracketing budgets the model is a factor of $1.25$ to $1.57$ behind a
-causal transformer on this corpus, and per parameter over the range where all three models are
-measured it gains less than either baseline. That is a smaller gap than we reported before and
+causal transformer on this corpus, and per parameter over the range where all three are
+measured it gains less than a standard transformer --- though its exponent there matches a
+looped transformer's, which puts the shallow slope on the weight sharing rather than on the
+structure. That is a smaller gap than we reported before and
 it is arrived at honestly; it is not a win, and we have tried not to write it as one.
 
 \paragraph{The bottleneck is not where it looks.}
