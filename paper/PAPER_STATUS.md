@@ -198,3 +198,11 @@ something against its own interest, and they are what make the rest credible.
 
 For an arXiv preprint the present length is acceptable; the cut is for a conference version, and
 should be made against a specific venue's limit rather than in the abstract.
+
+### Appendix D verified independently, 2026-09-08
+
+Every derived count in `D_datasets.tex` was recomputed from the loaders rather than read back
+from the appendix: vocabulary and split sizes for both corpora, evaluation blocks
+(1{,}152 / 1{,}287 for PTB validation and test; 3{,}400 / 3{,}837 for WikiText-2), scored tokens
+(72{,}576 / 81{,}081 and 214{,}200 / 241{,}731), and both unigram baselines with and without slot
+0 (688.82 / 687.45 and 964.82 / 965.37). All match.
