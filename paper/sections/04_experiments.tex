@@ -448,8 +448,22 @@ $\sqrt{d_{\text{head}}}$ --- the mis-calibration of \Cref{sec:temperature}, arri
 transformer side. The ladder has no temperature switch, so flipping the state alone changes the
 geometry without changing the temperature that geometry requires, and the interaction between
 two differences lands on one of them. The real decoder, which is simplex-constrained and has a
-temperature suited to it, reaches $206.1$. \TODO{the cumulative ladder and the S2 column at the
-full learning-rate sweep}
+temperature suited to it, reaches $\LadderTopVal$. \Cref{fig:ladder} draws the cumulative
+ladder, where that interaction is visible as a spike the last flip partly undoes.
+\TODO{the S2 column and the three ladder rungs still missing their top learning rate.}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_switch_ladder.png}
+\caption{The cumulative ladder: each rung flips one further difference from a causal
+transformer towards the causal PT, in the order given, and keeps every earlier one. Each point
+is the best of the learning rates run for that rung, and the two dotted references are the
+tuned endpoints. The shape is the finding --- six switches that cost nothing between them, a
+step at the feed-forward block, and a spike at the simplex state that the readout flip then
+partly recovers, which is what a two-difference interaction looks like when a ladder can only
+flip one at a time. Values are in \Cref{tab:switches}.}
+\label{fig:ladder}
+\end{figure}
 
 \paragraph{Exact vs.\ mean-field readout.}
 \label{sec:exp3}
