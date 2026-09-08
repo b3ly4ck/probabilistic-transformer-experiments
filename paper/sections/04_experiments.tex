@@ -608,6 +608,17 @@ stay affine in the concatenated beliefs, and whatever it buys should appear only
 exact readout. The structural half is already confirmed: at $\nlab = 8$ the affine
 dimension of the log-conditionals is $8$, $7$ and $5$ for $K = 1, 2, 4$ under the mean-field
 readout --- never above $\nlab$, whatever $K$ is, which is the prediction --- and strictly
-above $\nlab$ under the exact readout on the same contexts. and \Cref{app:factored} gives the parameter accounting, which the source states
-incorrectly.
+above $\nlab$ under the exact readout on the same contexts. \Cref{app:factored} gives the
+parameter accounting, which the source states incorrectly.
 \TODO{exp7: the measured (readout, $K$) interaction on iso-parameter diagonals.}
+
+\paragraph{Transfer to a second corpus.}
+\label{sec:exp-wt2}
+Every constant in this paper is chosen on the Penn Treebank. The one test of whether that
+choice transfers is to apply it unchanged to WikiText-2 --- twice the vocabulary, more than
+twice the tokens, and a unigram baseline of $964.8$ against PTB's $688.8$ --- and to report what
+happens without retuning anything (\Cref{tab:wt2}, \Cref{app:datasets}). Prof.\ Tu's review of
+an earlier draft made exactly this point: the hyperparameters may need to change with the
+dataset as well as with the model size, and a paper that tunes on one corpus and reports on one
+corpus cannot tell the difference.
+\TODO{exp8: the WikiText-2 transfer grid, which is the last one queued.}
