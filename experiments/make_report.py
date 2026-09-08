@@ -1298,8 +1298,14 @@ def _summarise_seeds(group: Sequence[Dict[str, Any]]) -> str:
     dead = sum(1 for r in group if default_failed(r))
     if dead:
         return f"\\textit{{{dead}/{len(group)} collapsed}}"
-    if len(vals) > 1 and vals[-1] >= 1.5 * vals[0]:
-        return f"\\textit{{{vals[0]:.0f}--{vals[-1]:.0f}}}"
+    if len(vals) > 1:
+        m, sd = _mean_sd(vals)
+        # Two ways a group stops looking like one distribution, because one threshold missed a
+        # real case by 0.003: the spread ratio, and the coefficient of variation. Seeds
+        # 250.8/261.7/375.4 have a ratio of 1.497 and were reported as "296.0 +- 69.0", a
+        # standard deviation of 23% of the mean where a clean cell in these grids runs 2-8%.
+        if vals[-1] >= 1.5 * vals[0] or (m > 0 and sd / m > 0.15):
+            return f"\\textit{{{vals[0]:.0f}--{vals[-1]:.0f}}}"
     return _pm(vals)
 
 
