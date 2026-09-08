@@ -90,7 +90,9 @@ distinction is what \Cref{sec:chain} implements and what \Cref{sec:exp-correctne
 
 \begin{figure}[t]
 \centering
-\input{figures/fig1_factor_graph}
+% Laid out at fixed millimetre offsets; scaled to the column so that adjusting the panels can
+% never push it into the margin again.
+\resizebox{\columnwidth}{!}{\input{figures/fig1_factor_graph}}
 \caption{The same factor graph in its two conditioning patterns, $\seqlen=3$. Shaded nodes are
 observed. \textbf{(a)} Encoder: every word variable is clamped, arcs are undirected, and the
 model is that of \citet{wu2023probabilistic}. \textbf{(b)} Decoder at slot $t=3$: the prefix

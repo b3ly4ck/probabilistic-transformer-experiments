@@ -13,6 +13,7 @@ embeddings, the output bias and a mixture-of-softmaxes readout follow as consequ
 in closed form because the per-position subgraph is a tree. Empirically we find that the model's
 sensitivity to its own width is not diffuse but has a mechanism in the calibration of one
 temperature, and that correcting it roughly doubles the usable width and makes the model's
-scaling curve orderly. On a common parameter range the model's scaling exponent matches a looped
-transformer's rather than a standard one's, which locates its shallow slope in weight sharing
-rather than in the syntactic structure.
+scaling curve orderly. Comparing fitted scaling exponents pair by pair on the range each pair
+shares, the ordering is the same every time --- a standard transformer is steeper than a looped
+one, and a looped one steeper than the causal PT --- which locates most of the model's shallow
+slope in weight sharing and the remainder in the syntactic structure itself.

@@ -135,7 +135,7 @@ learned and collapsed runs measures neither.
 
 \begin{table*}[t]
 \centering
-\small
+\footnotesize
 \input{figures/table_matched}
 \caption{Matched-budget comparison on PTB, at every point of the causal PT's own scaling ladder.
 The baselines are interpolated in log--log space at the causal PT's parameter count and left
@@ -192,43 +192,55 @@ restored the model's scaling exponent to a transformer's. \textbf{That reading i
 fitting each curve over a different range}, and the way it is wrong is worth stating: the
 baselines extend to $1.2\times10^{6}$ non-embedding parameters, well into the regime where this
 corpus and not the parameter count is binding, and those flat points drag their fitted slopes
-down. Refitting all four curves on the one window where they are all measured
-($1.3\times10^{4}$ to $1.3\times10^{5}$ non-embedding parameters):
+down. There is no single window on which all four curves can
+be compared: their intersection holds two points of the looped frontier, and a power law through
+two points is a line through two points. So each comparison is made on the range the two curves
+in it actually share, and only exponents fitted on the \emph{same} window are ever set beside
+each other.
 
 \begin{center}\small
-\begin{tabular}{@{}lrr@{}}
-\toprule
- & exponent & ppl, $1.3\text{e}4 \to 1.3\text{e}5$ \\
-\midrule
-causal transformer          & $-0.175$ & $189 \to 126$ \\
-looped transformer          & $-0.068$ & $157 \to 134$ \\
-causal PT, corrected        & $-0.084$ & $251 \to 207$ \\
-causal PT, $+$ low rank     & $-0.046$ & $226 \to 204$ \\
-\bottomrule
-\end{tabular}
+\input{figures/table_exponents}
 \end{center}
 
 \noindent
-\textbf{The causal PT scales like a looped transformer, not like a standard one.} Its exponent
-on this window, $-0.084$, sits beside the looped transformer's $-0.068$ and far from the
-standard transformer's $-0.175$. That is exactly what \Cref{tab:three-point} predicts should
-happen if the shallow slope comes from sharing parameters across depth rather than from the
-syntactic structure: the looped model has the sharing without the structure, and it has the
-shallow slope too. The remaining question --- how much of the vertical offset the structure
-costs --- is what the switch ladder below is for.
+Read down the table and the ordering is the same in every pair: \textbf{the standard transformer
+is steeper than the looped one, and the looped one is steeper than the causal PT.} Sharing
+parameters across depth costs most of the slope --- $\ExpTfvLpTf$ to $\ExpTfvLpLp$ --- which is
+what \Cref{tab:three-point} predicts, since the looped model has the sharing and none of the
+structure. But it does not account for all of it. On the range the causal PT shares with the
+looped transformer the two are $\ExpLpvPtLp$ and $\ExpLpvPtPt$, and at low rank, over a range
+more than twice as wide, $\ExpLpvLowLp$ and $\ExpLpvLowLow$. Dropping any single point from
+either fit leaves the ordering intact (\Cref{app:grids}).
+
+We therefore do \emph{not} claim that the causal PT scales like a looped transformer. Weight
+sharing is the larger part of its shallow slope and the syntactic structure is a further,
+smaller part --- and the second part is the one this model class is responsible for. How much of
+the vertical offset the structure costs, as opposed to the slope, is what the switch ladder
+below is for.
+
+A caution about all six of these numbers. Fitted exponents on this corpus are strongly
+window-dependent: the looped transformer comes out at $\ExpTfvLpLp$ against the transformer's
+range and $\ExpLpvPtLp$ against the causal PT's, from the same runs. Quoting any of them without
+its window would be meaningless, which is why the window is a column of the table and not a
+footnote, and why the exponents from a fit over each curve's own full range --- which is what
+one would report by default --- appear nowhere in our conclusions.
 
 \Cref{tab:main} makes the budget comparison
 directly. \textbf{The gap is smallest where the models are smallest and widens with budget},
-which is what a shallower exponent means in practice: at 18{,}624 non-embedding parameters the
-causal PT is within a factor $1.25$ of a causal transformer interpolated to the same budget, and
-by 131{,}584 it is a factor $1.57$ behind. Against the looped transformer the same progression
-runs $1.25 \to 1.53$. The best absolute figure is $208.8$ at $\nlab = 256$, $\krank = 32$; the
-comparison in our earlier work, made at one point and at a very different budget, gave $2.17$.
+which is what a shallower exponent means in practice: at \MBFirstNonemb{} non-embedding
+parameters, the smallest budget at which a causal transformer was actually run, the causal PT is
+within a factor $\MBFirstRatioGpt$ of one interpolated to the same budget, and by
+\MBLastNonemb{} it is a factor $\MBLastRatioGpt$ behind. The looped transformer, which is
+measured over the whole range, runs from $\MBFirstRatioLooped$ at the smallest point to
+$\MBLastRatioLooped$ at the largest. The best absolute figure is $\PTbestVal \pm \PTbestSd$ at
+$\nlab = \PTbestLab$, $\krank = \PTbestRank$; the comparison in our earlier work, made at one
+point and at a very different budget, gave $2.17$.
 
 Every causal PT entry in this paper is a mean over seeds, never the best of them. That is worth
 saying because the two differ here by more than the differences we are discussing: at
-$\nlab = 192$ the best seed gives $208.0$ and the mean $211.8 \pm 5.3$, and a paper that quoted
-the first while claiming three seeds would be reporting a maximum and calling it a
+$\nlab = \SpreadLab$, $\krank = \SpreadRank$ the best of \SpreadSeeds{} seeds gives $\SpreadBest$
+and the mean $\SpreadMean \pm \SpreadSd$, and a paper that quoted the first while claiming
+\SpreadSeeds{} seeds would be reporting a maximum and calling it a
 measurement --- which, in a model whose seed spread reaches $130$ in the region we started
 from, is exactly the failure this project set out to stop repeating.
 
