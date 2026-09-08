@@ -133,14 +133,14 @@ learned and collapsed runs measures neither.
 \begin{table*}[t]
 \centering
 \small
-\input{figures/table_main}
-\caption{Matched-budget comparison on PTB. Each causal PT row is followed by the transformer and
-looped-transformer points whose \emph{total} parameter count brackets it from below and from
-above --- a bracket rather than a nearest neighbour, so the interval the comparison lives in is
-visible instead of a point that could have been chosen from either side. Causal PT rows are means
-over three seeds with their standard deviation; baselines are the better of two learning rates.
-Every model is trained by the same loop on the same blocks and scored on the identical token set
-at its own best-validation checkpoint. The table is generated from the run JSONs by
+\input{figures/table_matched}
+\caption{Matched-budget comparison on PTB, at every point of the causal PT's own scaling ladder.
+The baselines are interpolated in log--log space at the causal PT's parameter count and left
+blank outside the range where they were run, since extrapolating a baseline into a region it was
+not measured in would be inventing the comparison. Every model is trained by the same loop on
+the same blocks, scored on the identical token set at its own best-validation checkpoint, and
+each baseline point is the better of two learning rates. The unigram reference is $688.8$ and
+the bigram $445.2$. The table is generated from the run JSONs by
 \texttt{experiments/make\_report.py}; no number in it is typed by hand.}
 \label{tab:main}
 \end{table*}
@@ -194,10 +194,13 @@ gains less than either baseline.}
 What the correction does buy is measured against the model's own control rather than against the
 baselines: the exponent improves from $-0.061$ to $-0.082$ and, more importantly, the ladder
 stops being erratic --- the control's seed standard deviation reaches $160.7$ at $\nlab = 64$
-where the corrected ladder's is $4.2$. At its best measured point the causal PT reaches
-$219.8 \pm 4.2$ at $\nlab = 64$ (65{,}664 non-embedding parameters), against $144.8$ for a
-transformer at $50{,}880$ and $133.9$ at $113{,}184$ --- a factor of $1.52$ against the smaller
-bracket and $1.64$ against the larger, where the same comparison in our earlier work gave
+where the corrected ladder's is $4.2$. \Cref{tab:main} makes the budget comparison
+directly. \textbf{The gap is smallest where the models are smallest and widens with budget},
+which is what a shallower exponent means in practice: at 18{,}624 non-embedding parameters the
+causal PT is within a factor $1.22$ of a causal transformer interpolated to the same budget, and
+by 131{,}584 it is a factor $1.57$ behind. Against the looped transformer the same progression
+runs $1.25 \to 1.53$. The best absolute number is $208.0$ at $\nlab = 192$, $\krank = 24$;
+the comparison in our earlier work, made at one point and at a very different budget, gave
 $2.17$.
 
 \begin{figure}[t]
