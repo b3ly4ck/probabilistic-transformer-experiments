@@ -170,6 +170,45 @@ No claim in Appendix C is unsourced. The one liberty taken is presentational: th
 lemmas become run-in paragraphs with two numbered environments, because this paper's format
 allows very few.
 
+## Number-by-number verification — 2026-09-08 (evening)
+
+Every numeral in the paper was checked against the run JSONs it claims to come from, rather
+than against the draft that introduced it. Seven were wrong. They are listed because the
+pattern matters more than the individual fixes: **every one was a number that was correct when
+typed and went stale as a grid filled in**, and prose does not announce when that happens.
+
+| where | claimed | actual | fixed in |
+|---|---|---|---|
+| §4 scaling | PT "scales like a looped transformer" | shallower than looped in every shared window | v1.13.0 |
+| §4 scaling | decomposition across three different windows | one three-way window, 13k–148k | v1.13.2 |
+| §4 width | "argmin of α_Z falls from 0.25 at d=16" | 0.125 at d=16, and at five of seven widths | v1.13.3 |
+| §4 rank | "a fifth of the seed variance" | an eighth of the spread (3.3 against 27.1) | v1.14.2 |
+| §4 rank | "seed spreads are 1.5 to 5.6" | 1.5 to 10.4 | v1.14.2 |
+| §4 rank | "the width ceiling disappears" | it moves; d=256, r=64 has a collapsed seed | v1.14.2 |
+| §4 readout | seed mean against one seed's swapped value | both sides seed means, over 11 configs | v1.14.1 |
+| App. F | prior–posterior r = 0.16 for the selected model | 0.47; 0.16 is the *earlier* model | v1.14.3 |
+
+**The structural fix, so this class of error cannot recur.** `experiments/make_report.py` now
+emits `paper/figures/numbers.tex`, a set of `\newcommand` macros for every headline number the
+prose quotes, computed from the same rows that build the tables beside them. The prose carries
+macros, not digits. Adding a number to the prose means adding it to `emit_numbers` first.
+
+**What verified clean, checked and not merely assumed:**
+
+* Appendix E — re-ran `experiments/validation_report.py`: exact readout against brute-force
+  enumeration 6.66e-16, free energy 11 updates and 0 increases with total decrease 5.681e-3,
+  the sign-flipped mutation 11 increases with the largest 6.5e-2, causality bitwise equal in
+  all six readout × temperature combinations, `S` one object, factored K=1 against the flat
+  decoder 6.94e-18, belief sums 1.2e-7. Every number reproduces.
+* Appendix D — recomputed from the corpora: all eleven PTB figures and all eleven WikiText-2
+  figures reproduce exactly, including the scored-token counts and both unigram conventions.
+* Appendix F attachment probe — root mass, mean distance, distance-1 mass, mass beyond 3, and
+  the uniform reference all reproduce from the probe JSONs for both models.
+* §4 baselines — 129.2 / 124.7 / 125.3, train 68.5 → 10.2, and the looped crossover
+  (164.7 at 12,768 against 195.2 at 13,152; 135.7 at 198,528 against 129.2 at 200,064).
+* §4 control ladder — 253.0 ± 6.0, 287.4 ± 52.5, 470.0 ± 160.7, and 250.7 ± 2.3 traced to its
+  row in `experiments/exp1_language_modeling/EXPERIMENT_STATUS.md`.
+
 ## Length — 2026-09-08
 
 Main body currently runs to **page 14**; references start on 15; total 29 with appendices. The
