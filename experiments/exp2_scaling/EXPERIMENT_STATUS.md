@@ -117,3 +117,59 @@ PT-versus-Looped comparison the *sharper* test rather than the more forgiving on
 |---|---|---|---|---|---|
 | 2026-09-08 | 9a9527a | 998612-998615 | 0-3 of 4 | 48/48 | baselines, complete, no failures |
 | 2026-09-08 | 2afa95d | queued | 0-5 of 6 | 42 | PT ladder: control at the 2026-08 constants, and the transfer rule at gain 1 undamped |
+
+## The PT ladders (2026-09-08)
+
+### Part B — the width ladder at `rank = d`, 42 cells, three seeds each
+
+| `d` | control (source constants) | rule (standardised temp., undamped) |
+|---|---|---|
+| 16  | 282.3 ± 0.6 | 281.2 ± 8.5 |
+| 24  | 263.5 ± 7.3 | 262.5 ± 13.6 |
+| 32  | **253.0 ± 6.0** | 246.7 ± 2.7 |
+| 48  | 287.4 ± 52.5 | **229.8 ± 8.5** |
+| 64  | 470.0 ± 160.7 | **219.8 ± 4.2** |
+| 96  | 424.0 ± 205.5 (1 collapsed) | 372.4 ± 277.0 (1 collapsed) |
+| 128 | 515.3 ± 159.0 (1 collapsed) | 508.9 ± 186.9 (1 collapsed) |
+
+The control reproduces the 2026-08 record at `d = 32` (253.0 ± 6.0 against 250.7 ± 2.3), which
+is the check that the two sessions are measuring the same thing. Above that width it does not
+gently worsen — **it becomes unpredictable**, and the standard deviations say so more clearly
+than the means. The rule extends the usable width to `d = 64` and improves the best from 253.0
+to 219.8, then hits a second ceiling at `d ≥ 96`.
+
+### Part C — the same ladder at low Kruskal rank, and the ceiling goes away
+
+| `d` | `r` | non-emb | val |
+|---|---|---|---|
+| 32  | 8  | 4,160   | 255.7 |
+| 64  | 8  | 8,320   | 230.5 |
+| 96  | 12 | 18,624  | 217.6 |
+| 128 | 16 | 33,024  | **212.8** |
+| 192 | 24 | 74,112  | **208.0** |
+| 256 | 32 | 131,584 | 208.8 |
+
+**Two things at once.** The curve is uniformly *below* the `rank = d` ladder — 217.6 at 18,624
+parameters against 372 ± 277 for `rank = 96` at 147,648 — and the width ceiling that stopped
+both earlier ladders at `d = 96` is gone: `d = 192` trains stably and only at `d = 256` does the
+curve turn over, on capacity rather than on collapse.
+
+Read together with exp4d, the reading is that a full-rank arc table gives the runaway loop more
+directions to run away in. Nothing in the source suggests `rank = d`; it is what Wu & Tu's
+Table 2 rule `min(64, d)` produces at every width this project has used, and it was carried
+along unexamined for the whole of 2026-08.
+
+### Matched budget, which is what the reviewers asked for
+
+Baselines interpolated in log-log space to the causal PT's own parameter count:
+
+| causal PT | non-emb | val | transformer | ratio | looped | ratio |
+|---|---|---|---|---|---|---|
+| `d=96, r=12`  | 18,624  | 217.6 | 178.5 | **1.22** | 157.6 | 1.38 |
+| `d=128, r=16` | 33,024  | 212.8 | 155.9 | 1.37 | 147.7 | 1.44 |
+| `d=192, r=24` | 74,112  | 208.0 | 139.6 | 1.49 | 139.1 | 1.50 |
+| `d=256, r=32` | 131,584 | 208.8 | 132.6 | **1.57** | 136.2 | 1.53 |
+
+The gap is smallest where the models are smallest and widens with budget. That is what the
+shallower exponent means in practice, and it is the honest form of the comparison: the 2026-08
+report's single point gave 2.17 by comparing a 16k-parameter PT against a 1.2M-parameter GPT.
