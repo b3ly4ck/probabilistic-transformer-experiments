@@ -962,6 +962,21 @@ def emit_numbers(out: Path, md: List[str], extra: Optional[Dict[str, str]] = Non
             defs["SpreadSeeds"] = str(len(g))
 
     defs.update(extra or {})
+    # The low-rank ladder's seed-spread range, over the configurations that did not collapse.
+    if low:
+        okpts = [r for r in mean_over_seeds(low, ["cell.d", "cell.rank"])
+                 if r.get("_n_dead", 0) == 0]
+        if okpts:
+            sds = sorted(r["_val_sd"] for r in okpts)
+            defs["LadderSdLo"] = f"{sds[0]:.1f}"
+            defs["LadderSdHi"] = f"{sds[-1]:.1f}"
+            defs["LadderNok"] = str(len(okpts))
+            top = max(okpts, key=lambda r: r["cell"]["d"])
+            defs["LadderTopLab"] = str(top["cell"]["d"])
+            defs["LadderTopRank"] = str(top["cell"]["rank"])
+            defs["LadderTopVal"] = f"{top['val_ppl']:.1f}"
+            defs["LadderTopSd"] = f"{top['_val_sd']:.1f}"
+
     # The evaluation-time readout swap, as seed means on both sides. Reported before as a seed
     # mean against a single seed's swapped value, which is not a comparison.
     if low:

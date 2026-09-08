@@ -496,8 +496,45 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ## Open questions closed inside the working region (Experiment 3)
 
-_grid empty_
 
+### Grid R -- replication over three seeds
+
+| what        | val (mean +- sd)     |   n | seeds |
+| ----------- | -------------------- | --: | ----- |
+| freeze_b_on | 315.46 +- 0.00 (n=1) |   1 | 0     |
+
+### Grid S -- budget vs. schedule
+
+_no rows yet_
+
+
+### Grid T -- inference depth T and tau
+
+_no rows yet_
+
+
+### Grid G -- the relative positional encoding
+
+_no rows yet_
+
+
+### Grid X -- the exact readout, trained
+
+_no rows yet_
+
+
+### Grid L -- the L2 coefficient on the arc scores
+
+_no rows yet_
+
+
+### Readout swap: the same trained weights scored under the other readout
+
+Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one extra pass.
+
+| cell.name       | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
+| --------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
+| R_freezeb_on_s0 | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
 
 ## The switch ladder (Experiment 6)
 
@@ -530,9 +567,9 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
+| weight_sharing  | 298.800 |          96.700 |   0.030 |   20800 |
 | attn_value      | 358.700 |          36.800 |   0.010 |   12432 |
 | attn_query_proj | 369.900 |          25.600 |   0.010 |   12432 |
-| weight_sharing  | 387.600 |           7.900 |   0.010 |   20800 |
 | position        | 430.100 |         -34.600 |   0.003 |    8256 |
 | norm            | 501.900 |        -106.400 |   0.010 |    8528 |
 | ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
@@ -630,6 +667,13 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \ExpTriLow          | -0.045    |
 | \ExpTriLp           | -0.068    |
 | \ExpTriTf           | -0.175    |
+| \LadderNok          | 11        |
+| \LadderSdHi         | 10.4      |
+| \LadderSdLo         | 1.5       |
+| \LadderTopLab       | 256       |
+| \LadderTopRank      | 32        |
+| \LadderTopSd        | 4.8       |
+| \LadderTopVal       | 206.1     |
 | \MBFirstNonemb      | 16{,}512  |
 | \MBFirstRatioGpt    | 1.23      |
 | \MBFirstRatioLooped | 1.25      |
