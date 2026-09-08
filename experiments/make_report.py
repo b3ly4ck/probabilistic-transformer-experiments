@@ -1149,7 +1149,7 @@ def emit_exponents(out: Path, md: List[str]) -> None:
         r = fit_window(P, tlo, thi)
         if not r:
             continue
-        three.append([nm, str(r[1]), f"${r[0].exponent:.3f}$",
+        three.append([nm, str(r[1]), f"${r[0].exponent:.3f}$", f"{r[0].r2:.2f}",
                       f"${r[0].predict(tlo):.0f} \\to {r[0].predict(thi):.0f}$"])
         macros[f"ExpTri{k}"] = f"{r[0].exponent:.3f}"
     macros["ExpTriLo"] = sci(tlo)
@@ -1161,8 +1161,10 @@ def emit_exponents(out: Path, md: List[str]) -> None:
         f = fit_power_law([a for a, _ in P], [b for _, b in P])
         if f:
             macros[f"Own{k}"] = f"{f.exponent:.3f}"
+    # R^2 moved here from the figure legend, which had grown wide enough to overlap the
+    # baseline annotation; it is also the right place for it, beside the point count.
     _latex_table(out / "table_exponents_trio.tex",
-                 ["", "$n$", "exponent", "ppl across the range"], three, "@{}lrrr@{}")
+                 ["", "$n$", "exp.", "$R^2$", "ppl across it"], three, "@{}lrrrr@{}")
     md.append(f"\n### All three on one window ({tlo:,.0f}--{thi:,.0f})\n\n" + markdown_table(
         [{"model": t[0], "n": t[1], "exponent": t[2].strip("$"),
           "ppl": t[3].strip("$").replace("\\to", "->")} for t in three],

@@ -646,8 +646,19 @@ class PowerLaw(NamedTuple):
         return 10.0 ** (self.exponent * math.log10(x) + self.intercept)
 
     def label(self) -> str:
-        """``"slope -0.43, R2 0.98"`` -- what goes in a legend entry."""
-        return "slope {:.3f}, R2 {:.3f}".format(self.exponent, self.r2)
+        """``"own range: -0.43"`` -- what goes in a legend entry.
+
+        Short on purpose: with R2 included the entries reach the left edge of the axes and
+        overlap the baseline annotation. The goodness of fit belongs in the appendix table,
+        which has room for it beside the point counts.
+
+        The qualifier is not decoration. Each curve here is fitted over the parameter range it
+        was measured on, and those ranges differ by more than an order of magnitude, so these
+        slopes are *not* comparable with each other -- reading them as a comparison is the
+        specific error the scaling section exists to correct. A legend is read before the text
+        beside it, so the legend has to carry the caveat itself.
+        """
+        return "own range: {:.3f}".format(self.exponent)
 
 
 def fit_power_law(xs: Sequence[float], ys: Sequence[float]) -> Optional[PowerLaw]:
@@ -865,11 +876,13 @@ def plot_scaling(
     if hline is not None:
         value, hlabel = hline
         ax.axhline(value, color="0.35", linestyle=(0, (1, 2)), linewidth=1.2)
-        # Left-aligned, because the legend sits top-right in these plots and a right-aligned
-        # reference label collides with its first entry.
+        # Left-aligned and *below* the line. Above it the label is overlapped by the legend,
+        # whose entries grew long enough to reach the left edge; below it there is empty space
+        # between the reference and the topmost curve in every plot that uses this.
         ax.annotate(
             hlabel, xy=(0.01, value), xycoords=("axes fraction", "data"),
-            ha="left", va="bottom", fontsize=8, color="0.25",
+            xytext=(0, -3), textcoords="offset points",
+            ha="left", va="top", fontsize=8, color="0.25",
         )
 
     ax.set_xscale("log")

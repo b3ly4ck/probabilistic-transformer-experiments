@@ -481,17 +481,19 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ## The B.3.3 global head, three seeds in the stable configuration (Exp. 5b)
 
-|   d |   m | init std | in L2 | init dist |   n | val mean |     sd | H(Q_g)/max | glob/unary |
-| --: | --: | -------: | ----- | --------- | --: | -------: | -----: | ---------: | ---------: |
-|  32 |   0 |       -- | True  | normal    |   3 |  243.200 |  5.300 |      0.000 |      0.000 |
-|  32 |  64 |    0.020 | False | normal    |   3 |  249.300 |  1.900 |      0.992 |      1.516 |
-|  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
-|  32 |  64 |    0.100 | False | normal    |   3 |  254.100 |  4.400 |      0.976 |      1.480 |
-|  32 |  64 |    0.100 | True  | normal    |   3 |  246.600 |  9.800 |      1.000 |      0.250 |
-|  32 |  64 |    0.500 | False | normal    |   3 |  248.400 |  3.500 |      0.942 |      1.190 |
-|  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 | 12.200 |      0.978 |      0.276 |
-|  64 |   0 |       -- | True  | normal    |   1 |  216.800 |  0.000 |      0.000 |      0.000 |
-|  64 |  64 |    0.100 | True  | normal    |   1 |  235.200 |  0.000 |      1.000 |      0.202 |
+|   d |   m | init std | in L2 | init dist |   n | val mean |      sd | H(Q_g)/max | glob/unary |
+| --: | --: | -------: | ----- | --------- | --: | -------: | ------: | ---------: | ---------: |
+|  32 |   0 |       -- | True  | normal    |   3 |  243.200 |   5.300 |      0.000 |      0.000 |
+|  32 |  64 |    0.020 | False | normal    |   3 |  249.300 |   1.900 |      0.992 |      1.516 |
+|  32 |  64 |    0.020 | True  | normal    |   3 |  242.500 |   5.400 |      1.000 |      0.231 |
+|  32 |  64 |    0.100 | False | normal    |   3 |  254.100 |   4.400 |      0.976 |      1.480 |
+|  32 |  64 |    0.100 | True  | normal    |   3 |  246.600 |   9.800 |      1.000 |      0.250 |
+|  32 |  64 |    0.500 | False | normal    |   3 |  248.400 |   3.500 |      0.942 |      1.190 |
+|  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 |  12.200 |      0.978 |      0.276 |
+|  64 |   0 |       -- | True  | normal    |   2 |  460.500 | 344.600 |      0.000 |      0.000 |
+|  64 |  64 |    0.020 | True  | normal    |   1 |  233.300 |   0.000 |      1.000 |      0.199 |
+|  64 |  64 |    0.100 | False | normal    |   1 |  227.700 |   0.000 |      0.938 |      1.524 |
+|  64 |  64 |    0.100 | True  | normal    |   1 |  235.200 |   0.000 |      1.000 |      0.202 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -503,9 +505,10 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 | what         | val (mean +- sd)      |   n | seeds |
 | ------------ | --------------------- | --: | ----- |
-| d48_anomaly  | 322.41 +- 0.00 (n=1)  |   1 | 1     |
+| d48_anomaly  | 284.70 +- 53.34 (n=2) |   2 | 2,1   |
 | freeze_b_off | 346.62 +- 13.76 (n=2) |   2 | 1,0   |
 | freeze_b_on  | 315.46 +- 0.00 (n=1)  |   1 | 0     |
+| record_d32   | 259.73 +- 0.00 (n=1)  |   1 | 2     |
 
 ### Grid S -- budget vs. schedule
 
@@ -514,8 +517,9 @@ _no rows yet_
 
 ### Grid T -- inference depth T and tau
 
-_no rows yet_
-
+| cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| T_iters1  | 241.306 |       241.487 |  220.176 |   215.161 |                     1.229 |       3.015 | 347.000 |
 
 ### Grid G -- the relative positional encoding
 
@@ -540,8 +544,11 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | ---------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
 | R_freezeb_on_s0  | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
 | R_freezeb_off_s1 | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
+| R_d48_s2         | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
 | R_freezeb_off_s0 | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
 | R_d48_s1         | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
+| R_record_s2      | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
+| T_iters1         | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
 
 ## The switch ladder (Experiment 6)
 
@@ -559,9 +566,9 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
+| position        | 128.300 |          -1.000 |   0.003 |  200128 |
 | norm            | 128.600 |          -0.700 |   0.003 |  198912 |
 | attn_value      | 128.700 |          -0.600 |   0.001 |  183424 |
-| position        | 128.900 |          -0.400 |   0.001 |  200128 |
 | attn_out_proj   | 130.800 |           1.500 |   0.001 |  183424 |
 | attn_query_proj | 131.100 |           1.900 |   0.001 |  183424 |
 | residual        | 136.700 |           7.500 |   0.001 |  200064 |
@@ -637,11 +644,11 @@ Baselines are interpolated in log-log space at the causal PT's own parameter cou
 
 ### All three on one window (13,152--147,840)
 
-| model       | n   | exponent | ppl        |
-| ----------- | --- | -------- | ---------- |
-| transformer | 4   | -0.175   | 189 -> 124 |
-| looped      | 3   | -0.068   | 157 -> 133 |
-| PT low rank | 8   | -0.045   | 226 -> 203 |
+| model       | n   | exponent | ppl  |
+| ----------- | --- | -------- | ---- |
+| transformer | 4   | -0.175   | 0.95 |
+| looped      | 3   | -0.068   | 0.96 |
+| PT low rank | 8   | -0.045   | 0.93 |
 
 ## Scaling exponents, pair by pair on each pair's shared range
 
