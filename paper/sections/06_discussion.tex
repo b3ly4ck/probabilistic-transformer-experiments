@@ -54,15 +54,17 @@ substitute.} Two of our experiments meet here and neither says this alone. The s
 prices the feed-forward block at $15.1$ perplexity in an otherwise ordinary decoder --- the
 largest cost of any single difference that is not a cliff. The global variables of
 \citet{wu2023probabilistic}'s Appendix B.3 are the in-graph replacement for exactly that block,
-and in the configuration where the model trains properly they contribute nothing: no
-improvement over omitting them at any initialisation scale or $L_2$ treatment we ran, with a
-head posterior that stays within $6\,\%$ of uniform even when its message exceeds the word
-unary. The mechanism is a symmetry --- rows that begin close together receive identical
-gradients and a shared $L_2$ keeps them there --- which is a statement about the parameterisation
-and not about the construction, so we do not read it as a proof that no in-graph feed-forward
-substitute can work. What we can say is that the one the source proposes did not, that the gap
-it was meant to close is real and priced, and that closing it is the most concrete piece of
-unfinished business this model class has.
+and what they buy is not capacity but stability: at a width where the model trains without them
+they are worth nothing, at a width where it does not they rescue it, and in both cases the head
+posterior stays within a few per cent of uniform even when its message exceeds the word unary.
+A variable whose posterior is uniform is sending a constant, and a constant is not a
+feed-forward block. The mechanism behind the uniformity is a symmetry --- rows that begin close
+together receive identical gradients and a shared $L_2$ keeps them there --- which is a
+statement about the parameterisation and not about the construction, so we do not read it as a
+proof that no in-graph feed-forward substitute can work. What we can say is that the one the
+source proposes does not close the gap it was proposed for, that the gap is real and now
+priced, and that closing it is the most concrete piece of unfinished business this model class
+has.
 
 \paragraph{A repair that leaves the graph.}
 We report one uncomfortable thing plainly. The temperature correction that works best is a
