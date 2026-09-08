@@ -12,7 +12,7 @@ transformer exists, it is forced rather than chosen at every step where a choice
 available, and next-token prediction in it is inference over a variable the model already had.
 Weight tying, the language-model bias, the \textsc{[mask]}-style query and a
 mixture-of-softmaxes readout are consequences of that, not additions to it. What we do not
-claim is a perplexity win. At bracketing budgets the model is a factor of $1.5$ to $1.6$ behind a
+claim is a perplexity win. At bracketing budgets the model is a factor of $1.25$ to $1.57$ behind a
 causal transformer on this corpus, and per parameter over the range where all three models are
 measured it gains less than either baseline. That is a smaller gap than we reported before and
 it is arrived at honestly; it is not a win, and we have tried not to write it as one.

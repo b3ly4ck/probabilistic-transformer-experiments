@@ -197,11 +197,17 @@ stops being erratic --- the control's seed standard deviation reaches $160.7$ at
 where the corrected ladder's is $4.2$. \Cref{tab:main} makes the budget comparison
 directly. \textbf{The gap is smallest where the models are smallest and widens with budget},
 which is what a shallower exponent means in practice: at 18{,}624 non-embedding parameters the
-causal PT is within a factor $1.22$ of a causal transformer interpolated to the same budget, and
+causal PT is within a factor $1.25$ of a causal transformer interpolated to the same budget, and
 by 131{,}584 it is a factor $1.57$ behind. Against the looped transformer the same progression
-runs $1.25 \to 1.53$. The best absolute number is $208.0$ at $\nlab = 192$, $\krank = 24$;
-the comparison in our earlier work, made at one point and at a very different budget, gave
-$2.17$.
+runs $1.25 \to 1.53$. The best absolute figure is $208.8$ at $\nlab = 256$, $\krank = 32$; the
+comparison in our earlier work, made at one point and at a very different budget, gave $2.17$.
+
+Every causal PT entry in this paper is a mean over seeds, never the best of them. That is worth
+saying because the two differ here by more than the differences we are discussing: at
+$\nlab = 192$ the best seed gives $208.0$ and the mean $211.8 \pm 5.3$, and a paper that quoted
+the first while claiming three seeds would be reporting a maximum and calling it a
+measurement --- which, in a model whose seed spread reaches $130$ in the region we started
+from, is exactly the failure this project set out to stop repeating.
 
 \begin{figure}[t]
 \centering
