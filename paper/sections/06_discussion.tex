@@ -36,6 +36,13 @@ the cost squarely there: every difference in the \emph{static} description of th
 key and value, no query or output projection, relative positions --- is free, while the two that
 concern what the state \emph{is} and how it moves are not.
 
+Pricing each difference twice, rather than once, turns out to be what makes the ladder say
+anything. The properties that are free to \emph{adopt} are not free to \emph{remove}: inside the
+all-PT rung, restoring any one of the ten transformer properties makes the model worse, and four
+of them break it outright (\Cref{sec:exp-switches}). A construction whose parts are individually
+cheap and jointly load-bearing is not a transformer with substitutions, and the two columns
+together are the only way we found to see that.
+
 Two of our results sharpen that into something a successor should take seriously. The exact
 readout is a strictly richer family than the mean-field one at zero parameter cost, and training
 under it is a hundred perplexity \emph{worse} (\Cref{sec:exp3}); and more mean-field iterations
