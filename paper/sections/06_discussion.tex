@@ -64,12 +64,19 @@ inheriting seven of them where a transformer has one will want to know where to 
 between training and sitting on the unigram), the learning rate (twenty times the source's
 value, and interacting with width), the Kruskal rank of the arc scores (better perplexity at an
 eighth of the parameters), and the label-set size itself. \textbf{One is decisive in the wrong
-direction}: the iteration count, where fewer is better (\Cref{sec:exp-depth}). \textbf{Two are
-close to inert} over the ranges we swept: the relative-position clip $\clip$, and the $L_2$
-coefficient on the arc scores, which changes nothing between $5\times10^{-4}$ and
-$5\times10^{-3}$ and then destroys the model at $5\times10^{-2}$ --- inert until it is fatal,
-with no useful gradient in between. These were measured at different budgets and are an ordering
-rather than a ranking, but the ordering is the practical content of
+direction}: the iteration count, where fewer is better (\Cref{sec:exp-depth}). \textbf{The
+remaining two have no gentle regime at all.} The $L_2$ coefficient on the arc scores changes
+nothing between $5\times10^{-4}$ and $5\times10^{-3}$ ($249.8$ against $248.3$) and then
+destroys the model at $5\times10^{-2}$ ($697.0$, with the arc message at $2\,\%$ of the unary
+and a prefix-ablation KL of zero). The relative-position clip $\clip$ does the same thing in the
+other direction: $1$ and $3$ are indistinguishable ($249.7$, $248.3$) and $7$ costs $357$
+($605.1$, with the message at eight times the unary). Both are flat and then catastrophic, in
+opposite directions, and both fail by the same mechanism as the head temperature --- the
+message-to-unary balance leaving the range in which the label update is stable. That is the
+generalisation we would offer a successor: \emph{this model's hyperparameters do not degrade
+gracefully}, so a coarse sweep that finds a flat region has not found a safe one, and the
+quantity to monitor is not perplexity but that balance. These were measured at different budgets
+and are an ordering rather than a ranking, but the ordering is the practical content of
 \citet{kuang2026scaling}'s observation restated from the decoder side: what matters are the two
 knobs that set the \emph{scale} of the messages and the one that sets their \emph{rank}, and
 those are exactly the ones the source fixes by a rule that does not transfer.
