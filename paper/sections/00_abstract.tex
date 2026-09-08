@@ -11,8 +11,9 @@ anti-causal term is never formed. Promoting the word from an observed constant t
 variable then yields a language-model head with no parameter outside the factor graph; tied
 embeddings, the output bias and a mixture-of-softmaxes readout follow as consequences, the last
 in closed form because the per-position subgraph is a tree. Empirically, the model's sensitivity to its own width is not
-diffuse but has a mechanism in the calibration of a single attention temperature, and correcting
-it roughly doubles the label-set sizes at which the model trains at all. On the one parameter
+diffuse but has a mechanism in the calibration of a single attention temperature; correcting it
+roughly doubles the label-set sizes at which the model trains at all, and the correction carries
+to a second corpus with no retuning. On the one parameter
 range where all three are measured, the fitted scaling exponents are $\ExpTriTf$ for a causal
 transformer, $\ExpTriLp$ for a looped one and $\ExpTriLow$ for the causal PT, which puts most of
 the
