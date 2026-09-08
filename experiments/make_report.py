@@ -558,9 +558,27 @@ def section_transfer(md: List[str], out: Path) -> None:
     if not rows:
         md.append("_not run yet_\n")
         return
-    emit(md, "The PTB rule applied unchanged to WikiText-2", rows,
-         ["cell.name", "cell.model", "cell.d", "cell.n_embd", "cell.alpha_Z", "cell.temp_mode",
-          "val_ppl", "test_ppl", "params.non_embedding", "params.total"])
+    agg = []
+    for lad in sorted({get_path(r, "cell.tags.ladder") for r in rows}):
+        sub = [r for r in rows if get_path(r, "cell.tags.ladder") == lad]
+        for key in sorted({(r["cell"]["d"], r["cell"]["n_embd"]) for r in sub}):
+            cells = [r for r in sub if (r["cell"]["d"], r["cell"]["n_embd"]) == key]
+            v = [r["val_ppl"] for r in cells]
+            m = sum(v) / len(v)
+            sd = (sum((x - m) ** 2 for x in v) / (len(v) - 1)) ** 0.5 if len(v) > 1 else 0.0
+            t = [r["test_ppl"] for r in cells]
+            agg.append({"ladder": lad,
+                        "config": (f"d={key[0]}" if cells[0]["cell"]["model"] == "pt"
+                                   else f"n_embd={key[1]}"),
+                        "n": len(v), "val": round(m, 1), "sd": round(sd, 1),
+                        "test": round(sum(t) / len(t), 1),
+                        "non-emb": cells[0]["params"]["non_embedding"],
+                        "total": cells[0]["params"]["total"]})
+    md.append(markdown_table(agg, ["ladder", "config", "n", "val", "sd", "test",
+                                   "non-emb", "total"]))
+    md.append("\nWikiText-2 unigram baseline: **964.8**. Every hyperparameter is the one "
+              "selected on PTB; nothing was retuned, which is what makes this a transfer test "
+              "rather than a second experiment.\n")
 
 
 def _fmt_pm(vals: Sequence[float]) -> str:

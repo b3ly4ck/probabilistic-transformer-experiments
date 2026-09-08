@@ -39,7 +39,7 @@ widths bracketing the PT budget, at two learning rates each, best taken. 15,000 
 Usage::
 
     python -m experiments.sweep --spec experiments.exp8_transfer.spec_wt2 \\
-        <temp_mode> <qk_gain> <alpha_fixed>
+        <temp_mode> <qk_gain> <alpha_fixed> <alpha_rule>
 """
 
 from experiments.sweep import Cell
@@ -51,19 +51,25 @@ BASE_WIDTHS = [32, 64, 128]
 BASE_LRS = [1e-3, 3e-3]
 
 
-def build_cells(temp_mode="qnorm", qk_gain="1.0", alpha_fixed="0.25"):
+def build_cells(temp_mode="qknorm", qk_gain="1.0", alpha_fixed="0.25", alpha_rule="1.0"):
     qk_gain = float(qk_gain)
+    # The control arm carries the *tuned* source configuration (alpha_Z = 0.25, the value
+    # selected at d = 32 on PTB), not an undamped one -- otherwise the comparison would be
+    # against a straw man that the width experiment already showed collapses. The rule arm is
+    # undamped, because not needing the damping is the claim.
     alpha_fixed = float(alpha_fixed)
+    alpha_rule = float(alpha_rule)
     cells = []
 
     for d in PT_WIDTHS:
         for seed in SEEDS:
-            for ladder, tm in (("fixed", "fixed"), ("rule", temp_mode)):
+            for ladder, tm, al in (("fixed", "fixed", alpha_fixed),
+                                   ("rule", temp_mode, alpha_rule)):
                 cells.append(Cell(
                     name=f"WT2_pt_{ladder}_d{d}_s{seed}",
                     model="pt", corpus="wikitext2",
                     d=d, rank=d, h=2, gamma=3, n_iters=3, tau=2, readout="mfvi",
-                    freeze_b=True, alpha_Z=alpha_fixed, temp_mode=tm, qk_gain=qk_gain,
+                    freeze_b=True, alpha_Z=al, temp_mode=tm, qk_gain=qk_gain,
                     lr=2e-2, steps=STEPS, eval_every=500, l2_arc=5e-4,
                     batch_size=16, block_size=64, seed=seed,
                     tags={"grid": "WT2", "ladder": ladder, "d": d}))

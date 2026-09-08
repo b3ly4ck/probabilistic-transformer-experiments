@@ -41,6 +41,7 @@ SPECS: Dict[str, Tuple[int, List[str]]] = {
     "experiments.exp5_init.spec_globalhead": (4, []),
     "experiments.exp3_readout.spec_open": (5, []),
     "experiments.exp6_switches.spec_switches": (6, []),
+    "experiments.exp8_transfer.spec_wt2": (4, ["qknorm", "1.0", "0.25", "1.0"]),
     "experiments.exp7_factored.spec_factored": (6, []),
 }
 
