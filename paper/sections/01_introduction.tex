@@ -66,8 +66,9 @@ the attention temperature the encoder model prescribes is exactly right at the u
 and mis-calibrated by up to a factor of the label-set size away from it, which is where training
 takes it within a few hundred steps. Correcting that revives label-set sizes at which the
 prescribed parameterisation sits on the unigram baseline. The resulting model reaches a
-validation perplexity of $208.8$ on the Penn Treebank against $445.2$ for a bigram and $133.9$
-for a causal transformer at a comparable budget; its label variables carry syntactic categories that nothing
+validation perplexity of $206$ on the Penn Treebank against $445.2$ for a bigram, and sits
+between $1.25$ and $1.57$ times a causal transformer interpolated to its own parameter count ---
+the gap smallest where the models are smallest; its label variables carry syntactic categories that nothing
 supervised, and its head variables attach at a mean distance of eleven positions where uniform
 attention would give seventeen --- though which of those two properties appears depends on the
 parameterisation, which is itself a result. Following \citet{wu2023probabilistic},
