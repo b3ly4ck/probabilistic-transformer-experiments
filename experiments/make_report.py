@@ -44,7 +44,8 @@ UNIGRAM_PTB = 688.82  # val ppl of the ML unigram on the identical token set, ig
 
 GRIDS = {
     "baselines": "experiments/exp2_scaling/spec_baselines*.json",
-    "pt_scaling": "experiments/exp2_scaling/spec_pt*.json",
+    "pt_scaling": "experiments/exp2_scaling/spec_pt.shard*.json",
+    "pt_lowrank": "experiments/exp2_scaling/spec_pt_lowrank*.json",
     "width": "experiments/exp4_width_transfer/spec_width*.json",
     "gain": "experiments/exp4_width_transfer/spec_gain*.json",
     "lr_transfer": "experiments/exp4_width_transfer/spec_lr_transfer*.json",

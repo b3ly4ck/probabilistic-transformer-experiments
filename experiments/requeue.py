@@ -32,6 +32,7 @@ PENDING = REPO / "experiments" / "pending.txt"
 SPECS: Dict[str, Tuple[int, List[str]]] = {
     "experiments.exp2_scaling.spec_baselines": (4, []),
     "experiments.exp2_scaling.spec_pt": (6, ["qknorm", "1.0", "0.25", "", "1.0"]),
+    "experiments.exp2_scaling.spec_pt_lowrank": (6, []),
     "experiments.exp4_width_transfer.spec_width": (6, []),
     "experiments.exp4_width_transfer.spec_gain": (4, []),
     "experiments.exp4_width_transfer.spec_lr_transfer": (3, []),
