@@ -1,3 +1,4 @@
+experiments.exp9_interpretability.spec_probe_ckpt --shard 0/1
 experiments.exp2_scaling.spec_pt_lowrank --shard 3/6
 experiments.exp2_scaling.spec_pt_lowrank --shard 4/6
 experiments.exp2_scaling.spec_pt_lowrank --shard 5/6

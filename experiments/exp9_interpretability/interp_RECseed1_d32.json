@@ -1,0 +1,925 @@
+{
+ "checkpoint": "checkpoints/RECseed1_d32_pt.pt",
+ "d": 32,
+ "lexicon": [
+  {
+   "label": 0,
+   "words": [
+    "vivid",
+    "'",
+    "personally",
+    "whose",
+    "kraft",
+    "typically",
+    "optical",
+    "hanover",
+    "clearing",
+    "terrorist"
+   ],
+   "contrast": [
+    3.5,
+    2.21,
+    1.91,
+    1.79,
+    1.76,
+    1.69,
+    1.64,
+    1.57,
+    1.53,
+    1.51
+   ],
+   "median_log10_freq": -4.67
+  },
+  {
+   "label": 1,
+   "words": [
+    "leaped",
+    "libor",
+    "hazards",
+    "climbing",
+    "liquid",
+    "eurodollars",
+    "slid",
+    "averaged",
+    "blue-chip",
+    "hk$"
+   ],
+   "contrast": [
+    1.86,
+    1.7,
+    1.61,
+    1.48,
+    1.37,
+    1.3,
+    1.3,
+    1.29,
+    1.27,
+    1.26
+   ],
+   "median_log10_freq": -4.93
+  },
+  {
+   "label": 2,
+   "words": [
+    "cruz",
+    "metall",
+    "rican",
+    "bono",
+    "korean",
+    "lang",
+    "mengistu",
+    "lavelle",
+    "kageyama",
+    "clara"
+   ],
+   "contrast": [
+    4.96,
+    3.14,
+    3.05,
+    2.83,
+    2.57,
+    2.5,
+    2.26,
+    2.17,
+    2.17,
+    2.12
+   ],
+   "median_log10_freq": -5.01
+  },
+  {
+   "label": 3,
+   "words": [
+    "a$",
+    "chile",
+    "chapter",
+    "arkansas",
+    "m$",
+    "november",
+    "hawaii",
+    "prepayment",
+    "january",
+    "deposit"
+   ],
+   "contrast": [
+    2.34,
+    1.54,
+    1.47,
+    1.39,
+    1.38,
+    1.37,
+    1.36,
+    1.33,
+    1.33,
+    1.21
+   ],
+   "median_log10_freq": -4.74
+  },
+  {
+   "label": 4,
+   "words": [
+    "leval",
+    "joel",
+    "mary",
+    "merkur",
+    "chuck",
+    "quickview",
+    "whitbread",
+    "ben",
+    "surgeon",
+    "cynthia"
+   ],
+   "contrast": [
+    2.02,
+    1.85,
+    1.61,
+    1.6,
+    1.49,
+    1.49,
+    1.47,
+    1.47,
+    1.42,
+    1.37
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 5,
+   "words": [
+    "an",
+    "percent",
+    "no",
+    "twelve",
+    "appellate",
+    "every",
+    "supreme",
+    "times-stock",
+    "ivy",
+    "soo"
+   ],
+   "contrast": [
+    1.95,
+    1.78,
+    1.6,
+    1.55,
+    1.43,
+    1.38,
+    1.36,
+    1.35,
+    1.35,
+    1.35
+   ],
+   "median_log10_freq": -4.79
+  },
+  {
+   "label": 6,
+   "words": [
+    "reconsider",
+    "condemn",
+    "leave",
+    "lend",
+    "hire",
+    "notify",
+    "restore",
+    "follow",
+    "regulate",
+    "evaluate"
+   ],
+   "contrast": [
+    1.86,
+    1.69,
+    1.56,
+    1.44,
+    1.4,
+    1.37,
+    1.3,
+    1.29,
+    1.28,
+    1.25
+   ],
+   "median_log10_freq": -4.85
+  },
+  {
+   "label": 7,
+   "words": [
+    "omitted",
+    "olympia",
+    "kohl",
+    "inadequate",
+    "medium",
+    "northeast",
+    "remodeling",
+    "treasurer",
+    "province",
+    "prevention"
+   ],
+   "contrast": [
+    2.72,
+    1.92,
+    1.88,
+    1.83,
+    1.81,
+    1.77,
+    1.76,
+    1.73,
+    1.66,
+    1.65
+   ],
+   "median_log10_freq": -5.01
+  },
+  {
+   "label": 8,
+   "words": [
+    "signs",
+    "likelihood",
+    "ratio",
+    "volume",
+    "sorts",
+    "formation",
+    "turnover",
+    "summary",
+    "offering",
+    "segment"
+   ],
+   "contrast": [
+    2.49,
+    2.38,
+    2.28,
+    1.92,
+    1.85,
+    1.69,
+    1.56,
+    1.46,
+    1.46,
+    1.37
+   ],
+   "median_log10_freq": -4.44
+  },
+  {
+   "label": 9,
+   "words": [
+    "sudden",
+    "two-day",
+    "kong",
+    "wide",
+    "30-day",
+    "lengthy",
+    "management-led",
+    "decent",
+    "youngest",
+    "ldp"
+   ],
+   "contrast": [
+    1.4,
+    1.35,
+    1.2,
+    1.19,
+    1.16,
+    1.13,
+    1.01,
+    0.99,
+    0.93,
+    0.92
+   ],
+   "median_log10_freq": -4.85
+  },
+  {
+   "label": 10,
+   "words": [
+    "relating",
+    "according",
+    "accustomed",
+    "access",
+    "precision",
+    "wo",
+    "beings",
+    "ca",
+    "horse",
+    "obligated"
+   ],
+   "contrast": [
+    2.63,
+    2.38,
+    2.17,
+    2.16,
+    1.88,
+    1.85,
+    1.8,
+    1.68,
+    1.43,
+    1.34
+   ],
+   "median_log10_freq": -4.82
+  },
+  {
+   "label": 11,
+   "words": [
+    "modified",
+    "clobbered",
+    "deemed",
+    "chasing",
+    "projecting",
+    "proving",
+    "valid",
+    "cautious",
+    "busy",
+    "proven"
+   ],
+   "contrast": [
+    2.29,
+    2.19,
+    2.02,
+    1.93,
+    1.91,
+    1.85,
+    1.82,
+    1.7,
+    1.66,
+    1.6
+   ],
+   "median_log10_freq": -5.01
+  },
+  {
+   "label": 12,
+   "words": [
+    "ivan",
+    "saul",
+    "t.",
+    "a.c.",
+    "gen.",
+    "heavier",
+    "bernard",
+    "milton",
+    "carl",
+    "backer"
+   ],
+   "contrast": [
+    2.4,
+    2.06,
+    1.75,
+    1.68,
+    1.67,
+    1.65,
+    1.6,
+    1.54,
+    1.45,
+    1.4
+   ],
+   "median_log10_freq": -4.79
+  },
+  {
+   "label": 13,
+   "words": [
+    "to",
+    "affects",
+    "between",
+    "from",
+    "until",
+    "thus",
+    "indeed",
+    "seeking",
+    "besides",
+    "through"
+   ],
+   "contrast": [
+    7.21,
+    2.08,
+    1.91,
+    1.78,
+    1.7,
+    1.64,
+    1.58,
+    1.52,
+    1.51,
+    1.49
+   ],
+   "median_log10_freq": -3.84
+  },
+  {
+   "label": 14,
+   "words": [
+    "allied-signal",
+    "pfizer",
+    "istat",
+    "jewelers",
+    "u",
+    "newly",
+    "ramada",
+    "nyse",
+    "pittston",
+    "quotron"
+   ],
+   "contrast": [
+    2.7,
+    2.58,
+    2.57,
+    2.36,
+    2.35,
+    2.29,
+    2.03,
+    2.02,
+    1.98,
+    1.88
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 15,
+   "words": [
+    "ample",
+    "dd",
+    "exact",
+    "one-year",
+    "perpetual",
+    "their",
+    "longer-term",
+    "heavy",
+    "our",
+    "the"
+   ],
+   "contrast": [
+    1.72,
+    1.66,
+    1.66,
+    1.66,
+    1.52,
+    1.43,
+    1.34,
+    1.34,
+    1.32,
+    1.3
+   ],
+   "median_log10_freq": -4.71
+  },
+  {
+   "label": 16,
+   "words": [
+    "<eos>",
+    "best-known",
+    "accelerating",
+    "observes",
+    "implied",
+    "archrival",
+    "apparent",
+    "weakened",
+    "approaches",
+    "measures"
+   ],
+   "contrast": [
+    2.25,
+    2.25,
+    1.88,
+    1.74,
+    1.73,
+    1.6,
+    1.36,
+    1.33,
+    1.3,
+    1.29
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 17,
+   "words": [
+    "source",
+    "representative",
+    "achievement",
+    "s&l",
+    "skilled",
+    "pension",
+    "roper",
+    "abortion-rights",
+    "soap",
+    "marina"
+   ],
+   "contrast": [
+    2.7,
+    2.24,
+    2.12,
+    2.09,
+    1.92,
+    1.89,
+    1.86,
+    1.84,
+    1.84,
+    1.76
+   ],
+   "median_log10_freq": -4.74
+  },
+  {
+   "label": 18,
+   "words": [
+    "us$",
+    "tall",
+    "old",
+    "due",
+    "surprises",
+    "outnumbered",
+    "thereafter",
+    "navy",
+    "robot",
+    "curve"
+   ],
+   "contrast": [
+    3.32,
+    1.45,
+    1.32,
+    1.01,
+    0.98,
+    0.97,
+    0.95,
+    0.91,
+    0.9,
+    0.83
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 19,
+   "words": [
+    "controlled",
+    "dean",
+    "punishable",
+    "bolstered",
+    "funded",
+    "fallout",
+    "headed",
+    "owned",
+    "commissioned",
+    "mandated"
+   ],
+   "contrast": [
+    3.21,
+    2.62,
+    2.34,
+    2.31,
+    2.2,
+    2.01,
+    1.98,
+    1.82,
+    1.82,
+    1.78
+   ],
+   "median_log10_freq": -4.85
+  },
+  {
+   "label": 20,
+   "words": [
+    "accurately",
+    "henderson",
+    "cook",
+    "cough",
+    "jr.",
+    "fisher",
+    "sr.",
+    "generale",
+    "robertson",
+    "chicken"
+   ],
+   "contrast": [
+    2.3,
+    2.07,
+    1.95,
+    1.95,
+    1.94,
+    1.93,
+    1.91,
+    1.88,
+    1.87,
+    1.81
+   ],
+   "median_log10_freq": -5.01
+  },
+  {
+   "label": 21,
+   "words": [
+    "resulted",
+    "specializes",
+    "knocking",
+    "lock",
+    "undersecretary",
+    "premiere",
+    "participate",
+    "specialize",
+    "exploded",
+    "opinions"
+   ],
+   "contrast": [
+    2.39,
+    2.06,
+    2.03,
+    2.01,
+    1.97,
+    1.97,
+    1.89,
+    1.86,
+    1.69,
+    1.63
+   ],
+   "median_log10_freq": -4.93
+  },
+  {
+   "label": 22,
+   "words": [
+    "speculation",
+    "deficits",
+    "view",
+    "sums",
+    "notion",
+    "evidence",
+    "question",
+    "assumption",
+    "lows",
+    "consumed"
+   ],
+   "contrast": [
+    3.01,
+    2.84,
+    2.84,
+    2.74,
+    2.66,
+    2.37,
+    2.27,
+    2.19,
+    2.1,
+    2.08
+   ],
+   "median_log10_freq": -4.65
+  },
+  {
+   "label": 23,
+   "words": [
+    "slipping",
+    "earned",
+    "founding",
+    "sinking",
+    "debut",
+    "accident",
+    "fortune",
+    "indicted",
+    "totals",
+    "participation"
+   ],
+   "contrast": [
+    4.13,
+    3.05,
+    2.87,
+    2.5,
+    2.24,
+    2.23,
+    2.06,
+    2.02,
+    1.99,
+    1.98
+   ],
+   "median_log10_freq": -4.82
+  },
+  {
+   "label": 24,
+   "words": [
+    "rated",
+    "minimize",
+    "whenever",
+    "devise",
+    "wearing",
+    "inhibit",
+    "recognizing",
+    "accepting",
+    "prosecuted",
+    "prebon"
+   ],
+   "contrast": [
+    2.42,
+    1.89,
+    1.64,
+    1.58,
+    1.58,
+    1.51,
+    1.49,
+    1.48,
+    1.41,
+    1.38
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 25,
+   "words": [
+    "angeles-based",
+    "jones",
+    "diego",
+    "fever",
+    "market",
+    "jose",
+    "reserve",
+    "andreas",
+    "court",
+    "craze"
+   ],
+   "contrast": [
+    2.13,
+    2.03,
+    2.03,
+    1.35,
+    1.34,
+    1.32,
+    1.29,
+    1.29,
+    1.29,
+    1.24
+   ],
+   "median_log10_freq": -4.71
+  },
+  {
+   "label": 26,
+   "words": [
+    "pence",
+    "marks",
+    "miles",
+    "equaling",
+    "gitano",
+    "guterman",
+    "tons",
+    "fromstein",
+    "cluett",
+    "cabernet"
+   ],
+   "contrast": [
+    3.04,
+    2.77,
+    2.55,
+    2.29,
+    2.27,
+    2.14,
+    2.0,
+    1.88,
+    1.86,
+    1.84
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 27,
+   "words": [
+    "broadcasters",
+    "fares",
+    "auctions",
+    "enthusiasts",
+    "premiums",
+    "will",
+    "polls",
+    "shall",
+    "limitations",
+    "phrase"
+   ],
+   "contrast": [
+    2.48,
+    2.38,
+    2.21,
+    2.15,
+    2.04,
+    2.02,
+    1.97,
+    1.96,
+    1.86,
+    1.82
+   ],
+   "median_log10_freq": -4.89
+  },
+  {
+   "label": 28,
+   "words": [
+    "accusations",
+    "diabetics",
+    "environments",
+    "connected",
+    "flooding",
+    "alliances",
+    "rulings",
+    "inspector",
+    "everywhere",
+    "conferences"
+   ],
+   "contrast": [
+    2.55,
+    2.05,
+    1.88,
+    1.87,
+    1.86,
+    1.47,
+    1.46,
+    1.45,
+    1.3,
+    1.28
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 29,
+   "words": [
+    "oct.",
+    "ancient",
+    "tactical",
+    "sept.",
+    "collective",
+    "shed",
+    "organic",
+    "wayne",
+    "raw",
+    "northern"
+   ],
+   "contrast": [
+    2.97,
+    1.84,
+    1.83,
+    1.81,
+    1.8,
+    1.76,
+    1.73,
+    1.7,
+    1.66,
+    1.66
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 30,
+   "words": [
+    "prefers",
+    "manages",
+    "chooses",
+    "earns",
+    "requires",
+    "bears",
+    "helps",
+    "acquires",
+    "deserve",
+    "kept"
+   ],
+   "contrast": [
+    3.78,
+    3.26,
+    2.22,
+    1.92,
+    1.82,
+    1.77,
+    1.74,
+    1.73,
+    1.72,
+    1.62
+   ],
+   "median_log10_freq": -4.93
+  },
+  {
+   "label": 31,
+   "words": [
+    "acceleration",
+    "weight",
+    "copies",
+    "surpluses",
+    "ahead",
+    "eagerness",
+    "none",
+    "encouragement",
+    "competitiveness",
+    "violation"
+   ],
+   "contrast": [
+    2.19,
+    2.19,
+    2.05,
+    1.98,
+    1.98,
+    1.89,
+    1.76,
+    1.69,
+    1.68,
+    1.62
+   ],
+   "median_log10_freq": -5.12
+  }
+ ],
+ "attention": {
+  "root_mass": 0.4862,
+  "mean_attachment_distance": 1.05,
+  "peakedness_over_uniform": 0.4625,
+  "distance_profile_first10": [
+   0.976,
+   0.0192,
+   0.0036,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0002,
+   0.0,
+   0.0
+  ]
+ },
+ "prior_posterior": {
+  "n_slots": 4032,
+  "pearson_r_kl_vs_nll": 0.1619,
+  "mean_kl_predictable_quartile": 1.9841,
+  "mean_kl_surprising_quartile": 2.581
+ }
+}
