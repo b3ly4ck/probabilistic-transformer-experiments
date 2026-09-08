@@ -657,18 +657,18 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 
 `step` is the change from the previous rung, so the column locates the cliff.
 
-| rung | switch flipped  |     val |    step | best lr | non-emb |
-| ---: | --------------- | ------: | ------: | ------: | ------: |
-|    1 | weight_sharing  | 144.100 |  14.800 |   0.001 |   50112 |
-|    2 | position        | 142.900 |  -1.200 |   0.001 |   50128 |
-|    3 | norm            | 139.500 |  -3.400 |   0.003 |   49744 |
-|    4 | attn_out_proj   | 145.200 |   5.700 |   0.003 |   45584 |
-|    5 | attn_query_proj | 146.300 |   1.100 |   0.003 |   41424 |
-|    6 | attn_value      | 149.900 |   3.600 |   0.003 |   37264 |
-|    7 | ffn             | 213.300 |  63.300 |   0.001 |    4176 |
-|    8 | residual        | 206.500 |  -6.800 |   0.003 |    4176 |
-|    9 | state           | 424.600 | 218.100 |   0.030 |    4176 |
-|   10 | readout         | 354.500 | -70.100 |   0.010 |    8272 |
+| rung | switch flipped  |     val |     step | best lr | non-emb |
+| ---: | --------------- | ------: | -------: | ------: | ------: |
+|    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
+|    2 | position        | 142.900 |   -1.200 |   0.001 |   50128 |
+|    3 | norm            | 139.500 |   -3.400 |   0.003 |   49744 |
+|    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
+|    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
+|    6 | attn_value      | 149.900 |    3.600 |   0.003 |   37264 |
+|    7 | ffn             | 213.300 |   63.300 |   0.001 |    4176 |
+|    8 | residual        | 206.500 |   -6.800 |   0.003 |    4176 |
+|    9 | state           | 424.600 |  218.100 |   0.030 |    4176 |
+|   10 | readout         | 296.700 | -127.800 |   0.030 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -686,11 +686,15 @@ The parameter count is independent of K at fixed total width; the prediction is 
 |     32 |           2 | mfvi         | 226.122 |  206.668 |   195.575 |                 8256 |       338256 | exact        |     5314.726 |
 |     64 |           4 | mfvi         | 222.797 |  198.507 |   139.984 |                 8256 |       658256 | exact        |    18926.049 |
 |     32 |           1 | mfvi         | 375.412 |  341.179 |   379.798 |                32896 |       362896 | exact        |      861.312 |
+|     64 |           2 | mfvi         | 221.961 |  200.475 |   182.003 |                32896 |       682896 | exact        |     1996.840 |
 |     16 |           1 | mfvi         | 274.328 |  252.325 |   268.442 |                 8256 |       178256 | exact        |     3267.025 |
 |     32 |           2 | mfvi         | 230.557 |  211.149 |   196.708 |                 8256 |       338256 | exact        |     4035.565 |
+|     64 |           4 | mfvi         | 243.111 |  219.025 |   160.103 |                 8256 |       658256 | exact        |    15939.122 |
 |     16 |           1 | mfvi         | 289.940 |  263.173 |   279.950 |                 8256 |       178256 | exact        |     3087.910 |
 |     32 |           2 | mfvi         | 234.998 |  211.518 |   191.581 |                 8256 |       338256 | exact        |     4979.727 |
+|     64 |           4 | mfvi         | 225.719 |  200.975 |   149.683 |                 8256 |       658256 | exact        |    18127.695 |
 |     16 |           1 | exact        | 342.968 |  309.261 |   326.348 |                 8256 |       178256 | mfvi         |     1227.467 |
+|     16 |           1 | exact        | 329.513 |  299.433 |   318.900 |                 8256 |       178256 | mfvi         |     1383.689 |
 
 ## WikiText-2 transfer (Experiment 8)
 
@@ -703,7 +707,7 @@ The parameter count is independent of K at fixed total width; the prediction is 
 | gpt    | n_embd=128 |   2 | 148.500 |  5.400 | 141.600 |  793344 | 5061120 |
 | looped | n_embd=32  |   2 | 203.000 |  4.900 | 188.600 |   12768 | 1079712 |
 | looped | n_embd=64  |   2 | 167.900 |  0.700 | 159.100 |   50112 | 2184000 |
-| looped | n_embd=128 |   1 | 156.300 |  0.000 | 149.100 |  198528 | 4466304 |
+| looped | n_embd=128 |   2 | 157.200 |  1.300 | 149.600 |  198528 | 4466304 |
 | rule   | d=32       |   3 | 308.100 |  2.600 | 288.600 |   16448 | 1114622 |
 | rule   | d=64       |   3 | 279.100 |  9.000 | 260.300 |   65664 | 2228734 |
 
@@ -827,6 +831,14 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \WtGptWideLab       | 128       |
 | \WtGptWideN         | 2         |
 | \WtGptWideSd        | 5.4       |
+| \WtLoopNarrow       | 203.0     |
+| \WtLoopNarrowLab    | 32        |
+| \WtLoopNarrowN      | 2         |
+| \WtLoopNarrowSd     | 4.9       |
+| \WtLoopWide         | 157.2     |
+| \WtLoopWideLab      | 128       |
+| \WtLoopWideN        | 2         |
+| \WtLoopWideSd       | 1.3       |
 | \WtSrcNarrow        | 343.1     |
 | \WtSrcNarrowLab     | 32        |
 | \WtSrcNarrowN       | 3         |

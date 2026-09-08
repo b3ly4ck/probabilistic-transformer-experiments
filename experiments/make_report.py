@@ -1002,13 +1002,17 @@ def emit_numbers(out: Path, md: List[str], extra: Optional[Dict[str, str]] = Non
             # A transformer row is keyed by n_embd, not by `d`: `d` is a label-set size that
             # every cell carries whether or not it means anything, so keying on it merged the
             # 32- and 128-wide baselines into one number.
-            width = (r["cell"].get("n_embd") if arm == "gpt" else r["cell"].get("d"))
+            # Baselines are keyed by n_embd and PT ladders by d. `d` is a label-set size that
+            # every cell carries whether or not it means anything there, so keying baselines on
+            # it merges their widths into one number describing none of them.
+            width = (r["cell"].get("n_embd") if arm in ("gpt", "looped")
+                     else r["cell"].get("d"))
             key = (arm, width)
             by.setdefault(key, []).append(r["val_ppl"])
         # LaTeX command names cannot contain digits, so widths are named rather than numbered:
         # within each arm the smallest is Narrow and the largest Wide, and the numeral itself is
         # exported as its own macro so the prose can still print it.
-        name = {"fixed": "Src", "rule": "Std", "gpt": "Gpt"}
+        name = {"fixed": "Src", "rule": "Std", "gpt": "Gpt", "looped": "Loop"}
         for arm, tag in name.items():
             widths = sorted(d for (a, d) in by if a == arm and d is not None)
             if not widths:
