@@ -650,7 +650,7 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 | readout         | 424.600 |        -127.800 |   0.030 |    4176 |
 | norm            | 501.900 |        -205.200 |   0.010 |    8528 |
 | ffn             | 530.700 |        -234.000 |   0.003 |   41360 |
-| state           | 686.800 |        -390.100 |   0.001 |    8272 |
+| state           | 670.200 |        -373.400 |   0.030 |    8272 |
 | residual        | 687.100 |        -390.400 |   0.001 |    8272 |
 
 ### L -- the cumulative ladder, transformer to PT
@@ -675,15 +675,28 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 
 ## Factored labels (Experiment 7)
 
-_grid empty_
 
+### K label components at fixed total width
+
+The parameter count is independent of K at fixed total width; the prediction is that factoring buys nothing under the mean-field readout and something under the exact one.
+
+| cell.d | cell.tags.K | cell.readout | val_ppl | test_ppl | train_ppl | params.non_embedding | params.total | swap_readout | swap_val_ppl |
+| -----: | ----------: | ------------ | ------: | -------: | --------: | -------------------: | -----------: | ------------ | -----------: |
+|     16 |           1 | mfvi         | 287.174 |  261.727 |   280.295 |                 8256 |       178256 | exact        |     2097.050 |
+|     32 |           2 | mfvi         | 226.122 |  206.668 |   195.575 |                 8256 |       338256 | exact        |     5314.726 |
 
 ## WikiText-2 transfer (Experiment 8)
 
-| ladder | config |   n |     val |     sd |    test | non-emb |   total |
-| ------ | ------ | --: | ------: | -----: | ------: | ------: | ------: |
-| fixed  | d=32   |   3 | 343.100 | 24.700 | 321.500 |   16448 | 1114622 |
-| rule   | d=32   |   2 | 306.600 |  0.600 | 287.700 |   16448 | 1114622 |
+| ladder | config     |   n |     val |     sd |    test | non-emb |   total |
+| ------ | ---------- | --: | ------: | -----: | ------: | ------: | ------: |
+| fixed  | d=32       |   3 | 343.100 | 24.700 | 321.500 |   16448 | 1114622 |
+| fixed  | d=64       |   3 | 334.100 | 27.600 | 312.800 |   65664 | 2228734 |
+| gpt    | n_embd=32  |   2 | 179.700 |  4.300 | 167.900 |   50880 | 1117824 |
+| gpt    | n_embd=64  |   1 | 149.700 |  0.000 | 140.800 |  200064 | 2333952 |
+| gpt    | n_embd=128 |   1 | 144.600 |  0.000 | 137.600 |  793344 | 5061120 |
+| looped | n_embd=64  |   1 | 168.500 |  0.000 | 159.800 |   50112 | 2184000 |
+| rule   | d=32       |   3 | 308.100 |  2.600 | 288.600 |   16448 | 1114622 |
+| rule   | d=64       |   2 | 281.200 | 11.700 | 262.600 |   65664 | 2228734 |
 
 WikiText-2 unigram baseline: **964.8**. Every hyperparameter is the one selected on PTB; nothing was retuned, which is what makes this a transfer test rather than a second experiment.
 
@@ -795,3 +808,27 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \SwapWorstRatio     | 18        |
 | \SwapWorstSwapped   | 4146      |
 | \SwapWorstTrained   | 225.9     |
+| \WtGptNarrow        | 179.7     |
+| \WtGptNarrowLab     | 32        |
+| \WtGptNarrowN       | 2         |
+| \WtGptNarrowSd      | 4.3       |
+| \WtGptWide          | 144.6     |
+| \WtGptWideLab       | 128       |
+| \WtGptWideN         | 1         |
+| \WtGptWideSd        | 0.0       |
+| \WtSrcNarrow        | 343.1     |
+| \WtSrcNarrowLab     | 32        |
+| \WtSrcNarrowN       | 3         |
+| \WtSrcNarrowSd      | 24.7      |
+| \WtSrcWide          | 334.1     |
+| \WtSrcWideLab       | 64        |
+| \WtSrcWideN         | 3         |
+| \WtSrcWideSd        | 27.6      |
+| \WtStdNarrow        | 308.1     |
+| \WtStdNarrowLab     | 32        |
+| \WtStdNarrowN       | 3         |
+| \WtStdNarrowSd      | 2.6       |
+| \WtStdWide          | 281.2     |
+| \WtStdWideLab       | 64        |
+| \WtStdWideN         | 2         |
+| \WtStdWideSd        | 11.7      |
