@@ -583,18 +583,28 @@ not-yet-converged sweep that makes the S2 column unreadable, seen from the side.
 
 \paragraph{Two knobs with no gentle regime.}
 \label{sec:exp-knobs}
-Two of the source's constants had never been varied inside a configuration that trains, and both
-behave the same way. The $L_2$ coefficient on the arc scores, which Wu \& Tu's Table 2 sets at
-$5\times10^{-4}$, is indistinguishable at $5\times10^{-3}$ ($249.8$ against $248.3$) and destroys
-the model at $5\times10^{-2}$ ($697.0$, with the arc message at $2\,\%$ of the word unary and a
-prefix-ablation KL of exactly zero --- the arc factors have been regularised out of the model).
-The relative-position clip $\clip$ does the same in the opposite direction: $\clip = 1$ and
-$\clip = 3$ are indistinguishable ($249.7$, $248.3$) and $\clip = 7$ costs $357$ perplexity
-($605.1$, with the message at eight times the unary). \textbf{Flat, then catastrophic, with
-nothing in between}, and in both cases the failure is the message-to-unary balance leaving the
-range where the label update is stable --- the same quantity, and the same mechanism, as
-\Cref{sec:exp-width}. One seed per cell. \TODO{$\clip=0$, the distance-blind control, and the
-remaining $L_2$ settings.}
+Two of the source's constants had never been varied inside a configuration that trains, and they
+behave very differently. The $L_2$ coefficient on the arc scores, which Wu \& Tu's Table 2 sets
+at $5\times10^{-4}$, has a genuine interior optimum there: $0$, $5\times10^{-5}$,
+$5\times10^{-4}$, $5\times10^{-3}$ and $5\times10^{-2}$ give $273.3$, $255.6$, $248.3$, $249.8$
+and $697.0$. Removing it costs $25$ perplexity, an order of magnitude either side of the
+source's value costs nothing, and two orders above destroys the model --- at $5\times10^{-2}$
+the arc message is $2\,\%$ of the word unary and the prefix-ablation KL is exactly zero, which
+is to say the arc factors have been regularised out and the model is a unigram with extra steps.
+The source's constant is well chosen and the paper has no quarrel with it.
+
+\textbf{The relative-position clip is a window, and both walls are cliffs.} $\clip = 1$ and
+$\clip = 3$ give $249.7$ and $248.3$; $\clip = 0$ gives $619.4$ and $\clip = 7$ gives $605.1$.
+The failures are opposite and both are visible in the diagnostics. At $\clip = 0$ the model is
+distance-blind and its prefix-ablation KL falls to $0.037$: the prediction at slot $t$ has
+almost stopped depending on which prefix it is conditioned on, and the model has nothing to
+attend with. At $\clip = 7$ the message reaches eight times the word unary and the loop runs
+away --- the failure of \Cref{sec:exp-width}, reached by giving the arc table more distinct
+distances to run away in. \textbf{One of these closes an inherited explanation.} An earlier
+implementation of this model's predecessor failed, and the failure was attributed to its having
+no relative positional encoding on the evidence of a toy fit-rate table; $\clip = 0$ measured on
+PTB inside a configuration that otherwise trains turns that attribution into a measurement.
+One seed per cell.
 
 \paragraph{Inference depth buys nothing, and costs.}
 \label{sec:exp-depth}
@@ -603,15 +613,17 @@ model a weight-shared stack rather than a single layer, and it is the axis it sh
 Looped transformer, so \Cref{tab:three-point}'s framing depends on knowing what it is worth.
 Wu \& Tu's Table 2 fixes $\niter = 3$ and neither paper varies it inside a configuration that
 trains. Varying it here, one seed per cell in the damped configuration at $\nlab = 32$ where the
-seed spread is $\ReproDampedSd$: $\niter = 1$ gives $241.3$, $2$ gives $246.5$, $3$ gives
-$248.3$ and $8$ gives $275.3$. The predictive rounds $\tau$ behave the same way, $242.1$ at
-$\tau=1$ against $248.3$ at $\tau=2$ --- the same $248.3$, because the base configuration is
-$\niter=3, \tau=2$ and both sweeps pass through it.
+seed spread is $\ReproDampedSd$: $\niter = 1, 2, 3, 5, 8$ give $241.3$, $246.5$, $248.3$,
+$297.0$ and $275.3$. The predictive rounds $\tau$ behave the same way --- $242.1$, $248.3$,
+$284.9$ at $\tau = 1, 2, 4$ --- and the middle value is literally the same run, since the base
+configuration is $\niter=3, \tau=2$ and both sweeps pass through it.
 
-\textbf{Perplexity increases monotonically with inference depth.} The step from $\niter=1$ to
-$\niter=3$ is about one seed standard deviation and we do not read it alone; the span to
-$\niter=8$, $34$ perplexity, is five of them and the monotonicity across four points is not an
-accident of one cell. Two readings are available and we cannot separate them here. Either the
+\textbf{Every value of $\niter$ above $1$ is worse than $\niter = 1$, and by $\niter = 5$ the
+cost is $56$ perplexity, nine seed standard deviations.} The ordering is not clean at the top:
+$\niter = 8$ returns to $275.3$, below $\niter = 5$, and one seed per cell cannot say whether
+that is a real non-monotonicity or noise in a regime where the loop is being iterated far past
+anything the source tried. What is not in doubt is the direction over the range that matters,
+$\niter = 1$ to $5$, where every step costs. Two readings are available and we cannot separate them here. Either the
 extra iterations are genuinely harmful --- each one re-injects the same arc factors, and
 \Cref{sec:exp-width} showed exactly that loop running away when its gain is mis-set --- or they
 are harmless but the optimisation problem they create is worse. Either way the practical
@@ -646,10 +658,10 @@ what a reader would assume from a construction that presents the two as alternat
 in one model.
 
 The practical consequence is that the cheap half of this comparison does not substitute for the
-expensive half: the readouts have to be compared by \emph{training} under each. Doing so, in the
-damped configuration at $\nlab=32$ where the seed spread is $\ReproDampedSd$, gives $348.8$
-under the exact readout against $248.3$ under the mean-field one --- the same model, the same
-loop, the same budget, differing only in which readout the loss is taken through.
+expensive half: the readouts have to be compared by \emph{training} under each. Doing so gives $348.8$ under the exact readout against $248.3$
+under the mean-field one at $\nlab = 32$, and $409.5$ against $315.5$ at $\nlab = 16$ --- the
+same model, loop and budget in each pair, differing only in which readout the loss is taken
+through. A factor of $1.41$ and $1.30$, in the same direction at both widths.
 
 \textbf{The richer family is worse.} \Cref{prop:readout}(iii) says the exact readout's image
 strictly contains the mean-field readout's, and it costs no parameters, so the only way it can
@@ -661,7 +673,7 @@ reaches it through $\Sfac\QZ{t}$, an average that passes gradient to every label
 to its belief. A strictly larger hypothesis class that is harder to search is a familiar
 outcome, and it is worth reporting plainly because the construction's own logic points the other
 way: the exact readout is what the graph says the answer is, and the approximation to it trains
-better. \TODO{the $\nlab=16$ pair, and whether the ordering holds undamped.}
+better.
 
 \paragraph{Factored labels.}
 \label{sec:exp-factored}
@@ -682,6 +694,14 @@ choice transfers is to apply it unchanged to WikiText-2 --- twice the vocabulary
 twice the tokens, and a unigram baseline of $964.8$ against PTB's $688.8$ --- and to report what
 happens without retuning anything (\Cref{tab:wt2}, \Cref{app:datasets}). The
 hyperparameters of this model may need to change with the dataset as well as with the model
-size, and a paper that tunes on one corpus and reports on one corpus cannot tell the
-difference.
-\TODO{exp8: the WikiText-2 transfer grid, which is the last one queued.}
+size, and a paper that tunes on one corpus and reports on one corpus cannot tell the difference.
+
+\textbf{The correction transfers, and it transfers most clearly as variance.} At $\nlab = 32$
+with nothing retuned, the source head temperature gives $343.1 \pm 24.7$ and the standardised
+one $306.6 \pm 0.6$ --- a better mean, and a seed spread forty times tighter, on a corpus whose
+unigram baseline is $964.8$ and whose add-one bigram is $692.5$. The same two things the
+correction does on PTB it does here: it lowers the mean a little and it makes the model
+reproducible. Nothing about the constants was adjusted for the larger vocabulary or the longer
+training split, which is the only sense in which this is a test of transfer rather than a second
+tuning exercise.
+\TODO{exp8: the remaining widths and the third seed of the standardised arm.}
