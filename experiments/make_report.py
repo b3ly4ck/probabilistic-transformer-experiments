@@ -854,6 +854,10 @@ def mean_over_seeds(rows: Sequence[Dict[str, Any]], key_fields: Sequence[str]
         # which one seed collapsed has a mean that describes no run that happened, so the count
         # travels with the row and every caller that reports a comparison can refuse to make one.
         rep["_n_dead"] = sum(1 for r in g if default_failed(r))
+        # Min and max travel too, so a caller can apply the same "is this one distribution?"
+        # test as `_summarise_seeds` without holding on to the group.
+        rep["_val_min"] = min(r["val_ppl"] for r in g)
+        rep["_val_max"] = max(r["val_ppl"] for r in g)
         out.append(rep)
     return out
 
@@ -879,10 +883,15 @@ def emit_matched_budget(out: Path, md: List[str]) -> None:
     table, mdrows = [], []
     for r in sorted(pts, key=lambda r: r["params"]["non_embedding"]):
         n, v = r["params"]["non_embedding"], r["val_ppl"]
-        dead = r.get("_n_dead", 0) > 0
+        lo, hi = r.get("_val_min", 0.0), r.get("_val_max", 0.0)
+        dead = r.get("_n_dead", 0) > 0 or (lo > 0 and hi >= 1.5 * lo)
         g, l = _loginterp(curves["gpt"], n), _loginterp(curves["looped"], n)
-        val = (f"{v:.1f} $\\pm$ {r['_val_sd']:.1f}" if not dead
-               else f"\\textit{{{r['_n_dead']}/{r['_n_seeds']} collapsed}}")
+        if not dead:
+            val = f"{v:.1f} $\\pm$ {r['_val_sd']:.1f}"
+        elif r.get("_n_dead", 0):
+            val = f"\\textit{{{r['_n_dead']}/{r['_n_seeds']} collapsed}}"
+        else:
+            val = f"\\textit{{{lo:.0f}--{hi:.0f}}}"
         table.append([f"$\\nlab={r['cell']['d']}$, $\\krank={r['cell']['rank']}$", n, val,
                       f"{g:.1f}" if g else "---",
                       f"{v / g:.2f}" if g and not dead else "---",
