@@ -152,8 +152,9 @@ at its own best-validation checkpoint. The table is generated from the run JSONs
 \caption{Scaling on PTB: validation perplexity against non-embedding parameters (top) and total
 parameters (bottom), log--log. Each point is the better of two learning rates at a 15{,}000-step
 budget with the checkpoint selected on validation; the legend carries the fitted power-law
-exponent. The dotted line is the unigram baseline, which separates ``learned something'' from
-``learned the marginal''. The two panels are not interchangeable: with tying forced, almost all
+exponent. The dotted line is the add-one bigram (445.2), which is the reference that separates ``learned
+something beyond the previous word'' from ``did not'' --- the unigram at 688.8 lies above every
+curve and separates nothing. The two panels are not interchangeable: with tying forced, almost all
 of the causal PT's parameters are its word--label factor.}
 \label{fig:scaling}
 \end{figure}
