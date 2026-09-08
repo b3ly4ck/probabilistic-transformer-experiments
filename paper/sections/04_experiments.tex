@@ -92,6 +92,20 @@ state which axis any given claim is made on.
 \subsection{Results}
 \label{sec:results}
 
+The order below is the order the questions have to be answered in. First, whether the
+implementation is the model (\Cref{sec:exp-correctness}) and whether its numbers are
+measurements at all (\Cref{sec:exp-repro}) --- the second of those changes how everything after
+it may be read. Then the comparison the model exists to support: how it scales against a causal
+transformer and a looped one (\Cref{sec:exp-scaling}), and what it costs at matched budget.
+Then four questions about the model's own parameterisation --- its width
+(\Cref{sec:exp-width}), its initialisation and the global variables
+(\Cref{sec:exp-ablations}), the two constants with no gentle regime (\Cref{sec:exp-knobs}), and
+its inference depth (\Cref{sec:exp-depth}). Last, two questions internal to the construction:
+which readout to use (\Cref{sec:exp3}) and whether factoring the label variable buys anything
+(\Cref{sec:exp-factored}), and whether any of it transfers to a second corpus
+(\Cref{sec:exp-wt2}). The switch ladder (\Cref{sec:exp-switches}) sits between the two groups
+because it is what turns ``worse than a transformer'' into a statement about named components.
+
 \paragraph{Correctness of the implementation.}
 \label{sec:exp-correctness}
 Two checks test the derivation rather than the code and belong here; the rest are in
