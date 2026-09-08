@@ -1304,6 +1304,25 @@ def emit_grid_tables(out: Path) -> None:
                      ["$d$", "$m$", "init sd", "in $L_2$", "dist.", "$n$", "val ppl",
                       r"$H(Q_g)/\max$"], table, "rrllrrlr")
 
+    # The initialisation-distribution grid, in the source configuration where it was first run.
+    # Section 4 cites this table precisely to say that nothing can be read from it: single seeds
+    # in a region whose seed standard deviation is 130. Emitted so that the claim is checkable
+    # rather than asserted, with a caption that says what it is for.
+    init = load("init")
+    cgrid = [r for r in (init or []) if get_path(r, "cell.tags.grid") == "C"]
+    if cgrid:
+        table = [[str(get_path(r, "cell.d")), str(get_path(r, "cell.init_dist") or "--"),
+                  "yes" if (get_path(r, "cell.n_global") or 0) else "no",
+                  f"{r['val_ppl']:.1f}", f"{r['test_ppl']:.1f}"]
+                 for r in sorted(cgrid, key=lambda r: (get_path(r, "cell.d") or 0,
+                                                       get_path(r, "cell.n_global") or 0,
+                                                       str(get_path(r, "cell.init_dist"))))]
+        _latex_table(out / "table_init.tex",
+                     ["$\\nlab$", "draw", "head", "val ppl", "test ppl"], table,
+                     "@{}rllrr@{}")
+    else:
+        _placeholder(out / "table_init.tex", "initialisation grid not yet run")
+
     rows = load("wt2")
     if not rows:
         _placeholder(out / "table_wt2.tex", "WikiText-2 transfer not yet run")

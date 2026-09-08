@@ -491,10 +491,12 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  32 |  64 |    0.500 | False | normal    |   3 |  248.400 |   3.500 |      0.942 |      1.190 |
 |  32 |  64 |    0.500 | True  | normal    |   3 |  250.300 |   9.900 |      0.973 |      0.267 |
 |  64 |   0 |       -- | True  | normal    |   2 |  460.500 | 344.600 |      0.000 |      0.000 |
-|  64 |  64 |    0.020 | True  | normal    |   2 |  231.600 |   2.400 |      1.000 |      0.220 |
-|  64 |  64 |    0.100 | False | normal    |   1 |  227.700 |   0.000 |      0.938 |      1.524 |
-|  64 |  64 |    0.100 | True  | normal    |   1 |  235.200 |   0.000 |      1.000 |      0.202 |
-|  64 |  64 |    0.500 | True  | normal    |   1 |  240.600 |   0.000 |      0.999 |      0.242 |
+|  64 |  64 |    0.020 | False | normal    |   3 |  493.200 | 233.400 |      0.993 |      1.128 |
+|  64 |  64 |    0.020 | True  | normal    |   3 |  225.800 |  10.200 |      1.000 |      0.221 |
+|  64 |  64 |    0.100 | False | normal    |   2 |  223.400 |   6.200 |      0.968 |      1.605 |
+|  64 |  64 |    0.100 | True  | normal    |   2 |  225.100 |  14.200 |      1.000 |      0.201 |
+|  64 |  64 |    0.500 | False | normal    |   2 |  218.600 |   3.600 |      0.952 |      1.231 |
+|  64 |  64 |    0.500 | True  | normal    |   3 |  228.000 |  11.600 |      1.000 |      0.204 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -506,54 +508,70 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 | what         | val (mean +- sd)      |   n | seeds |
 | ------------ | --------------------- | --: | ----- |
-| d48_anomaly  | 284.70 +- 53.34 (n=2) |   2 | 2,1   |
+| d48_anomaly  | 304.50 +- 50.99 (n=3) |   3 | 2,1,0 |
 | freeze_b_off | 346.62 +- 13.76 (n=2) |   2 | 1,0   |
 | freeze_b_on  | 315.46 +- 0.00 (n=1)  |   1 | 0     |
-| record_d32   | 259.73 +- 0.00 (n=1)  |   1 | 2     |
+| record_d32   | 255.30 +- 6.27 (n=2)  |   2 | 2,1   |
 
 ### Grid S -- budget vs. schedule
 
-| cell.name           | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
-| ------------------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
-| S_steps15000_floor1 | 250.706 |       250.706 |  228.187 |   226.605 |                     1.089 |       2.945 | 555.600 |
+| cell.name            | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| -------------------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| S_steps15000_floor1  | 250.706 |       250.706 |  228.187 |   226.605 |                     1.089 |       2.945 | 555.600 |
+| S_steps6000_floor0.1 | 293.700 |       293.700 |  268.326 |   294.204 |                     1.898 |       2.249 | 207.900 |
 
 ### Grid T -- inference depth T and tau
 
-| cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
-| --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
-| T_iters1  | 241.306 |       241.487 |  220.176 |   215.161 |                     1.229 |       3.015 | 347.000 |
-| T_tau1    | 242.105 |       242.105 |  221.038 |   217.676 |                     1.205 |       3.176 | 447.700 |
+| cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl |  seconds |
+| --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | -------: |
+| T_iters8  | 275.335 |       275.552 |  253.314 |   261.217 |                     1.685 |       2.594 | 1030.700 |
+| T_iters1  | 241.306 |       241.487 |  220.176 |   215.161 |                     1.229 |       3.015 |  347.000 |
+| T_tau1    | 242.105 |       242.105 |  221.038 |   217.676 |                     1.205 |       3.176 |  447.700 |
+| T_iters2  | 246.497 |       246.497 |  225.495 |   225.057 |                     1.384 |       2.761 |  423.100 |
 
 ### Grid G -- the relative positional encoding
 
-_no rows yet_
-
+| cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| G_gamma1  | 249.714 |       249.714 |  226.001 |   226.439 |                     0.893 |       3.010 | 414.000 |
+| G_gamma3  | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 493.400 |
 
 ### Grid X -- the exact readout, trained
 
-_no rows yet_
-
+| cell.name  | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| ---------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| X_d32_mfvi | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 494.900 |
 
 ### Grid L -- the L2 coefficient on the arc scores
 
-_no rows yet_
-
+| cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| L_l20.05  | 697.047 |       697.447 |  641.265 |   741.198 |                     0.020 |       0.000 | 498.300 |
 
 ### Readout swap: the same trained weights scored under the other readout
 
 Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one extra pass.
 
-| cell.name           | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
-| ------------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
-| R_freezeb_on_s0     | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
-| R_freezeb_off_s1    | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
-| R_d48_s2            | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
-| S_steps15000_floor1 | mfvi         | 250.706 | exact        |     8596.715 |  228.187 |      8226.701 |
-| R_freezeb_off_s0    | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
-| R_d48_s1            | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
-| R_record_s2         | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
-| T_iters1            | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
-| T_tau1              | mfvi         | 242.105 | exact        |     2645.932 |  221.038 |      2486.356 |
+| cell.name            | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
+| -------------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
+| R_freezeb_on_s0      | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
+| R_freezeb_off_s1     | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
+| R_d48_s2             | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
+| S_steps15000_floor1  | mfvi         | 250.706 | exact        |     8596.715 |  228.187 |      8226.701 |
+| T_iters8             | mfvi         | 275.335 | exact        |     3540.833 |  253.314 |      3309.624 |
+| G_gamma1             | mfvi         | 249.714 | exact        |     3678.681 |  226.001 |      3400.048 |
+| R_freezeb_off_s0     | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
+| R_d48_s1             | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
+| R_record_s2          | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
+| T_iters1             | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
+| T_tau1               | mfvi         | 242.105 | exact        |     2645.932 |  221.038 |      2486.356 |
+| G_gamma3             | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
+| X_d32_mfvi           | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
+| L_l20.05             | mfvi         | 697.047 | exact        |      697.049 |  641.265 |       641.281 |
+| R_d48_s0             | mfvi         | 344.122 | exact        |     1830.154 |  315.987 |      1685.770 |
+| R_record_s1          | mfvi         | 250.863 | exact        |     2170.500 |  229.453 |      2026.479 |
+| S_steps6000_floor0.1 | mfvi         | 293.700 | exact        |      969.879 |  268.326 |       894.924 |
+| T_iters2             | mfvi         | 246.497 | exact        |     1940.320 |  225.495 |      1836.752 |
 
 ## The switch ladder (Experiment 6)
 
@@ -589,12 +607,12 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | weight_sharing  | 298.800 |          96.700 |   0.030 |   20800 |
 | attn_value      | 358.700 |          36.800 |   0.010 |   12432 |
 | attn_query_proj | 369.900 |          25.600 |   0.010 |   12432 |
+| attn_out_proj   | 380.000 |          15.500 |   0.003 |   12432 |
 | position        | 430.100 |         -34.600 |   0.003 |    8256 |
 | norm            | 501.900 |        -106.400 |   0.010 |    8528 |
 | ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
 | readout         | 537.500 |        -142.000 |   0.010 |    4176 |
 | state           | 686.800 |        -291.300 |   0.001 |    8272 |
-| attn_out_proj   | 686.900 |        -291.400 |   0.001 |   12432 |
 | residual        | 687.100 |        -291.600 |   0.001 |    8272 |
 
 ### L -- the cumulative ladder, transformer to PT
@@ -608,8 +626,8 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 |    3 | norm            | 139.500 |  -3.400 |   0.003 |   49744 |
 |    4 | attn_out_proj   | 145.200 |   5.700 |   0.003 |   45584 |
 |    5 | attn_query_proj | 146.300 |   1.100 |   0.003 |   41424 |
-|    6 | attn_value      | 156.900 |  10.600 |   0.010 |   37264 |
-|    7 | ffn             | 213.300 |  56.300 |   0.001 |    4176 |
+|    6 | attn_value      | 149.900 |   3.600 |   0.003 |   37264 |
+|    7 | ffn             | 213.300 |  63.300 |   0.001 |    4176 |
 |    8 | residual        | 206.500 |  -6.800 |   0.003 |    4176 |
 |    9 | state           | 424.600 | 218.100 |   0.030 |    4176 |
 |   10 | readout         | 395.500 | -29.100 |   0.003 |    8272 |
