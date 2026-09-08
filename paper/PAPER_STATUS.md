@@ -170,6 +170,39 @@ No claim in Appendix C is unsourced. The one liberty taken is presentational: th
 lemmas become run-in paragraphs with two numbered environments, because this paper's format
 allows very few.
 
+## Results added overnight, 2026-09-09
+
+Four findings the paper did not have when the verification pass above was written. All are in
+Section 4 with their seed counts; the first two are the most consequential.
+
+1. **Training under the exact readout is worse, by a hundred perplexity.** $348.8$ against the
+   mean-field readout's $248.3$ at `d=32` damped, same loop and budget. Proposition 2(iii) says
+   the exact readout's image strictly contains the other's at zero parameter cost, so this is a
+   statement about what the optimiser reaches, not about what the family contains. The paper's
+   own mainline readout is the one that trains worse.
+2. **Inference depth is monotonically harmful.** `T=1` 241.3, `T=2` 246.5, `T=3` 248.3, `T=8`
+   275.3, with `tau` behaving the same way. At this scale the model is best as a one-iteration
+   model, so the property it shares with looped transformers is present in the construction and
+   not exercised by the data. Single seed; the `T=1`–`T=3` step is one seed sd and is not read
+   alone, the span to `T=8` is five.
+3. **The initialisation draw matters, through variance.** Semi-orthogonal $219.3 \pm 0.6$
+   against Gaussian $225.8 \pm 10.2$, with matched-variance uniform collapsing on one seed in
+   three. The registered prediction (orthogonal survives an $L_2$ that kills a small Gaussian
+   draw) is *not* what this shows and the paper says so.
+4. **The global head buys stability, not capacity.** Nothing at `d=32`; at `d=64` it changes
+   which parameterisations are stable without making the model stable. `H(Q_g)/max` between
+   0.93 and 1.000 in every cell of both grids — a variable whose posterior is uniform is
+   sending a constant.
+
+Two knobs with no gentle regime were also measured (`l2_arc` inert at 5e-3 and fatal at 5e-2;
+the position clip inert at 1 and 3 and costing 357 at 7), and the Discussion now carries an
+inventory of which of the model's seven hyperparameters matter.
+
+**Process changes made alongside.** `\draftfalse` no longer hides outstanding items, it refuses
+to build while any exist. Both grid tables share one rule for refusing to average a seed group
+that is not one distribution. The title page states that the author list is provisional. Three
+passages that cited listed authors' private review comments by name were rephrased.
+
 ## Number-by-number verification — 2026-09-08 (evening)
 
 Every numeral in the paper was checked against the run JSONs it claims to come from, rather
