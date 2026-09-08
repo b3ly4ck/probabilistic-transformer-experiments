@@ -491,15 +491,16 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  32 |  64 |    0.500 | False | normal     |   3 |  248.400 |   3.500 |      0.942 |      1.190 |
 |  32 |  64 |    0.500 | True  | normal     |   3 |  250.300 |   9.900 |      0.973 |      0.267 |
 |  64 |   0 |       -- | True  | normal     |   3 |  378.700 | 281.800 |      0.000 |      0.000 |
-|  64 |  16 |    0.100 | False | normal     |   2 |  221.200 |   0.200 |      0.981 |      1.428 |
+|  64 |  16 |    0.100 | False | normal     |   3 |  224.200 |   5.100 |      0.977 |      1.564 |
 |  64 |  64 |    0.020 | False | normal     |   3 |  493.200 | 233.400 |      0.993 |      1.128 |
 |  64 |  64 |    0.020 | True  | normal     |   3 |  225.800 |  10.200 |      1.000 |      0.221 |
-|  64 |  64 |    0.020 | True  | orthogonal |   1 |  219.100 |   0.000 |      1.000 |      0.237 |
-|  64 |  64 |    0.020 | True  | uniform    |   1 |  272.900 |   0.000 |      1.000 |      0.238 |
-|  64 |  64 |    0.100 | False | normal     |   2 |  223.400 |   6.200 |      0.968 |      1.605 |
+|  64 |  64 |    0.020 | True  | orthogonal |   3 |  219.300 |   0.600 |      1.000 |      0.240 |
+|  64 |  64 |    0.020 | True  | uniform    |   3 |  401.800 | 265.500 |      1.000 |      0.236 |
+|  64 |  64 |    0.100 | False | normal     |   3 |  222.200 |   4.800 |      0.974 |      1.648 |
 |  64 |  64 |    0.100 | True  | normal     |   3 |  372.400 | 255.300 |      1.000 |      0.200 |
 |  64 |  64 |    0.500 | False | normal     |   3 |  221.400 |   5.400 |      0.929 |      1.375 |
 |  64 |  64 |    0.500 | True  | normal     |   3 |  228.000 |  11.600 |      1.000 |      0.204 |
+|  64 | 256 |    0.100 | False | normal     |   1 |  220.700 |   0.000 |      0.998 |      0.967 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -512,16 +513,18 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | what         | val (mean +- sd)      |   n | seeds |
 | ------------ | --------------------- | --: | ----- |
 | d48_anomaly  | 304.50 +- 50.99 (n=3) |   3 | 2,1,0 |
-| freeze_b_off | 346.62 +- 13.76 (n=2) |   2 | 1,0   |
-| freeze_b_on  | 331.76 +- 23.06 (n=2) |   2 | 0,2   |
+| freeze_b_off | 350.34 +- 11.67 (n=3) |   3 | 1,0,2 |
+| freeze_b_on  | 332.66 +- 16.38 (n=3) |   3 | 0,2,1 |
 | record_d32   | 252.96 +- 6.00 (n=3)  |   3 | 2,1,0 |
 
 ### Grid S -- budget vs. schedule
 
-| cell.name            | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
-| -------------------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
-| S_steps15000_floor1  | 250.706 |       250.706 |  228.187 |   226.605 |                     1.089 |       2.945 | 555.600 |
-| S_steps6000_floor0.1 | 293.700 |       293.700 |  268.326 |   294.204 |                     1.898 |       2.249 | 207.900 |
+| cell.name             | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| --------------------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| S_steps15000_floor1   | 250.706 |       250.706 |  228.187 |   226.605 |                     1.089 |       2.945 | 555.600 |
+| S_steps6000_floor0.1  | 293.700 |       293.700 |  268.326 |   294.204 |                     1.898 |       2.249 | 207.900 |
+| S_steps6000_floor1    | 275.365 |       275.365 |  251.343 |   268.982 |                     1.638 |       2.447 | 206.200 |
+| S_steps15000_floor0.1 | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 556.800 |
 
 ### Grid T -- inference depth T and tau
 
@@ -532,6 +535,8 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | T_tau1    | 242.105 |       242.105 |  221.038 |   217.676 |                     1.205 |       3.176 |  447.700 |
 | T_iters2  | 246.497 |       246.497 |  225.495 |   225.057 |                     1.384 |       2.761 |  423.100 |
 | T_tau2    | 248.295 |       248.295 |  226.616 |   225.428 |                     1.313 |       2.851 |  509.200 |
+| T_iters3  | 248.295 |       248.295 |  226.616 |   225.428 |                     1.313 |       2.851 |  534.700 |
+| T_tau4    | 284.875 |       284.875 |  260.268 |   282.928 |                     2.840 |       2.293 |  688.000 |
 
 ### Grid G -- the relative positional encoding
 
@@ -539,6 +544,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
 | G_gamma1  | 249.714 |       249.714 |  226.001 |   226.439 |                     0.893 |       3.010 | 414.000 |
 | G_gamma3  | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 493.400 |
+| G_gamma7  | 605.108 |       605.108 |  558.982 |   645.831 |                     8.432 |       0.281 | 813.500 |
 
 ### Grid X -- the exact readout, trained
 
@@ -553,36 +559,45 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
 | L_l20.005 | 249.794 |       249.794 |  227.580 |   233.756 |                     0.716 |       2.922 | 555.200 |
 | L_l20.05  | 697.047 |       697.447 |  641.265 |   741.198 |                     0.020 |       0.000 | 498.300 |
+| L_l20     | 273.345 |       273.345 |  249.627 |   258.402 |                     2.110 |       2.610 | 512.800 |
 
 ### Readout swap: the same trained weights scored under the other readout
 
 Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one extra pass.
 
-| cell.name            | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
-| -------------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
-| R_freezeb_on_s0      | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
-| R_freezeb_off_s1     | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
-| R_d48_s2             | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
-| S_steps15000_floor1  | mfvi         | 250.706 | exact        |     8596.715 |  228.187 |      8226.701 |
-| T_iters8             | mfvi         | 275.335 | exact        |     3540.833 |  253.314 |      3309.624 |
-| G_gamma1             | mfvi         | 249.714 | exact        |     3678.681 |  226.001 |      3400.048 |
-| X_d32_exact          | exact        | 348.807 | mfvi         |     1018.763 |  319.996 |       913.268 |
-| L_l20.005            | mfvi         | 249.794 | exact        |     5488.080 |  227.580 |      5064.069 |
-| R_freezeb_off_s0     | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
-| R_d48_s1             | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
-| R_record_s2          | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
-| T_iters1             | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
-| T_tau1               | mfvi         | 242.105 | exact        |     2645.932 |  221.038 |      2486.356 |
-| G_gamma3             | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
-| X_d32_mfvi           | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
-| L_l20.05             | mfvi         | 697.047 | exact        |      697.049 |  641.265 |       641.281 |
-| R_d48_s0             | mfvi         | 344.122 | exact        |     1830.154 |  315.987 |      1685.770 |
-| R_record_s1          | mfvi         | 250.863 | exact        |     2170.500 |  229.453 |      2026.479 |
-| S_steps6000_floor0.1 | mfvi         | 293.700 | exact        |      969.879 |  268.326 |       894.924 |
-| T_iters2             | mfvi         | 246.497 | exact        |     1940.320 |  225.495 |      1836.752 |
-| T_tau2               | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
-| R_record_s0          | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
-| R_freezeb_on_s2      | mfvi         | 348.070 | exact        |     1531.901 |  313.101 |      1430.394 |
+| cell.name             | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
+| --------------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
+| R_freezeb_on_s0       | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
+| R_freezeb_off_s1      | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
+| R_d48_s2              | mfvi         | 246.978 | exact        |     4862.068 |  224.184 |      4568.800 |
+| S_steps15000_floor1   | mfvi         | 250.706 | exact        |     8596.715 |  228.187 |      8226.701 |
+| T_iters8              | mfvi         | 275.335 | exact        |     3540.833 |  253.314 |      3309.624 |
+| G_gamma1              | mfvi         | 249.714 | exact        |     3678.681 |  226.001 |      3400.048 |
+| X_d32_exact           | exact        | 348.807 | mfvi         |     1018.763 |  319.996 |       913.268 |
+| L_l20.005             | mfvi         | 249.794 | exact        |     5488.080 |  227.580 |      5064.069 |
+| R_freezeb_off_s0      | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
+| R_d48_s1              | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
+| R_record_s2           | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
+| T_iters1              | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
+| T_tau1                | mfvi         | 242.105 | exact        |     2645.932 |  221.038 |      2486.356 |
+| G_gamma3              | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
+| X_d32_mfvi            | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
+| L_l20.05              | mfvi         | 697.047 | exact        |      697.049 |  641.265 |       641.281 |
+| R_d48_s0              | mfvi         | 344.122 | exact        |     1830.154 |  315.987 |      1685.770 |
+| R_record_s1           | mfvi         | 250.863 | exact        |     2170.500 |  229.453 |      2026.479 |
+| S_steps6000_floor0.1  | mfvi         | 293.700 | exact        |      969.879 |  268.326 |       894.924 |
+| T_iters2              | mfvi         | 246.497 | exact        |     1940.320 |  225.495 |      1836.752 |
+| T_tau2                | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
+| G_gamma7              | mfvi         | 605.108 | exact        |      897.855 |  558.982 |       834.085 |
+| L_l20                 | mfvi         | 273.345 | exact        |     3687.352 |  249.627 |      3500.172 |
+| R_record_s0           | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
+| R_freezeb_on_s2       | mfvi         | 348.070 | exact        |     1531.901 |  313.101 |      1430.394 |
+| S_steps6000_floor1    | mfvi         | 275.365 | exact        |     1225.203 |  251.343 |      1131.055 |
+| T_iters3              | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
+| T_tau4                | mfvi         | 284.875 | exact        |     1660.496 |  260.268 |      1561.730 |
+| R_freezeb_on_s1       | mfvi         | 334.448 | exact        |     3403.140 |  302.732 |      3221.463 |
+| R_freezeb_off_s2      | mfvi         | 357.779 | exact        |    18739.000 |  327.325 |     18363.650 |
+| S_steps15000_floor0.1 | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
 
 ## The switch ladder (Experiment 6)
 
@@ -618,8 +633,8 @@ The ladder spans **225.3 perplexity**; every delta below is a share of that.
 | weight_sharing  | 298.800 |          55.700 |   0.030 |   20800 |
 | attn_value      | 358.700 |          -4.200 |   0.010 |   12432 |
 | attn_query_proj | 369.900 |         -15.400 |   0.010 |   12432 |
+| position        | 377.600 |         -23.100 |   0.010 |    8256 |
 | attn_out_proj   | 380.000 |         -25.500 |   0.003 |   12432 |
-| position        | 430.100 |         -75.600 |   0.003 |    8256 |
 | norm            | 501.900 |        -147.400 |   0.010 |    8528 |
 | ffn             | 530.700 |        -176.200 |   0.003 |   41360 |
 | readout         | 537.500 |        -182.900 |   0.010 |    4176 |

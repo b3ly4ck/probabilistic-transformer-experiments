@@ -1200,6 +1200,31 @@ def emit_exponents(out: Path, md: List[str]) -> None:
     return macros
 
 
+def _summarise_seeds(group: Sequence[Dict[str, Any]]) -> str:
+    """A cell's validation perplexity, or a refusal to average it into one.
+
+    Two ways a seed group stops being summarisable by a mean, and both occur in these grids:
+
+    * a seed finished on the unigram, so the group is a mixture of runs that learned and runs
+      that did not, and its mean describes neither;
+    * no seed reached the unigram but they still do not look like samples of one distribution
+      --- 224.0, 616.5, 639.1 was being reported as "493.2 +- 233.4", which reads as a uniformly
+      mediocre configuration rather than as one seed working and two not.
+
+    The second is caught by the spread ratio rather than by a new baseline constant: a group
+    whose largest seed is at least 1.5x its smallest is reported as its range. That threshold
+    separates every mixed cell in these grids from every clean one by a wide margin (worst clean
+    ratio 1.10, best mixed 2.85) and needs no per-corpus reference to travel with the rows.
+    """
+    vals = sorted(r["val_ppl"] for r in group)
+    dead = sum(1 for r in group if default_failed(r))
+    if dead:
+        return f"\\textit{{{dead}/{len(group)} collapsed}}"
+    if len(vals) > 1 and vals[-1] >= 1.5 * vals[0]:
+        return f"\\textit{{{vals[0]:.0f}--{vals[-1]:.0f}}}"
+    return _pm(vals)
+
+
 def emit_grid_tables(out: Path) -> None:
     """Emit the per-grid detail tables that Appendix G inputs.
 
@@ -1297,9 +1322,13 @@ def emit_grid_tables(out: Path) -> None:
                                              str(k[3]), k[4])):
             c = seen[k]
             hq, _ = _mean_sd([get_path(r, "diag_final.qg_entropy_frac") or 0.0 for r in c])
+            # Same rule as the matched-budget table: a group with any seed on the unigram gets a
+            # collapse count, not a mean. Without it this grid reported cells like
+            # "378.7 +- 281.8", which describes no run that happened and hides that the number
+            # is one collapse rather than a uniformly mediocre configuration.
             table.append([k[0], k[1], "---" if k[2] is None else f"{k[2]:g}",
                           "yes" if k[3] else "no", k[4], len(c),
-                          _pm([r["val_ppl"] for r in c]), f"{hq:.3f}"])
+                          _summarise_seeds(c), f"{hq:.3f}"])
         _latex_table(out / "table_globalhead.tex",
                      ["$d$", "$m$", "init sd", "in $L_2$", "dist.", "$n$", "val ppl",
                       r"$H(Q_g)/\max$"], table, "rrllrrlr")
