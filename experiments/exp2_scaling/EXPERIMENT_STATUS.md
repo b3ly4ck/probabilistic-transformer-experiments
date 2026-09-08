@@ -72,3 +72,48 @@ tiny. Both curves are drawn, and the paper shows both.
 | date | commit | job | shard | cells | notes |
 |---|---|---|---|---|---|
 | 2026-09-08 | 9a9527a | 998612-998615 | 0-3 of 4 | 48 | baselines, first submission |
+
+## Baselines — complete (2026-09-08, jobs 998612–998615, 48/48 cells)
+
+15,000 steps, blocks 16 x 64, validation checkpoint selection, best of `lr ∈ {1e-3, 3e-3}`.
+
+| `d_model` | GPT val | GPT test | GPT non-emb | Looped val | Looped test | Looped non-emb |
+|---|---|---|---|---|---|---|
+| 16  | 195.23 | 181.04 | 13,152    | 214.20 | 196.46 | 3,312   |
+| 24  | 159.41 | 147.18 | 28,944    | 183.09 | 168.44 | 7,272   |
+| 32  | 144.79 | 133.85 | 50,880    | 164.75 | 150.07 | 12,768  |
+| 48  | 133.89 | 122.28 | 113,184   | 149.98 | 137.17 | 28,368  |
+| 64  | 129.25 | 118.20 | 200,064   | 141.78 | 129.67 | 50,112  |
+| 96  | 128.76 | 118.72 | 447,552   | 136.41 | 125.91 | 112,032 |
+| 128 | 126.45 | 118.09 | 793,344   | 135.67 | 124.43 | 198,528 |
+| 160 | 124.69 | 116.59 | 1,237,440 | 133.77 | 125.34 | 309,600 |
+| 256 | 125.27 | 116.43 | 3,159,552 | 128.41 | 120.66 | 790,272 |
+
+Depth family at `d_model = 64`: GPT `L=1/2/4/8` → 141.45 / 135.12 / 129.25 / 124.46.
+
+**Two features of the baselines reshape the whole comparison, and both were pre-registered as
+falsification conditions in this file.**
+
+1. **The transformer's own curve is flat above ~2×10⁵ non-embedding parameters** (129.2 at
+   `d_model=64` against 124.7 at 160 and 125.3 at 256), while its training perplexity falls
+   from 68.5 to 10.2 over the same range. On 929,589 training tokens the baseline stops being
+   parameter-limited and becomes data-limited. A comparison made only at the top of that range
+   compares two models in a regime where one has stopped improving — which is what the 2026-08
+   report did when it put PT's 16,448 non-embedding parameters against GPT's 1,237,440.
+2. **At matched non-embedding budget the Looped transformer beats the standard one below about
+   5×10⁴ parameters** (164.75 at 12,768 against 195.23 at 13,152; 149.98 at 28,368 against
+   159.41 at 28,944) and loses above it (135.67 at 198,528 against 129.25 at 200,064). At
+   matched *total* parameters the standard transformer wins everywhere. Both statements are
+   true and they are about different axes, which is why both axes are plotted.
+
+Consequence for the framing of Experiment 2: at this scale weight sharing is not a handicap
+that the causal PT pays in exchange for structure — it is a saving. That makes the
+PT-versus-Looped comparison the *sharper* test rather than the more forgiving one, and it means
+"causal PT loses to GPT" cannot be attributed to sharing.
+
+## Run log
+
+| date | commit | job | shard | cells | notes |
+|---|---|---|---|---|---|
+| 2026-09-08 | 9a9527a | 998612-998615 | 0-3 of 4 | 48/48 | baselines, complete, no failures |
+| 2026-09-08 | 2afa95d | queued | 0-5 of 6 | 42 | PT ladder: control at the 2026-08 constants, and the transfer rule at gain 1 undamped |
