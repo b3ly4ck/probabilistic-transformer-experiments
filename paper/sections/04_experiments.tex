@@ -691,8 +691,25 @@ exact readout. The structural half is already confirmed: at $\nlab = 8$ the affi
 dimension of the log-conditionals is $8$, $7$ and $5$ for $K = 1, 2, 4$ under the mean-field
 readout --- never above $\nlab$, whatever $K$ is, which is the prediction --- and strictly
 above $\nlab$ under the exact readout on the same contexts. \Cref{app:factored} gives the
-parameter accounting, which the source states incorrectly.
-\TODO{exp7: the measured (readout, $K$) interaction on iso-parameter diagonals.}
+parameter accounting, which the source states incorrectly --- and correcting it is what makes
+the measurement possible, because it is the arc factors, not the word--label factor, whose count
+falls as $1/K^2$.
+
+That correction turns into the experiment's first result. Walking an \emph{iso-parameter
+diagonal} --- $(\nlab, K)$ pairs with identical arc budgets, so that only the factorisation and
+the total label width change --- gives, at $8{,}256$ arc parameters, $283.8 \pm 8.3$ at
+$(16, 1)$, $230.6 \pm 4.4$ at $(32, 2)$ and $230.5 \pm 11.0$ at $(64, 4)$; at $32{,}896$, a
+split cell at $(32,1)$ and then $220.6 \pm 3.2$ at $(64, 2)$ (\Cref{tab:factored}). \textbf{At a
+fixed arc budget, factoring buys total label width, and the width is worth about $50$
+perplexity} --- most of it in the first halving, with $K = 4$ no better than $K = 2$. That is
+not the note's claim, which is about factoring at fixed width; it is the claim its own parameter
+accounting supports once corrected, and it is the one that matters to anyone choosing a
+configuration.
+
+The readout ordering of \Cref{sec:exp3} reappears here unchanged: at matched $(\nlab, K)$ the
+exact readout is worse by $30$ to $52$ perplexity, at both points where both were run.
+\TODO{exp7 family W --- fixed total width, which is the comparison the note's prediction is
+actually about.}
 
 \paragraph{Transfer to a second corpus.}
 \label{sec:exp-wt2}
