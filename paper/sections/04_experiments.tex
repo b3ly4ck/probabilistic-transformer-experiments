@@ -69,6 +69,18 @@ necessary, and that it interacts with the label-set size, is itself a finding
 (\Cref{sec:exp-width}). A comparison in which one model is tuned and the other is not measures
 the tuning.
 
+\paragraph{Which readout, and why not the other one.}
+\Cref{sec:inference} makes the exact readout the mainline of the \emph{construction}: it is what
+sum--product on the slot tree gives, it costs no parameters, and it is the form the derivation
+distinguishes. Every causal PT number in this section is nonetheless produced under the
+\emph{mean-field} readout, and saying so here rather than leaving it to be inferred matters,
+because the two are not interchangeable --- \Cref{sec:exp3} is the measurement of how far from
+interchangeable. The reason is the order the work happened in: the scaling, width, rank and
+switch grids were run before that measurement existed, and re-running them under the exact
+readout is a comparison of trained models, not a re-scoring, so it is a second full sweep rather
+than an evaluation pass. It is the one experiment in this paper whose absence is a matter of
+GPU-hours rather than of design, and \Cref{sec:exp3} reports what has finished of it.
+
 \paragraph{Two parameter axes, both reported.}
 Tying is forced (\Cref{sec:output}), so almost all of the causal PT's parameters sit in
 $\Sfac \in \R^{|\Vocab|\times\nlab}$: at $\nlab = 32$ that is 330{,}000 embedding parameters
