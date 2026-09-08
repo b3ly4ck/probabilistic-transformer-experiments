@@ -51,6 +51,7 @@ GRIDS = {
     "lr_transfer": "experiments/exp4_width_transfer/spec_lr_transfer*.json",
     "rank": "experiments/exp4_width_transfer/spec_rank*.json",
     "init": "experiments/exp5_init/spec_init*.json",
+    "globalhead": "experiments/exp5_init/spec_globalhead*.json",
     "open": "experiments/exp3_readout/spec_open*.json",
     "repro": "experiments/exp3_readout/repro_check*.json",
     "switches": "experiments/exp6_switches/spec_switches*.json",
@@ -94,6 +95,7 @@ def section_scaling(md: List[str], out: Path) -> None:
     md.append("\n## Scaling curves (Experiment 2)\n")
     base = load("baselines")
     pt = load("pt_scaling")
+    low = load("pt_lowrank")
     if not base:
         md.append("_baseline grid empty_\n")
         return
@@ -102,7 +104,15 @@ def section_scaling(md: List[str], out: Path) -> None:
     depth = [r for r in base if get_path(r, "cell.tags.family") == "depth"]
     bw = best_by(width, ["cell.model", "cell.n_embd"], metric="val_ppl")
     bd = best_by(depth, ["cell.model", "cell.n_layer"], metric="val_ppl")
-    bpt = best_by(pt, ["cell.d"], metric="val_ppl") if pt else []
+    # The two PT ladders are different models, not two runs of one: the control carries the
+    # 2026-08 constants across widths, the rule ladder uses the standardised temperature, and
+    # the low-rank ladder additionally drops the Kruskal rank. Each is its own curve, and the
+    # scaling plot draws the Pareto envelope of each rather than mixing them.
+    rule = [r for r in pt if get_path(r, "cell.tags.ladder") == "rule"]
+    ctrl = [r for r in pt if get_path(r, "cell.tags.ladder") == "fixed"]
+    bpt = best_by(rule, ["cell.d"], metric="val_ppl") if rule else []
+    bctrl = best_by(ctrl, ["cell.d"], metric="val_ppl") if ctrl else []
+    blow = best_by(low, ["cell.d", "cell.rank"], metric="val_ppl") if low else []
 
     cols = ["cell.model", "cell.n_embd", "cell.n_layer", "cell.d", "cell.lr", "val_ppl",
             "test_ppl", "train_ppl", "params.non_embedding", "params.total", "best_step"]
@@ -110,8 +120,12 @@ def section_scaling(md: List[str], out: Path) -> None:
          "Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selected "
          "on validation.")
     emit(md, "Depth family (`n_embd = 64`)", bd, cols)
-    if bpt:
-        emit(md, "Causal PT ladder", bpt, cols)
+    for label, rows_ in (("Causal PT -- control (source constants carried across widths)", bctrl),
+                         ("Causal PT -- standardised temperature, undamped", bpt),
+                         ("Causal PT -- standardised temperature at low Kruskal rank", blow)):
+        if rows_:
+            emit(md, label, sorted(rows_, key=lambda r: (r["cell"]["d"], r["cell"]["rank"] or 0)),
+                 cols + ["cell.rank"])
 
     for xkey, fname, xlabel in (
         ("params.non_embedding", "fig_scaling_nonemb.png", "non-embedding parameters (count)"),
@@ -122,8 +136,12 @@ def section_scaling(md: List[str], out: Path) -> None:
             pts = [r for r in bw if get_path(r, "cell.model") == model]
             if pts:
                 curves.append((label, pts))
+        if bctrl:
+            curves.append(("causal PT, source constants", bctrl))
         if bpt:
-            curves.append(("causal PT", bpt))
+            curves.append(("causal PT, standardised temp.", bpt))
+        if blow:
+            curves.append(("causal PT, + low rank", blow))
         if curves:
             p = plot_scaling(
                 curves, out / fname, x=xkey, x_label=xlabel,
@@ -343,6 +361,43 @@ def section_init(md: List[str], out: Path) -> None:
               "cell.n_global", "val_ppl", "test_ppl", "train_ppl"] + gd)
 
 
+def section_globalhead(md: List[str], out: Path) -> None:
+    md.append("\n## The B.3.3 global head, three seeds in the stable configuration (Exp. 5b)\n")
+    rows = load("globalhead")
+    if not rows:
+        md.append("_grid empty_\n")
+        return
+    agg = []
+    for r in rows:
+        c = r["cell"]
+        key = (c["d"], c["n_global"], c["b_glob_init_std"], c["regularise_global_head"],
+               c["init_dist"])
+        agg.append((key, r))
+    seen = {}
+    for key, r in agg:
+        seen.setdefault(key, []).append(r)
+    table = []
+    for key in sorted(seen, key=lambda k: (k[0], k[1], k[2] or -1, str(k[3]), k[4])):
+        cells = seen[key]
+        v = [r["val_ppl"] for r in cells]
+        m = sum(v) / len(v)
+        sd = (sum((x - m) ** 2 for x in v) / (len(v) - 1)) ** 0.5 if len(v) > 1 else 0.0
+        d, m_glob, std, reg, dist = key
+        table.append({"d": d, "m": m_glob, "init std": std, "in L2": reg, "init dist": dist,
+                      "n": len(v), "val mean": round(m, 1), "sd": round(sd, 1),
+                      "H(Q_g)/max": round(sum(
+                          get_path(r, "diag_final.qg_entropy_frac") or 0 for r in cells)
+                          / len(cells), 3),
+                      "glob/unary": round(sum(
+                          get_path(r, "diag_final.glob_over_unary") or 0 for r in cells)
+                          / len(cells), 3)})
+    md.append(markdown_table(table, ["d", "m", "init std", "in L2", "init dist", "n",
+                                     "val mean", "sd", "H(Q_g)/max", "glob/unary"]))
+    md.append("\n`H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is "
+              "contributing a constant label bias rather than a feed-forward-like operator. "
+              "That distinction is the whole question and it is not visible in perplexity.\n")
+
+
 def section_open(md: List[str], out: Path) -> None:
     md.append("\n## Open questions closed inside the working region (Experiment 3)\n")
     rows = load("open")
@@ -479,6 +534,7 @@ def emit_main_table(out: Path) -> None:
     """
     base = load("baselines")
     pt = load("pt_scaling")
+    low = load("pt_lowrank")
     if not base:
         return
     width = [r for r in base if get_path(r, "cell.tags.family") == "width"]
@@ -548,7 +604,7 @@ def main() -> None:
         "new shard lands.\n",
     ]
 
-    for fn in (section_repro, section_scaling, section_width, section_mechanism, section_gain, section_rank, section_init, section_open,
+    for fn in (section_repro, section_scaling, section_width, section_mechanism, section_gain, section_rank, section_init, section_globalhead, section_open,
                section_switches, section_factored, section_transfer):
         try:
             fn(md, out)
