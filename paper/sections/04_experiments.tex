@@ -439,9 +439,13 @@ readouts differing concretely on one slot.
 
 The swap is measured for every causal PT cell in this paper, and it gives a clear negative
 result: \textbf{the two readouts are not interchangeable at evaluation.} Substituting
-\Cref{eq:exact-readout} for the mean-field readout on mean-field-trained weights takes
-$223.1$ to $1492.5$ at $\nlab=96$ and $255.7$ to $4361.4$ at $\nlab=32$ --- an order of
-magnitude, consistently across every width and rank we ran. Inspecting a trained model, the
+\Cref{eq:exact-readout} for the mean-field readout on mean-field-trained weights costs between
+a factor of $\SwapMildestRatio$ and a factor of $\SwapWorstRatio$ in validation perplexity, at
+every one of the \SwapNconfigs{} $(\nlab, \krank)$ configurations for which we have three
+uncollapsed seeds: from $\SwapMildestTrained$ to $\SwapMildestSwapped$ at its mildest
+($\nlab = \SwapMildestLab$, $\krank = \SwapMildestRank$) and from $\SwapWorstTrained$ to
+$\SwapWorstSwapped$ at its worst ($\nlab = \SwapWorstLab$, $\krank = \SwapWorstRank$). Both
+sides of each comparison are seed means. Inspecting a trained model, the
 exact readout's logits are not degenerate; they simply discriminate less between words at a
 fixed context (standard deviation $1.63$ against the mean-field readout's $2.64$) and more
 between contexts for a fixed word ($2.73$ against $2.42$). Parameters trained so that one
