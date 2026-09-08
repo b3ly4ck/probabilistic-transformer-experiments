@@ -115,9 +115,11 @@ def section_scaling(md: List[str], out: Path) -> None:
     # scaling plot draws the Pareto envelope of each rather than mixing them.
     rule = [r for r in pt if get_path(r, "cell.tags.ladder") == "rule"]
     ctrl = [r for r in pt if get_path(r, "cell.tags.ladder") == "fixed"]
-    bpt = best_by(rule, ["cell.d"], metric="val_ppl") if rule else []
-    bctrl = best_by(ctrl, ["cell.d"], metric="val_ppl") if ctrl else []
-    blow = best_by(low, ["cell.d", "cell.rank"], metric="val_ppl") if low else []
+    # Seed means, not seed minima -- see `mean_over_seeds`. The baselines are single-seed and
+    # selected over learning rate, which is a different operation and stays `best_by`.
+    bpt = mean_over_seeds(rule, ["cell.d"]) if rule else []
+    bctrl = mean_over_seeds(ctrl, ["cell.d"]) if ctrl else []
+    blow = mean_over_seeds(low, ["cell.d", "cell.rank"]) if low else []
 
     cols = ["cell.model", "cell.n_embd", "cell.n_layer", "cell.d", "cell.lr", "val_ppl",
             "test_ppl", "train_ppl", "params.non_embedding", "params.total", "best_step"]
@@ -769,6 +771,35 @@ def _loginterp(table, x):
     return math.exp(math.log(y0) + t * (math.log(y1) - math.log(y0)))
 
 
+def mean_over_seeds(rows: Sequence[Dict[str, Any]], key_fields: Sequence[str]
+                    ) -> List[Dict[str, Any]]:
+    """Collapse seeds by *mean*, not by minimum.
+
+    `best_by` takes the best row in a group, which is the right operation for choosing between
+    learning rates -- a tuned hyperparameter is a choice the experimenter is entitled to make.
+    It is the wrong operation for seeds: taking the best of three is reporting a maximum and
+    calling it a measurement, and it is exactly what the reproduction check of this project
+    showed to be indefensible in a model whose seed spread can reach 130 perplexity. Every
+    causal PT point in the paper is a seed mean, and this is where that is enforced.
+    """
+    groups: Dict[Any, List[Dict[str, Any]]] = {}
+    for r in rows:
+        groups.setdefault(tuple(get_path(r, k) for k in key_fields), []).append(r)
+    out = []
+    for _, g in sorted(groups.items(), key=lambda kv: [
+            (0, v) if isinstance(v, (int, float)) else (1, str(v)) for v in kv[0]]):
+        rep = dict(g[0])
+        for metric in ("val_ppl", "test_ppl", "train_ppl", "val_ppl_final"):
+            vals = [r[metric] for r in g if isinstance(r.get(metric), (int, float))]
+            if vals:
+                rep[metric] = sum(vals) / len(vals)
+        m, sd = _mean_sd([r["val_ppl"] for r in g])
+        rep["_n_seeds"] = len(g)
+        rep["_val_sd"] = sd
+        out.append(rep)
+    return out
+
+
 def emit_matched_budget(out: Path, md: List[str]) -> None:
     """The matched-budget comparison, at each causal PT point, against both baselines."""
     base = load("baselines")
@@ -781,17 +812,17 @@ def emit_matched_budget(out: Path, md: List[str]) -> None:
     curves = {m: sorted((r["params"]["non_embedding"], r["val_ppl"])
                         for r in bw if r["cell"]["model"] == m)
               for m in ("gpt", "looped")}
-    pts = best_by(low, ["cell.d", "cell.rank"], metric="val_ppl")
+    pts = mean_over_seeds(low, ["cell.d", "cell.rank"])
     table, mdrows = [], []
     for r in sorted(pts, key=lambda r: r["params"]["non_embedding"]):
         n, v = r["params"]["non_embedding"], r["val_ppl"]
         g, l = _loginterp(curves["gpt"], n), _loginterp(curves["looped"], n)
         table.append([f"$\\nlab={r['cell']['d']}$, $\\krank={r['cell']['rank']}$", n,
-                      f"{v:.1f}",
+                      f"{v:.1f} $\\pm$ {r['_val_sd']:.1f}",
                       f"{g:.1f}" if g else "---", f"{v / g:.2f}" if g else "---",
                       f"{l:.1f}" if l else "---", f"{v / l:.2f}" if l else "---"])
         mdrows.append({"config": f"d={r['cell']['d']}, r={r['cell']['rank']}", "non-emb": n,
-                       "PT": round(v, 1),
+                       "n": r["_n_seeds"], "PT": round(v, 1), "sd": round(r["_val_sd"], 1),
                        "transformer": round(g, 1) if g else None,
                        "ratio": round(v / g, 2) if g else None,
                        "looped": round(l, 1) if l else None,
@@ -800,8 +831,8 @@ def emit_matched_budget(out: Path, md: List[str]) -> None:
                  ["causal PT", "non-emb.", "val ppl", "transformer", "ratio", "looped", "ratio"],
                  table, "lrrrrrr")
     md.append("\n## Matched-budget comparison\n")
-    md.append(markdown_table(mdrows, ["config", "non-emb", "PT", "transformer", "ratio",
-                                      "looped", "ratio "]))
+    md.append(markdown_table(mdrows, ["config", "non-emb", "n", "PT", "sd", "transformer",
+                                      "ratio", "looped", "ratio "]))
     md.append("\nBaselines are interpolated in log-log space at the causal PT's own parameter "
               "count, and left blank outside the range where they were measured -- "
               "extrapolating a baseline into a region it was not run in would be inventing the "
