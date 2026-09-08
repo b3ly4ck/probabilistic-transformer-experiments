@@ -430,13 +430,24 @@ treatments, between $242.5$ and $254.1$, none of them distinguishable from no he
 against those spreads.
 
 So at $\nlab = 32$ the head was not adding capacity, it was rescuing a pathology, and the
-temperature correction removes the pathology more cheaply. \textbf{The rescue returns wherever
-the pathology does.} At $\nlab = 64$, where the corrected model is itself near the edge of its
-stable region, the configuration without the head has a collapsed seed and the head restores it;
-the same reading, one width up. Which of the two a practitioner meets depends on whether their
-configuration trains, and that is the honest form of the answer: \emph{the global head is worth
-having exactly when the model is failing without it}, and there are cheaper ways to stop it
-failing. The diagnostic says the same thing from inside: the head
+temperature correction removes the pathology more cheaply.
+
+At $\nlab = 64$ the answer is neither the same nor its opposite, and the shape of it is worth
+setting out because it is what a practitioner will actually meet. That width sits at the edge of
+the stable region: without the head, one of two seeds lands on the unigram ($216.8$ and
+$704.1$). With it, four of the six treatments train on every seed and reach $221$ to $234$ ---
+better than anything at $\nlab = 32$ --- while two do not, and the two that fail are not the two
+one would guess: the smallest initialisation outside the shared $L_2$ ($224.0$, $616.5$,
+$639.1$) and the middle one inside it ($215.0$, $235.2$, $667.0$). \textbf{The head does not
+make the model stable; it changes which configurations are.} The largest initialisation we ran,
+$0.5$, is stable under both $L_2$ treatments, which is the one regularity in the block and the
+opposite of what a shrink-toward-symmetry account would predict.
+
+What does hold at both widths, in every cell of the grid, is the diagnostic: $H(Q_g)$ is between
+$0.93$ and $1.000$ of its maximum everywhere, including in the cells where the head is carrying
+more message than the word unary and in the cells where it is associated with the model training
+at all. Whatever the head is doing at $\nlab = 64$, it is not doing it by discriminating between
+its own values. The diagnostic says the same thing from inside: the head
 posterior's entropy is between $0.94$ and $1.000$ of its maximum in every cell of the grid, so
 what the head sends is a near-constant label prior and not the feed-forward-like operator it is
 proposed as --- including in the cells where its message is \emph{larger} than the word unary

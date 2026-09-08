@@ -54,9 +54,10 @@ substitute.} Two of our experiments meet here and neither says this alone. The s
 prices the feed-forward block at $15.1$ perplexity in an otherwise ordinary decoder --- the
 largest cost of any single difference that is not a cliff. The global variables of
 \citet{wu2023probabilistic}'s Appendix B.3 are the in-graph replacement for exactly that block,
-and what they buy is not capacity but stability: at a width where the model trains without them
-they are worth nothing, at a width where it does not they rescue it, and in both cases the head
-posterior stays within a few per cent of uniform even when its message exceeds the word unary.
+and what they buy is not capacity: at a width where the model trains without them they are worth
+nothing, and at a width where it barely does they change which parameterisations are stable
+without making the model stable. In every cell of both grids the head posterior stays within
+$7\,\%$ of uniform, including where its message exceeds the word unary.
 A variable whose posterior is uniform is sending a constant, and a constant is not a
 feed-forward block. The mechanism behind the uniformity is a symmetry --- rows that begin close
 together receive identical gradients and a shared $L_2$ keeps them there --- which is a
