@@ -617,10 +617,10 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | anchor | val | test | non-emb | best lr |
 |---|---|---|---|---|
 | all-transformer | 129.2 | 118.2 | 200,064 | 0.001 |
-| all-PT | 296.7 | 267.0 | 8,272 | 0.03 |
+| all-PT | 277.3 | 247.7 | 8,272 | 0.1 |
 
 
-The ladder spans **167.5 perplexity**; every delta below is a share of that.
+The ladder spans **148.1 perplexity**; every delta below is a share of that.
 
 
 ### S1 -- cost of one PT property in an otherwise ordinary decoder
@@ -642,33 +642,33 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
-| weight_sharing  | 298.800 |          -2.100 |   0.030 |   20800 |
-| attn_query_proj | 302.000 |          -5.300 |   0.030 |   12432 |
-| attn_value      | 310.100 |         -13.400 |   0.030 |   12432 |
-| position        | 329.900 |         -33.200 |   0.030 |    8256 |
-| attn_out_proj   | 380.000 |         -83.300 |   0.003 |   12432 |
-| readout         | 424.600 |        -127.800 |   0.030 |    4176 |
-| norm            | 501.900 |        -205.200 |   0.010 |    8528 |
-| ffn             | 530.700 |        -234.000 |   0.003 |   41360 |
-| state           | 670.200 |        -373.400 |   0.030 |    8272 |
-| residual        | 687.100 |        -390.400 |   0.001 |    8272 |
+| attn_value      | 276.600 |           0.700 |   0.100 |   12432 |
+| weight_sharing  | 298.800 |         -21.500 |   0.030 |   20800 |
+| attn_query_proj | 302.000 |         -24.700 |   0.030 |   12432 |
+| position        | 313.300 |         -36.000 |   0.100 |    8256 |
+| residual        | 356.400 |         -79.100 |   0.100 |    8272 |
+| readout         | 375.200 |         -97.900 |   0.100 |    4176 |
+| attn_out_proj   | 380.000 |        -102.700 |   0.003 |   12432 |
+| norm            | 501.900 |        -224.600 |   0.010 |    8528 |
+| ffn             | 530.700 |        -253.400 |   0.003 |   41360 |
+| state           | 670.200 |        -392.800 |   0.030 |    8272 |
 
 ### L -- the cumulative ladder, transformer to PT
 
 `step` is the change from the previous rung, so the column locates the cliff.
 
-| rung | switch flipped  |     val |     step | best lr | non-emb |
-| ---: | --------------- | ------: | -------: | ------: | ------: |
-|    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
-|    2 | position        | 142.900 |   -1.200 |   0.001 |   50128 |
-|    3 | norm            | 139.500 |   -3.400 |   0.003 |   49744 |
-|    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
-|    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
-|    6 | attn_value      | 149.900 |    3.600 |   0.003 |   37264 |
-|    7 | ffn             | 213.300 |   63.300 |   0.001 |    4176 |
-|    8 | residual        | 206.500 |   -6.800 |   0.003 |    4176 |
-|    9 | state           | 424.600 |  218.100 |   0.030 |    4176 |
-|   10 | readout         | 296.700 | -127.800 |   0.030 |    8272 |
+| rung | switch flipped  |     val |    step | best lr | non-emb |
+| ---: | --------------- | ------: | ------: | ------: | ------: |
+|    1 | weight_sharing  | 144.100 |  14.800 |   0.001 |   50112 |
+|    2 | position        | 142.900 |  -1.200 |   0.001 |   50128 |
+|    3 | norm            | 139.500 |  -3.400 |   0.003 |   49744 |
+|    4 | attn_out_proj   | 145.200 |   5.700 |   0.003 |   45584 |
+|    5 | attn_query_proj | 146.300 |   1.100 |   0.003 |   41424 |
+|    6 | attn_value      | 149.900 |   3.600 |   0.003 |   37264 |
+|    7 | ffn             | 213.300 |  63.300 |   0.001 |    4176 |
+|    8 | residual        | 206.500 |  -6.800 |   0.003 |    4176 |
+|    9 | state           | 375.900 | 169.400 |   0.100 |    4176 |
+|   10 | readout         | 277.300 | -98.500 |   0.100 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -684,14 +684,18 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 | P      |  16 |   1 | mfvi    |   3 | 283.800 |  8.300 |    8256 |    2817 |
 | P      |  32 |   2 | exact   |   3 | 260.600 |  1.400 |    8256 |    1390 |
 | P      |  32 |   2 | mfvi    |   3 | 230.600 |  4.400 |    8256 |    4777 |
-| P      |  64 |   4 | exact   |   2 | 226.700 |  1.000 |    8256 |    1003 |
+| P      |  64 |   4 | exact   |   3 | 227.000 |  0.800 |    8256 |    1073 |
 | P      |  64 |   4 | mfvi    |   3 | 230.500 | 11.000 |    8256 |   17664 |
-| P      |  32 |   1 | exact   |   1 | 310.800 |  0.000 |   32896 |    2068 |
+| P      |  32 |   1 | exact   |   3 | 313.000 |  9.500 |   32896 |    1412 |
 | P      |  32 |   1 | mfvi    |   3 | 296.000 | 69.000 |   32896 |    3303 |
+| P      |  64 |   2 | exact   |   3 | 242.300 |  8.500 |   32896 |     915 |
 | P      |  64 |   2 | mfvi    |   3 | 220.600 |  3.200 |   32896 |    3233 |
+| P      | 128 |   4 | exact   |   3 | 217.600 |  4.600 |   32896 |     692 |
 | P      | 128 |   4 | mfvi    |   3 | 223.800 |  9.400 |   32896 |    1024 |
+| W      |  32 |   4 | exact   |   1 | 254.800 |  0.000 |    2080 |    1037 |
 | W      |  32 |   4 | mfvi    |   3 | 250.500 |  7.000 |    2080 |   22665 |
-| W      |  64 |   1 | mfvi    |   1 | 694.800 |  0.000 |  131328 |     699 |
+| W      |  64 |   1 | exact   |   1 | 476.000 |  0.000 |  131328 |     804 |
+| W      |  64 |   1 | mfvi    |   3 | 697.300 |  2.200 |  131328 |     700 |
 
 Family **W** holds the total label width fixed and is what tests the note's prediction that factoring buys nothing under the mean-field readout. Family **P** walks an iso-parameter diagonal, where `d` rises with `K`, so a gain there is a gain from *width at fixed arc budget* and not from factoring as such. `swapped` is the same trained weights scored under the other readout.
 
