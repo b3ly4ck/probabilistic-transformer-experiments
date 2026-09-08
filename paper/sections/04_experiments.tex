@@ -106,7 +106,7 @@ which readout to use (\Cref{sec:exp3}) and whether factoring the label variable 
 (\Cref{sec:exp-wt2}). The switch ladder (\Cref{sec:exp-switches}) sits between the two groups
 because it is what turns ``worse than a transformer'' into a statement about named components.
 
-\paragraph{Correctness of the implementation.}
+\subsubsection{Correctness of the implementation.}
 \label{sec:exp-correctness}
 Two checks test the derivation rather than the code and belong here; the rest are in
 \Cref{app:validation}. The mean-field free energy is non-increasing along the inner loop on a
@@ -121,7 +121,7 @@ $(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$ written from the raw parame
 its closed form to $10^{-10}$, and setting $K=1$ reproduces the flat decoder to $6.9\times
 10^{-18}$.
 
-\paragraph{A methodological finding first: variance.}
+\subsubsection{A methodological finding first: variance.}
 \label{sec:exp-repro}
 A configuration recorded at validation perplexity 430.04 in our own earlier work was re-run
 here on the same code, the same seed and the same data order, and landed at 644.98. Three arms
@@ -211,7 +211,7 @@ of the causal PT's parameters are its word--label factor.}
 \label{fig:scaling}
 \end{figure}
 
-\paragraph{Scaling curves.}
+\subsubsection{Scaling curves.}
 \label{sec:exp-scaling}
 \Cref{fig:scaling} draws validation perplexity against parameter count for all three models,
 each point the best of its learning-rate search at a 15{,}000-step budget with
@@ -304,7 +304,7 @@ width axis against the attention temperature rule, all undamped. Hatched cells d
 \label{fig:width}
 \end{figure}
 
-\paragraph{Width transfer, and why the source temperature fails.}
+\subsubsection{Width transfer, and why the source temperature fails.}
 \label{sec:exp-width}
 \Cref{sec:temperature} predicted that Wu \& Tu's head temperature $\lamH = 1/\nlab$, being
 calibrated for the uniform-belief limit, would make the label update's feedback loop worse as
@@ -416,7 +416,7 @@ first evaluation. Both undamped; $\alpha_Z = 1$ throughout.}
 \label{fig:mechanism}
 \end{figure}
 
-\paragraph{Initialisation, and the global variables.}
+\subsubsection{Initialisation, and the global variables.}
 \label{sec:exp-ablations}
 \citet{wu2023probabilistic} propose global variables in their Appendix B.3 as the in-graph
 substitute for a feed-forward block and never test them. We do, and the first thing to report is
@@ -512,7 +512,7 @@ deviation}. That is what a posterior which stays uniform implies --- more values
 same constant over --- and it is the cleanest evidence in the grid that the entropy reading is
 not an artefact of how we measure it.
 
-\paragraph{What the construction costs: the switch ladder.}
+\subsubsection{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
 \Cref{tab:switches} prices each of the ten differences twice --- once as its cost in an
 otherwise ordinary decoder (S1), once as the benefit of restoring it inside the all-PT rung
@@ -589,7 +589,7 @@ than a result.}
 \label{fig:ladder}
 \end{figure}
 
-\paragraph{Two constants nobody had varied.}
+\subsubsection{Two constants nobody had varied.}
 \label{sec:exp-knobs}
 Two of the source's constants had never been varied inside a configuration that trains, and they
 behave very differently. The $L_2$ coefficient on the arc scores, which Wu \& Tu's Table 2 sets
@@ -614,7 +614,7 @@ no relative positional encoding on the evidence of a toy fit-rate table; $\clip 
 PTB inside a configuration that otherwise trains turns that attribution into a measurement.
 One seed per cell.
 
-\paragraph{Inference depth buys nothing, and costs.}
+\subsubsection{Inference depth buys nothing, and costs.}
 \label{sec:exp-depth}
 The number of mean-field iterations $\niter$ is the causal PT's depth: it is what makes the
 model a weight-shared stack rather than a single layer, and it is the axis it shares with a
@@ -640,7 +640,7 @@ scale, \emph{the causal PT is best as a one-iteration model}, which is to say as
 looped character is vestigial. That is a further reason not to read the shallow scaling slope of
 \Cref{sec:exp-scaling} as evidence about depth-shared computation.
 
-\paragraph{Exact vs.\ mean-field readout.}
+\subsubsection{Exact vs.\ mean-field readout.}
 \label{sec:exp3}
 Two measurements are needed and they answer different questions: swapping the readout at
 evaluation on the same trained weights isolates the approximation error, while training under
@@ -683,7 +683,7 @@ outcome, and it is worth reporting plainly because the construction's own logic 
 way: the exact readout is what the graph says the answer is, and the approximation to it trains
 better.
 
-\paragraph{Factored labels.}
+\subsubsection{Factored labels.}
 \label{sec:exp-factored}
 The construction of \Cref{sec:variants} predicts an interaction rather than a main effect:
 factoring the label variable should buy nothing under the mean-field readout, because the logits
@@ -721,7 +721,7 @@ $243.1$.
 \TODO{the third seed at $K=4$, and family W --- fixed total width, which is the comparison the
 note's prediction is literally about.}
 
-\paragraph{Transfer to a second corpus.}
+\subsubsection{Transfer to a second corpus.}
 \label{sec:exp-wt2}
 Every constant in this paper is chosen on the Penn Treebank. The one test of whether that
 choice transfers is to apply it unchanged to WikiText-2 --- twice the vocabulary, more than
