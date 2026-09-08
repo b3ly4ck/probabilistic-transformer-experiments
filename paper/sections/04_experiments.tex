@@ -409,6 +409,15 @@ symmetry: with the rows of $\Bglob$ close together relative to their own length 
 posterior is uniform, the message is the row mean, and every row then receives the identical
 gradient $1/m$, so nothing separates them; a shared $L_2$ shrinks the spread that would.
 
+Where the answer comes from also needs saying. We first put the distribution question directly
+--- Gaussian against a matched-variance uniform and a semi-orthogonal draw --- in the source
+configuration at one seed per cell, and it cannot be read: at $\nlab=32$ the three draws give
+$700.7$, $375.0$ and $386.3$, differences of three hundred perplexity in a region whose seed
+standard deviation is $\ReproUndampedSd$. That grid is \Cref{tab:init} and no
+conclusion is drawn from it. What follows is the same question re-asked at three seeds in the
+configuration \Cref{sec:exp-width} selects, which is the only region where an initialisation
+effect of the size anyone cares about would be visible at all.
+
 Measured twice, in two configurations, the head answers two different questions --- and the
 second answer withdraws the first. Under the \emph{source} head temperature at $\nlab = 32$,
 where the model collapses, the configuration without the head sits on the unigram ($700.7$)
