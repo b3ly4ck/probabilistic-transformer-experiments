@@ -170,6 +170,29 @@ No claim in Appendix C is unsourced. The one liberty taken is presentational: th
 lemmas become run-in paragraphs with two numbered environments, because this paper's format
 allows very few.
 
+## All five grids complete — 2026-09-09, 05:00
+
+globalhead 54/54 · exp3 open questions 37/37 · switch ladder 160/160 · WikiText-2 24/24 ·
+factored labels 48/48. **Zero errors in any of them**, and the paper has **zero TODO markers**:
+`\draftfalse` builds clean, verified.
+
+The finding to lead with is the one the technical note **registered before any of it ran**. The
+exact readout's penalty against the mean-field one falls monotonically with the number of label
+components — $+52.2, +30.0, -3.5$ at 8,256 arc parameters and $+21.7, -6.2$ at 32,896 — and at
+fixed total width the two readouts separate outright: cutting the arc budget sixteenfold, the
+exact readout improves the whole way down (313.0 → 260.6 → 253.0) while the mean-field one is
+best in the middle. That reframes Experiment 3's result that the exact readout trains 100
+perplexity worse: it was not punished for being richer, it had nothing extra to be rich about at
+`K=1`, because the product of one mixture is a mixture.
+
+**What a reader should take from the session as a whole.** The construction is a package — nine
+of ten transformer properties cannot be restored inside it without making it worse. Its width
+sensitivity has a mechanism, the repair transfers to a second corpus untouched, and a
+semi-orthogonal draw removes almost all of the seed variance. Its slope is shallower than both
+baselines, four fifths of that attributable to weight sharing. And two of its own design
+choices — the exact readout and multiple inference iterations — cost at `K=1`, which is where
+everyone has run it.
+
 ## Grids finished, 2026-09-09 (early morning)
 
 Four of the five grids completed and two produced findings that changed the paper's argument
