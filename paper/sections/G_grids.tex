@@ -111,10 +111,11 @@ $H(Q_g)/\max$ is the entropy of the head posterior as a fraction of its maximum:
 posterior is uniform and the head's message is a constant label prior rather than the
 feed-forward-like operator it is proposed as --- a distinction perplexity alone cannot see. Two
 kinds of cell carry no mean. \textit{$n/m$ collapsed} means $n$ of $m$ seeds finished on the
-unigram. An italic \textit{range} means no seed reached the unigram but the largest is at least
-$1.5\times$ the smallest, so the seeds are not samples of one distribution and their mean would
-describe a uniformly mediocre configuration rather than one seed working and two not; every
-clean cell in this grid has a ratio below $1.11$ and every reported range above $2.8$.}
+unigram. An italic \textit{range} means no seed reached the unigram but the group is
+still not a sample of one distribution --- the largest seed at least $1.5\times$ the smallest,
+or a standard deviation above $15\,\%$ of the mean --- so a mean would describe a uniformly
+mediocre configuration rather than one seed working and two not. Clean cells in these grids run
+at $2$--$8\,\%$.}
 \label{tab:globalhead}
 \end{table*}
 
