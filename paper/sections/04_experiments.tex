@@ -402,13 +402,20 @@ second answer withdraws the first. Under the \emph{source} head temperature at $
 where the model collapses, the configuration without the head sits on the unigram ($700.7$)
 while several with it land between $323$ and $380$: a second message into $\Zv{t}$ that does not
 pass through the arc factors evidently breaks the runaway loop, and on that evidence the head
-looks load-bearing. Re-run in the configuration \Cref{sec:exp-width} selects --- standardised
-temperature, undamped, three seeds --- \textbf{the effect is gone}. Without the head,
-$243.2 \pm 5.3$; with it, across three initialisation scales and both $L_2$ treatments,
-between $243.6$ and $254.1$, every one of them equal to or worse than no head at all.
+looks load-bearing. Re-run at the same width in the configuration \Cref{sec:exp-width}
+selects --- standardised temperature, undamped, three seeds --- \textbf{the effect is gone}:
+without the head, $243.2 \pm 5.3$; with it, across three initialisation scales and both $L_2$
+treatments, between $242.5$ and $254.1$, none of them distinguishable from no head at all
+against those spreads.
 
-So the head was not adding capacity, it was rescuing a pathology, and the temperature correction
-removes the pathology more cheaply. The diagnostic says the same thing from inside: the head
+So at $\nlab = 32$ the head was not adding capacity, it was rescuing a pathology, and the
+temperature correction removes the pathology more cheaply. \textbf{The rescue returns wherever
+the pathology does.} At $\nlab = 64$, where the corrected model is itself near the edge of its
+stable region, the configuration without the head has a collapsed seed and the head restores it;
+the same reading, one width up. Which of the two a practitioner meets depends on whether their
+configuration trains, and that is the honest form of the answer: \emph{the global head is worth
+having exactly when the model is failing without it}, and there are cheaper ways to stop it
+failing. The diagnostic says the same thing from inside: the head
 posterior's entropy is between $0.94$ and $1.000$ of its maximum in every cell of the grid, so
 what the head sends is a near-constant label prior and not the feed-forward-like operator it is
 proposed as --- including in the cells where its message is \emph{larger} than the word unary
