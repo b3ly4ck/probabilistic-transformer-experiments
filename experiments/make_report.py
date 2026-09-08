@@ -641,11 +641,32 @@ def section_factored(md: List[str], out: Path) -> None:
     if not rows:
         md.append("_grid empty_\n")
         return
-    emit(md, "K label components at fixed total width", rows,
-         ["cell.d", "cell.tags.K", "cell.readout", "val_ppl", "test_ppl", "train_ppl",
-          "params.non_embedding", "params.total", "swap_readout", "swap_val_ppl"],
-         "The parameter count is independent of K at fixed total width; the prediction is that "
-         "factoring buys nothing under the mean-field readout and something under the exact one.")
+    # Seed means by (family, d, K, readout). The raw rows were unreadable as an interaction --
+    # which is what this experiment is about -- because three seeds of each cell interleave.
+    # The note's claim is tested by family W, where the total width is held fixed; family P
+    # varies width along an iso-parameter diagonal and a gain there is a gain from width.
+    table = []
+    for r in mean_over_seeds(rows, ["cell.tags.grid", "cell.d", "cell.tags.K", "cell.readout"]):
+        swaps = [x["swap_val_ppl"] for x in rows
+                 if (x["cell"]["d"], get_path(x, "cell.tags.K"), x["cell"]["readout"])
+                 == (r["cell"]["d"], get_path(r, "cell.tags.K"), r["cell"]["readout"])
+                 and x.get("swap_val_ppl") is not None]
+        table.append({
+            "family": get_path(r, "cell.tags.grid"),
+            "d": r["cell"]["d"], "K": get_path(r, "cell.tags.K"),
+            "readout": r["cell"]["readout"], "n": r["_n_seeds"],
+            "val": round(r["val_ppl"], 1), "sd": round(r["_val_sd"], 1),
+            "non-emb": r["params"]["non_embedding"],
+            "swapped": round(sum(swaps) / len(swaps)) if swaps else None,
+        })
+    table.sort(key=lambda t: (str(t["family"]), t["non-emb"], t["d"], str(t["readout"])))
+    md.append("\n### Seed means by family, width, K and readout\n\n" + markdown_table(
+        table, ["family", "d", "K", "readout", "n", "val", "sd", "non-emb", "swapped"]))
+    md.append("\nFamily **W** holds the total label width fixed and is what tests the note's "
+              "prediction that factoring buys nothing under the mean-field readout. Family "
+              "**P** walks an iso-parameter diagonal, where `d` rises with `K`, so a gain there "
+              "is a gain from *width at fixed arc budget* and not from factoring as such. "
+              "`swapped` is the same trained weights scored under the other readout.\n")
 
 
 def section_transfer(md: List[str], out: Path) -> None:

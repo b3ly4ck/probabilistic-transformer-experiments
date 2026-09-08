@@ -644,8 +644,8 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 | --------------- | ------: | --------------: | ------: | ------: |
 | weight_sharing  | 298.800 |          -2.100 |   0.030 |   20800 |
 | attn_query_proj | 302.000 |          -5.300 |   0.030 |   12432 |
+| attn_value      | 310.100 |         -13.400 |   0.030 |   12432 |
 | position        | 329.900 |         -33.200 |   0.030 |    8256 |
-| attn_value      | 358.700 |         -61.900 |   0.010 |   12432 |
 | attn_out_proj   | 380.000 |         -83.300 |   0.003 |   12432 |
 | readout         | 424.600 |        -127.800 |   0.030 |    4176 |
 | norm            | 501.900 |        -205.200 |   0.010 |    8528 |
@@ -676,25 +676,20 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 ## Factored labels (Experiment 7)
 
 
-### K label components at fixed total width
+### Seed means by family, width, K and readout
 
-The parameter count is independent of K at fixed total width; the prediction is that factoring buys nothing under the mean-field readout and something under the exact one.
+| family |   d |   K | readout |   n |     val |     sd | non-emb | swapped |
+| ------ | --: | --: | ------- | --: | ------: | -----: | ------: | ------: |
+| P      |  16 |   1 | exact   |   3 | 336.000 |  6.700 |    8256 |    1284 |
+| P      |  16 |   1 | mfvi    |   3 | 283.800 |  8.300 |    8256 |    2817 |
+| P      |  32 |   2 | exact   |   1 | 262.100 |  0.000 |    8256 |     924 |
+| P      |  32 |   2 | mfvi    |   3 | 230.600 |  4.400 |    8256 |    4777 |
+| P      |  64 |   4 | mfvi    |   3 | 230.500 | 11.000 |    8256 |   17664 |
+| P      |  32 |   1 | mfvi    |   1 | 375.400 |  0.000 |   32896 |     861 |
+| P      |  64 |   2 | mfvi    |   1 | 222.000 |  0.000 |   32896 |    1997 |
 
-| cell.d | cell.tags.K | cell.readout | val_ppl | test_ppl | train_ppl | params.non_embedding | params.total | swap_readout | swap_val_ppl |
-| -----: | ----------: | ------------ | ------: | -------: | --------: | -------------------: | -----------: | ------------ | -----------: |
-|     16 |           1 | mfvi         | 287.174 |  261.727 |   280.295 |                 8256 |       178256 | exact        |     2097.050 |
-|     32 |           2 | mfvi         | 226.122 |  206.668 |   195.575 |                 8256 |       338256 | exact        |     5314.726 |
-|     64 |           4 | mfvi         | 222.797 |  198.507 |   139.984 |                 8256 |       658256 | exact        |    18926.049 |
-|     32 |           1 | mfvi         | 375.412 |  341.179 |   379.798 |                32896 |       362896 | exact        |      861.312 |
-|     64 |           2 | mfvi         | 221.961 |  200.475 |   182.003 |                32896 |       682896 | exact        |     1996.840 |
-|     16 |           1 | mfvi         | 274.328 |  252.325 |   268.442 |                 8256 |       178256 | exact        |     3267.025 |
-|     32 |           2 | mfvi         | 230.557 |  211.149 |   196.708 |                 8256 |       338256 | exact        |     4035.565 |
-|     64 |           4 | mfvi         | 243.111 |  219.025 |   160.103 |                 8256 |       658256 | exact        |    15939.122 |
-|     16 |           1 | mfvi         | 289.940 |  263.173 |   279.950 |                 8256 |       178256 | exact        |     3087.910 |
-|     32 |           2 | mfvi         | 234.998 |  211.518 |   191.581 |                 8256 |       338256 | exact        |     4979.727 |
-|     64 |           4 | mfvi         | 225.719 |  200.975 |   149.683 |                 8256 |       658256 | exact        |    18127.695 |
-|     16 |           1 | exact        | 342.968 |  309.261 |   326.348 |                 8256 |       178256 | mfvi         |     1227.467 |
-|     16 |           1 | exact        | 329.513 |  299.433 |   318.900 |                 8256 |       178256 | mfvi         |     1383.689 |
+Family **W** holds the total label width fixed and is what tests the note's prediction that factoring buys nothing under the mean-field readout. Family **P** walks an iso-parameter diagonal, where `d` rises with `K`, so a gain there is a gain from *width at fixed arc budget* and not from factoring as such. `swapped` is the same trained weights scored under the other readout.
+
 
 ## WikiText-2 transfer (Experiment 8)
 
