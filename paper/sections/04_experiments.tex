@@ -116,6 +116,34 @@ anything at all. Every headline number below is a three-seed mean with its sprea
 grid cell carries a count of seeds that failed to learn, because a mean taken over a mixture of
 learned and collapsed runs measures neither.
 
+\begin{table*}[t]
+\centering
+\small
+\input{figures/table_main}
+\caption{Matched-budget comparison on PTB. Each causal PT row is followed by the transformer and
+looped-transformer points whose \emph{total} parameter count brackets it from below and from
+above --- a bracket rather than a nearest neighbour, so the interval the comparison lives in is
+visible instead of a point that could have been chosen from either side. Causal PT rows are means
+over three seeds with their standard deviation; baselines are the better of two learning rates.
+Every model is trained by the same loop on the same blocks and scored on the identical token set
+at its own best-validation checkpoint. The table is generated from the run JSONs by
+\texttt{experiments/make\_report.py}; no number in it is typed by hand.}
+\label{tab:main}
+\end{table*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_scaling_nonemb.png}\\[2pt]
+\includegraphics[width=\columnwidth]{figures/fig_scaling_total.png}
+\caption{Scaling on PTB: validation perplexity against non-embedding parameters (top) and total
+parameters (bottom), log--log. Each point is the better of two learning rates at a 15{,}000-step
+budget with the checkpoint selected on validation; the legend carries the fitted power-law
+exponent. The dotted line is the unigram baseline, which separates ``learned something'' from
+``learned the marginal''. The two panels are not interchangeable: with tying forced, almost all
+of the causal PT's parameters are its word--label factor.}
+\label{fig:scaling}
+\end{figure}
+
 \paragraph{Scaling curves.}
 \label{sec:exp-scaling}
 \Cref{fig:scaling} draws validation perplexity against parameter count for all three models,
