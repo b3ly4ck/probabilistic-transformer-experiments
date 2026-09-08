@@ -62,8 +62,9 @@ Held fixed: PTB, `h = 4`, `gamma = 3`, `T = 3`, `tau = 2`, `alpha_Z = 0.25`, fro
 three seeds. `h = 4` rather than the usual 2 because the channel assignment is what carries
 the factorisation: under the round-robin rule with `h = K^2` every (child, head) component
 pair occurs exactly once, and at `h = 2` with `K = 4` most pairs never occur at all. Holding
-`h` fixed across the `K` axis keeps the two from confounding; a `h = 2` bridge row is kept so
-the grid connects to the configuration the rest of the paper uses.
+`h` fixed across the `K` axis keeps the two from confounding. A `h = 2` bridge row to the
+configuration the rest of the paper uses was specified and then dropped for budget; the reason
+is recorded at the point in `build_cells` where it would have been added.
 
 The sweep runner additionally scores every cell under the *other* readout at no training cost,
 so the evaluation-time swap arrives alongside the trained comparison and the two can be told
@@ -132,9 +133,11 @@ def build_cells(*args):
                 for seed in SEEDS:
                     add(d, K, readout, seed, "W")
 
-    # bridge row: h = 2, the configuration every other experiment in the paper uses
-    for K in (1, 2):
-        for readout in READOUTS:
-            for seed in SEEDS:
-                add(32, K, readout, seed, "B", h=2)
+    # A bridge row at h = 2 -- the configuration every other experiment uses -- was specified
+    # and is dropped: it costs twelve cells of the same GPU budget that the iso-parameter
+    # diagonals and the fixed-width family need, and it answers a question about h rather than
+    # about K. The channel assignment is what carries the factorisation, and at h = 2 with
+    # K = 2 only two of the four (child, head) component pairs occur, so the bridge would have
+    # measured a degenerate assignment as much as anything else. Recorded rather than removed
+    # silently, because a grid that quietly shrinks is how a design becomes untraceable.
     return cells
