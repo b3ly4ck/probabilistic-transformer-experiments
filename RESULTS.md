@@ -484,7 +484,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |   d |   m | init std | in L2 | init dist |   n | val mean |     sd | H(Q_g)/max | glob/unary |
 | --: | --: | -------: | ----- | --------- | --: | -------: | -----: | ---------: | ---------: |
 |  32 |   0 |       -- | True  | normal    |   1 |  244.300 |  0.000 |      0.000 |      0.000 |
-|  32 |  64 |    0.020 | False | normal    |   1 |  248.500 |  0.000 |      0.996 |      1.589 |
+|  32 |  64 |    0.020 | False | normal    |   2 |  248.200 |  0.400 |      0.995 |      1.456 |
 |  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
 |  32 |  64 |    0.100 | False | normal    |   1 |  249.500 |  0.000 |      0.958 |      1.593 |
 |  32 |  64 |    0.500 | False | normal    |   1 |  244.600 |  0.000 |      0.884 |      0.849 |
@@ -590,6 +590,14 @@ _not run yet_
 Baselines are interpolated in log-log space at the causal PT's own parameter count, and left blank outside the range where they were measured -- extrapolating a baseline into a region it was not run in would be inventing the comparison.
 
 
+### All three on one window (13,152--147,840)
+
+| model       | n   | exponent | ppl        |
+| ----------- | --- | -------- | ---------- |
+| transformer | 4   | -0.175   | 189 -> 124 |
+| looped      | 3   | -0.068   | 157 -> 133 |
+| PT low rank | 8   | -0.045   | 226 -> 203 |
+
 ## Scaling exponents, pair by pair on each pair's shared range
 
 | comparison                 | window         |  first |   n | LOO first      | second |  n  | LOO second     |
@@ -616,6 +624,11 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \ExpTfvLpTf         | -0.115    |
 | \ExpTfvPtPt         | -0.084    |
 | \ExpTfvPtTf         | -0.223    |
+| \ExpTriHi           | 148k      |
+| \ExpTriLo           | 13k       |
+| \ExpTriLow          | -0.045    |
+| \ExpTriLp           | -0.068    |
+| \ExpTriTf           | -0.175    |
 | \MBFirstNonemb      | 16{,}512  |
 | \MBFirstRatioGpt    | 1.23      |
 | \MBFirstRatioLooped | 1.25      |

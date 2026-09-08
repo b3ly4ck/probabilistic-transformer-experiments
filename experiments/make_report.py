@@ -1073,12 +1073,37 @@ def emit_exponents(out: Path, md: List[str]) -> None:
         macros[f"Exp{a}v{b}{a}"] = f"{ra[0].exponent:.3f}"
         macros[f"Exp{a}v{b}{b}"] = f"{rb[0].exponent:.3f}"
 
-    _latex_table(out / "table_exponents.tex",
-                 ["pair", "range", "\\multicolumn{2}{r@{}}{exponents}"],
-                 table, "@{}l@{\\ \\ }l@{\\ \\ }r@{\\ \\ }r@{}")
-    # The same comparison with the point counts and the leave-one-out ranges, for the appendix.
-    # Section 4 asserts that no single point decides any ordering; that assertion has to be
-    # checkable somewhere in the paper and not only in the repository.
+    # The main-text table is the three-way comparison on the window all three of transformer,
+    # looped and low-rank causal PT are measured on. This is the only place in the analysis
+    # where three exponents share one window, which is what a *decomposition* -- so much of the
+    # slope to sharing, the rest to structure -- requires. The corrected-PT curve cannot join
+    # it: on the range where all three of transformer, looped and corrected PT are measured the
+    # looped frontier has two points. The pairwise table below is the robustness check.
+    TRIO = ("Tf", "Lp", "Low")
+    tlo = max(min(x for x, _ in C[k][1]) for k in TRIO)
+    thi = min(max(x for x, _ in C[k][1]) for k in TRIO)
+    three = []
+    for k in TRIO:
+        nm, P = C[k]
+        r = fit_window(P, tlo, thi)
+        if not r:
+            continue
+        three.append([nm, str(r[1]), f"${r[0].exponent:.3f}$",
+                      f"${r[0].predict(tlo):.0f} \\to {r[0].predict(thi):.0f}$"])
+        macros[f"ExpTri{k}"] = f"{r[0].exponent:.3f}"
+    macros["ExpTriLo"] = sci(tlo)
+    macros["ExpTriHi"] = sci(thi)
+    _latex_table(out / "table_exponents_trio.tex",
+                 ["", "$n$", "exponent", "ppl across the range"], three, "@{}lrrr@{}")
+    md.append(f"\n### All three on one window ({tlo:,.0f}--{thi:,.0f})\n\n" + markdown_table(
+        [{"model": t[0], "n": t[1], "exponent": t[2].strip("$"),
+          "ppl": t[3].strip("$").replace("\\to", "->")} for t in three],
+        ["model", "n", "exponent", "ppl"]))
+
+    # The pairwise comparison goes to the appendix, with the point counts and leave-one-out
+    # ranges: Section 4 asserts that no single point decides any ordering, and that has to be
+    # checkable in the paper and not only in the repository. There is no second, shorter
+    # version of it -- one table, one place.
     _latex_table(out / "table_exponents_full.tex",
                  ["pair", "range", "$n$", "exponent", "leave-one-out",
                   "$n$", "exponent", "leave-one-out"], full, "@{}llrrlrrl@{}")
