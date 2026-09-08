@@ -65,3 +65,48 @@ initialisation scale.
 | date | commit | job | shard | notes |
 |---|---|---|---|---|
 | 2026-09-08 | 14419ae | queued | 0-3 of 4 | 59 cells, queued behind exp4 |
+
+## First pass — and why it had to be re-run (2026-09-08, `spec_init.py`, 59 cells)
+
+Grid A varied the global head's initialisation scale and L2 treatment at **one seed per cell, at
+the source temperature, undamped** — the region the reproduction check independently showed has
+a seed standard deviation of **130 perplexity**. The grid duly came back unreadable. At `d = 32`
+the same head at `b_glob_init_std = 0.02` gives 337.7 without the L2 and 465.0 with it; at 0.1,
+587.2 and 675.7; at 0.25, 383.2 and 323.0. The ordering reverses twice. No conclusion about the
+initialisation scale can be drawn from it, and none is drawn.
+
+**Two things in it are nonetheless unambiguous and are carried forward.**
+
+1. **The head rescues a collapsing configuration.** At `d = 32` the reference *without* the head
+   sits exactly on the unigram (700.7), while several cells *with* it land between 323 and 380.
+   A second message into `Z_t` that does not pass through the arc factors evidently breaks the
+   runaway loop. That is a mechanism claim; `spec_globalhead.py` measures it at three seeds in
+   the stable configuration.
+2. **`H(Q_g)` is 1.000 in almost every cell.** The head posterior is uniform, so its message is
+   the row mean of `B'` — a constant vector added to the label logits, i.e. a **learned label
+   prior**, not a feed-forward-like operator. The head can help perplexity while doing nothing
+   the B.3.3 proposal was for. Perplexity alone cannot see this distinction, which is why
+   `qg_entropy_frac` is reported beside it in every table.
+
+## An unplanned but decisive by-product
+
+`C_normal_d16` of grid C is bit-for-bit the configuration of job 940848 of 2026-08-10, and it
+landed on `ai_gpu06`, an **A40** — the same GPU model as the original. It reproduced that run's
+entire validation trace to every printed digit, ending at **430.04**. The same configuration on a
+TITAN RTX ends at 645.0. See `experiments/exp3_readout/EXPERIMENT_STATUS.md`; this is the cell
+that answered the hardware question and let the A40-pinned control be cancelled.
+
+## Grid E — the initialisation half of the width rule
+
+`arc_init_std` following `const`, `sqrt(32/d)` and `32/d` across `d`, one seed, same
+high-variance region: the completed cells scatter (363.2 / 673.7 / 606.6) and support no rule.
+The width mechanism this project found lives in the head *temperature*, not in the arc-score
+initialisation scale, and exp4b/4c are where that is measured. Grid E is reported as
+inconclusive rather than quietly dropped.
+
+## Run log
+
+| date | commit | job | shard | notes |
+|---|---|---|---|---|
+| 2026-09-08 | 14419ae | 998660, 998830-998833 | 0-3 of 4 | 59 cells; single seed, source temperature, undamped — superseded for the global-head question by `spec_globalhead.py` |
+| 2026-09-08 | cc79156 | queued | 0-3 of 4 | `spec_globalhead.py`, 54 cells, three seeds, standardised temperature |
