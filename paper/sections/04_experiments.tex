@@ -707,9 +707,16 @@ $\WtStdWide$ is not. That is the mechanism of \Cref{sec:exp-width} reproducing o
 with a vocabulary three times larger, which is the strongest evidence we have that it is a
 property of the model rather than of the Penn Treebank.
 
-The gap to a transformer transfers too, and is no smaller: a causal transformer at
-$d_{\text{model}} = 32$ reaches $\WtGptNarrow$ here with $50{,}880$ non-embedding parameters against
-the causal PT's $\WtStdWide$ at $65{,}664$. Nothing about the constants was adjusted for the
-larger vocabulary or the longer training split, which is the only sense in which this is a test
-of transfer rather than a second tuning exercise.
-\TODO{exp8: the third seed of the standardised arm at $\nlab=64$, the last cell of that grid.}
+The gap to the baselines transfers too, and is if anything wider. At a \emph{smaller}
+non-embedding budget than the causal PT's $65{,}664$, a causal transformer reaches
+$179.7 \pm 4.3$ with $50{,}880$ and a looped one $167.9 \pm 0.7$ with $50{,}112$, against the
+causal PT's $\WtStdWide \pm \WtStdWideSd$. The crossover of \Cref{sec:exp-scaling} reappears as
+well: at matched $d_{\text{model}}$ the looped transformer is worse than the standard one at
+every width here, and at matched non-embedding budget it is better --- the same inversion, on a
+different corpus.
+
+Nothing about the constants was adjusted for the larger vocabulary or the longer training split,
+which is the only sense in which this is a test of transfer rather than a second tuning
+exercise. What it establishes is narrow and worth having: \emph{the parameterisation we selected
+on one corpus is not overfitted to it}, and the ordering of every comparison in this paper
+survives a threefold change of vocabulary.
