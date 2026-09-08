@@ -105,3 +105,38 @@ result. Every headline number in the preprint is reported over three seeds with 
 Note that the *test* perplexity differs between arms A/B (587.82) and C (555.44) because the
 old driver scores the final weights and the new runner scores the best-validation checkpoint;
 that is a protocol difference, stated in `spec_open.py`, not a discrepancy.
+
+### Part C — the seed spread, which is the actual finding (2026-09-08, job 998665)
+
+Same configuration, three seeds, through the new runner on one GPU:
+
+| `alpha_Z` | seeds | val ppl | mean ± sd | spread |
+|---|---|---|---|---|
+| **1.0** (undamped) | 0, 1, 2 | 610.88 / 408.81 / 367.55 | **462.4 ± 130.2** | 243 |
+| **0.25** (damped)  | 0, 1, 2 | 322.46 / 321.55 / … | **322.0 ± 0.65** | 0.9 |
+
+The undamped configuration has a seed standard deviation of **130 perplexity — 28 % of its own
+mean**. The damped one has **0.65 — 0.2 %**. Two orders of magnitude.
+
+**This resolves the reproduction question completely, and in a more useful way than a hardware
+story would have.** The 2026-08 number, 430.04, sits comfortably inside the undamped spread
+[367.55, 610.88]. It was never wrong; it was one draw from a distribution with `sd = 130`,
+quoted to two decimal places as though it were a measurement. The same is true of every other
+single-seed number the 2026-08 report took from the undamped region — including the frozen-`b`
+gain (473.28 → 430.04, a difference of 43 against a spread of 130) and the `d = 16` versus
+`d = 24` ordering.
+
+What this does to the write-up:
+
+1. **No single-seed number from the undamped region appears in the preprint**, and the
+   frozen-`b` comparison of 2026-08 §5.1 is withdrawn pending the three-seed replication in
+   `spec_open.py` grid R.
+2. **The variance reduction is itself a headline result.** Damping was reported in 2026-08 as
+   an improvement in the mean (641.5 → 248.29). It is at least as much an improvement in
+   reproducibility, and reproducibility is the property that lets any later comparison mean
+   anything. The same test applies to the standardised temperature: `spec_gain.py` reports
+   `sd` and a dead-seed count in every cell for exactly this reason, and at `d = 32` it gives
+   282.2 ± 6.6 at gain 1 against a 3/3 collapse at gain 3 — a cliff, not noise.
+3. The A40-pinned control (job 998682) is still worth running, but it is now a secondary
+   question: with `sd = 130` across seeds on one GPU, a difference between two GPUs needs no
+   further explanation.
