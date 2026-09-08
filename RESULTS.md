@@ -97,10 +97,11 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | pt         |         160 |            4 |     64 |   0.020 | 231.963 |  212.031 |   205.717 |                 8320 |       658320 |     14500 |         8 |
 | pt         |         160 |            4 |     64 |   0.020 | 225.937 |  207.203 |   197.079 |                16512 |       666512 |     14500 |        16 |
 | pt         |         160 |            4 |     96 |   0.020 | 223.149 |  204.382 |   184.631 |                18624 |       988624 |     15000 |        12 |
-| pt         |         160 |            4 |     96 |   0.020 | 214.774 |  197.177 |   178.875 |                37056 |      1007056 |     14500 |        24 |
+| pt         |         160 |            4 |     96 |   0.020 | 213.474 |  196.101 |   176.524 |                37056 |      1007056 |     14500 |        24 |
 | pt         |         160 |            4 |    128 |   0.020 | 214.604 |  195.763 |   171.472 |                33024 |      1323024 |     15000 |        16 |
-| pt         |         160 |            4 |    128 |   0.020 | 216.952 |  196.577 |   160.090 |                65792 |      1355792 |     14500 |        32 |
+| pt         |         160 |            4 |    128 |   0.020 | 213.954 |  194.420 |   163.826 |                65792 |      1355792 |     14500 |        32 |
 | pt         |         160 |            4 |    192 |   0.020 | 206.929 |  188.280 |   148.554 |                74112 |      2004112 |     15000 |        24 |
+| pt         |         160 |            4 |    192 |   0.020 | 207.089 |  188.310 |   165.060 |               147840 |      2077840 |     15000 |        48 |
 | pt         |         160 |            4 |    256 |   0.020 | 206.095 |  187.466 |   127.215 |               131584 |      2701584 |     10500 |        32 |
 
 **Fitted power-law exponents on the non-embedding axis**
@@ -111,7 +112,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            | 13,152-790,272   |   6 | -0.087    | -0.042     | -0.115                   |
 | causal PT, source constants   | 13,152-16,448    |   1 | -0.080    | --         | --                       |
 | causal PT, standardised temp. | 13,152-65,664    |   3 | -0.090    | -0.084     | -0.223                   |
-| causal PT, + low rank         | 13,152-131,584   |   5 | -0.061    | -0.046     | -0.175                   |
+| causal PT, + low rank         | 13,152-131,584   |   6 | -0.061    | -0.045     | -0.175                   |
 
 `overlap` is each curve's shared parameter range with the causal transformer, and `common range` the exponent refitted there. Fitting each curve over its own full range flatters the causal PT, because the baselines extend into the regime where this corpus and not the parameter count binds and their flat points drag the slope down.
 
@@ -124,7 +125,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            | 174,176-2,847,680 |   7 | -0.158    | -0.145     | -0.137                   |
 | causal PT, source constants   | 174,176-346,448   |   2 | -0.160    | --         | --                       |
 | causal PT, standardised temp. | 174,176-715,664   |   4 | -0.177    | -0.174     | -0.305                   |
-| causal PT, + low rank         | 334,160-2,701,584 |   9 | -0.101    | -0.101     | -0.072                   |
+| causal PT, + low rank         | 334,160-2,701,584 |   8 | -0.100    | -0.100     | -0.072                   |
 
 `overlap` is each curve's shared parameter range with the causal transformer, and `common range` the exponent refitted there. Fitting each curve over its own full range flatters the causal PT, because the baselines extend into the regime where this corpus and not the parameter count binds and their flat points drag the slope down.
 
@@ -479,7 +480,11 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ## The B.3.3 global head, three seeds in the stable configuration (Exp. 5b)
 
-_grid empty_
+|   d |   m | init std | in L2 | init dist |   n | val mean |    sd | H(Q_g)/max | glob/unary |
+| --: | --: | -------- | ----- | --------- | --: | -------: | ----: | ---------: | ---------: |
+|  32 |   0 | --       | True  | normal    |   1 |  244.300 | 0.000 |      0.000 |      0.000 |
+
+`H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
 
 ## Open questions closed inside the working region (Experiment 3)
@@ -518,9 +523,9 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
+| weight_sharing  | 387.600 |           7.900 |   0.010 |   20800 |
 | position        | 430.100 |         -34.600 |   0.003 |    8256 |
 | attn_query_proj | 473.400 |         -77.900 |   0.003 |   12432 |
-| weight_sharing  | 479.900 |         -84.400 |   0.003 |   20800 |
 | norm            | 501.900 |        -106.400 |   0.010 |    8528 |
 | ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
 | state           | 686.800 |        -291.300 |   0.001 |    8272 |
@@ -532,16 +537,16 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 `step` is the change from the previous rung, so the column locates the cliff.
 
-| rung | switch flipped  |     val |    step | best lr | non-emb |
-| ---: | --------------- | ------: | ------: | ------: | ------: |
-|    1 | weight_sharing  | 144.100 |  14.800 |   0.001 |   50112 |
-|    3 | norm            | 139.500 |  -4.600 |   0.003 |   49744 |
-|    4 | attn_out_proj   | 145.200 |   5.700 |   0.003 |   45584 |
-|    5 | attn_query_proj | 146.300 |   1.100 |   0.003 |   41424 |
-|    6 | attn_value      | 158.600 |  12.300 |   0.001 |   37264 |
-|    7 | ffn             | 213.300 |  54.700 |   0.001 |    4176 |
-|    9 | state           | 608.700 | 395.400 |   0.003 |    4176 |
-|   10 | readout         | 687.200 |  78.500 |   0.001 |    8272 |
+| rung | switch flipped  |     val |     step | best lr | non-emb |
+| ---: | --------------- | ------: | -------: | ------: | ------: |
+|    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
+|    3 | norm            | 139.500 |   -4.600 |   0.003 |   49744 |
+|    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
+|    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
+|    6 | attn_value      | 158.600 |   12.300 |   0.001 |   37264 |
+|    7 | ffn             | 213.300 |   54.700 |   0.001 |    4176 |
+|    9 | state           | 608.700 |  395.400 |   0.003 |    4176 |
+|   10 | readout         | 395.500 | -213.200 |   0.003 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -566,9 +571,10 @@ _not run yet_
 | d=64, r=16  |   16512 |   3 | 225.900 |  2.500 |     184.100 | 1.230 | 159.800 |  1.410 |
 | d=96, r=12  |   18624 |   3 | 223.100 |  5.600 |     178.500 | 1.250 | 157.600 |  1.420 |
 | d=128, r=16 |   33024 |   3 | 214.600 |  2.000 |     155.900 | 1.380 | 147.700 |  1.450 |
-| d=96, r=24  |   37056 |   2 | 214.800 |  4.300 |     152.800 | 1.410 | 146.100 |  1.470 |
-| d=128, r=32 |   65792 |   1 | 217.000 |  0.000 |     141.200 | 1.540 | 139.900 |  1.550 |
+| d=96, r=24  |   37056 |   3 | 213.500 |  3.800 |     152.800 | 1.400 | 146.100 |  1.460 |
+| d=128, r=32 |   65792 |   2 | 214.000 |  4.200 |     141.200 | 1.520 | 139.900 |  1.530 |
 | d=192, r=24 |   74112 |   3 | 206.900 |  9.200 |     139.600 | 1.480 | 139.100 |  1.490 |
 | d=256, r=32 |  131584 |   3 | 206.100 |  4.800 |     132.600 | 1.550 | 136.200 |  1.510 |
+| d=192, r=48 |  147840 |   1 | 207.100 |  0.000 |     131.700 | 1.570 | 136.000 |  1.520 |
 
 Baselines are interpolated in log-log space at the causal PT's own parameter count, and left blank outside the range where they were measured -- extrapolating a baseline into a region it was not run in would be inventing the comparison.
