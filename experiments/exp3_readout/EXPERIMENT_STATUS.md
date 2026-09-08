@@ -67,6 +67,7 @@ region on all four axes at once, so a null result there measured nothing.
 |---|---|---|---|
 | 2026-09-08 | 14419ae | 998640 | reproduction check A/B/C |
 | 2026-09-08 | 14419ae | queued | `spec_open`, 37 cells, 5 shards |
+| 2026-09-09 | 39fc6bc | 998966, 998968, 998982 + | 23/37 cells done, 0 errors. **Grid X, the result this experiment exists for:** at `d=32` damped, trained under the exact readout 348.8 against the mean-field readout's 248.3 -- the strictly richer family (Prop. readout (iii)) trains 100 perplexity worse. **Grid T:** perplexity rises monotonically with inference depth, `T=1` 241.3, `T=2` 246.5, `T=3` 248.3, `T=8` 275.3; `tau=1` 242.1 against `tau=2` 248.3. **Grid R:** the damped record replicates, 253.0 +- 6.0 over three seeds against 250.7 +- 2.3. **Grid L:** `l2_arc` 5e-3 is indistinguishable from 5e-4 (249.8), 5e-2 kills the model (697.0, msg/unary 0.02, ablation KL 0.000). **Grid G:** `gamma=1` 249.7 against `gamma=3` 248.3. Single seed except grid R. |
 
 ## Reproduction check — result (2026-09-08)
 
