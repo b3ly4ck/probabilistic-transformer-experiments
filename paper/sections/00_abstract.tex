@@ -10,6 +10,7 @@ conditional random fields in which the prefix enters each step as a frozen condi
 anti-causal term is never formed. Promoting the word from an observed constant to a latent
 variable then yields a language-model head with no parameter outside the factor graph; tied
 embeddings, the output bias and a mixture-of-softmaxes readout follow as consequences, the last
-in closed form because the per-position subgraph is a tree. Empirically we find the model's
-sensitivity to its own width is not diffuse but has a mechanism, and that correcting it restores
-the model's scaling exponent to a transformer's.
+in closed form because the per-position subgraph is a tree. Empirically we find that the model's
+sensitivity to its own width is not diffuse but has a mechanism in the calibration of one
+temperature, and that correcting it roughly doubles the usable width and makes the model's
+scaling curve orderly --- though still, per parameter, shallower than a transformer's.
