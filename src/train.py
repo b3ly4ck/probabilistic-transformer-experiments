@@ -60,6 +60,21 @@ class TrainConfig:
     device: str = "cpu"
     log_every: int = 20
     diagnostics: bool = True
+    keep_best: bool = False
+    # Early stopping, done in the shared loop so that every model gets exactly the same
+    # protocol. When set, the loop keeps a CPU copy of the state dict at the evaluation with
+    # the lowest validation loss and restores it before returning, and `History.best_step`
+    # says where that was. This is the standard language-modelling protocol and it is what
+    # makes a fixed token budget fair across models that overfit at different rates: PTB has
+    # 929,589 training tokens, so a 1.2M-parameter GPT and a 16k-parameter PT reach their
+    # best validation point at very different steps, and scoring both at the *last* step
+    # would grade one of them past its optimum.
+    #
+    # It does not resurrect correction #11 of the 2026-08 report ("best-val = min over the
+    # trace" hid a divergent run). The row still records the final value alongside the best,
+    # and the test number is taken from the restored best checkpoint rather than from a
+    # different point of the trace than the validation number -- which was the actual defect
+    # there.
 
 
 @dataclass
@@ -70,6 +85,9 @@ class History:
     val_loss: List[float] = field(default_factory=list)
     val_ppl: List[float] = field(default_factory=list)
     diag: List[dict] = field(default_factory=list)
+    best_step: Optional[int] = None
+    best_val_ppl: Optional[float] = None
+    final_val_ppl: Optional[float] = None
 
 
 def lr_at(step: int, cfg: TrainConfig) -> float:
@@ -138,7 +156,8 @@ def _diagnostics(model, block: torch.Tensor) -> dict:
         )
         # message decomposition — which carrier grew, if a run degrades
         for k in ("arc_msg_norm", "glob_msg_norm", "glob_over_unary",
-                  "qg_entropy_frac", "max_abs_B_glob"):
+                  "qg_entropy_frac", "max_abs_B_glob", "q_sharpness", "attn_entropy",
+                  "G_absmax", "Sw_norm", "G_norm"):
             if k in last:
                 out[k] = last[k]
     if hasattr(model, "arc_scores"):
@@ -171,6 +190,7 @@ def train(
 
     t0 = time.time()
     running: List[float] = []
+    best = {"loss": float("inf"), "step": None, "state": None}
     for step in range(cfg.max_steps):
         for group in opt.param_groups:
             group["lr"] = lr_at(step, cfg)
@@ -205,9 +225,23 @@ def train(
             hist.val_ppl.append(ev["ppl"])
             hist.diag.append(diag)
             hist.train_loss.append(float(nll.detach()))
+            if cfg.keep_best and ev["loss"] < best["loss"]:
+                best = {
+                    "loss": ev["loss"],
+                    "step": step + 1,
+                    "state": {k: v.detach().to("cpu").clone()
+                              for k, v in model.state_dict().items()},
+                }
             extra = "  ".join(f"{k} {v:.4f}" for k, v in diag.items())
             log(f"  eval @ {step + 1:>6}  val ppl {ev['ppl']:8.2f}  train ppl {tr['ppl']:8.2f}"
                 f"  ({ev['tokens']} tokens)  {extra}")
 
+    hist.final_val_ppl = hist.val_ppl[-1] if hist.val_ppl else None
+    if cfg.keep_best and best["state"] is not None:
+        model.load_state_dict({k: v.to(cfg.device) for k, v in best["state"].items()})
+        hist.best_step = best["step"]
+        hist.best_val_ppl = math.exp(min(best["loss"], 700.0))
+        log(f"restored best checkpoint from step {best['step']} "
+            f"(val ppl {hist.best_val_ppl:.2f}, final was {hist.final_val_ppl:.2f})")
     log(f"done in {time.time() - t0:.0f}s")
     return hist

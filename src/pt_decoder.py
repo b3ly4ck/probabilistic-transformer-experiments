@@ -97,20 +97,45 @@ class CausalPTDecoder(nn.Module):
             self.b.copy_(log_freq.to(self.b.dtype))
         self.b.requires_grad_(not self.cfg.freeze_word_unary)
 
+    def _init_(self, tensor: torch.Tensor, std: float) -> None:
+        """Fill ``tensor`` at scale ``std`` under ``cfg.init_dist``.
+
+        All three distributions are matched on the *standard deviation*, so a change of
+        `init_dist` is a change of shape only and the scale sweep stays interpretable.
+        """
+        dist = self.cfg.init_dist
+        if dist == "normal":
+            tensor.normal_(0.0, std)
+        elif dist == "uniform":
+            a = math.sqrt(3.0) * std  # Var[U(-a,a)] = a^2/3
+            tensor.uniform_(-a, a)
+        elif dist == "orthogonal":
+            # semi-orthogonal in the last two axes, then rescaled to the target std.
+            flat = tensor.reshape(-1, tensor.shape[-2], tensor.shape[-1]) if tensor.dim() > 2 \
+                else tensor.unsqueeze(0)
+            for k in range(flat.shape[0]):
+                torch.nn.init.orthogonal_(flat[k])
+            cur = flat.std()
+            flat.mul_(std / cur.clamp(min=1e-12))
+            tensor.copy_(flat.reshape(tensor.shape))
+        else:  # pragma: no cover - guarded in PTConfig.__post_init__
+            raise ValueError(dist)
+
     def reset_parameters(self) -> None:
         std = self.cfg.init_std
         root_std = self.cfg.root_init_std if self.cfg.root_init_std is not None else std
+        arc_std = self.cfg.arc_init_std if self.cfg.arc_init_std is not None else std
         with torch.no_grad():
-            self.S.normal_(0.0, std)
-            self.r_root.normal_(0.0, root_std)
+            self._init_(self.S, std)
+            self._init_(self.r_root, root_std)
             if self.b is not None:
                 self.b.zero_()
             for p in (self.T, self.U, self.V):
                 if p is not None:
-                    p.normal_(0.0, std)
+                    self._init_(p, arc_std)
             if self.B_glob is not None:
                 bg = self.cfg.b_glob_init_std
-                self.B_glob.normal_(0.0, std if bg is None else bg)
+                self._init_(self.B_glob, std if bg is None else bg)
 
     # ------------------------------------------------------------------ factors --
 
@@ -182,6 +207,65 @@ class CausalPTDecoder(nn.Module):
             total = total + (self.B_glob**2).mean()
         return total
 
+    # ------------------------------------------------------------- temperature --
+
+    def _scaled_logits(
+        self, full: torch.Tensor, query: torch.Tensor, allowed: Optional[torch.Tensor]
+    ) -> torch.Tensor:
+        """Divide the head logits by the attention temperature of ``cfg.temp_mode``.
+
+        ``full`` is ``(..., D)`` over the head domain, **unmasked**; ``allowed`` is the causal
+        mask and the ``-inf`` is written here, at the end. Masking first and dividing after is
+        what the first version did and it produces ``NaN`` on the *backward* pass at step 0:
+        ``d(-inf / x)/dx`` is infinite and multiplies the zero gradient of a masked slot.
+        ``query`` carries the label belief whose Euclidean norm sets the query-side scale,
+        with its label axis last.
+
+        See ``PTConfig.temp_mode`` for the argument. In one line: ``lambda_H = 1/d`` is the
+        temperature that makes the head logit ``O(sigma_T)`` when both beliefs are uniform,
+        and both beliefs stop being uniform the moment training starts.
+        """
+        mode = self.cfg.temp_mode
+        if allowed is not None:
+            full = torch.where(allowed, full, torch.zeros_like(full))
+
+        def _mask(x: torch.Tensor) -> torch.Tensor:
+            return x if allowed is None else x.masked_fill(~allowed, NEG_INF)
+
+        if mode == "fixed":
+            return _mask(full / self.cfg.lam_H)
+
+        if mode == "qnorm":
+            # ||q||_2 * sqrt(d) is 1 at the uniform belief and sqrt(d) at a one-hot, so this
+            # is exactly Wu & Tu's temperature at initialisation and a strictly weaker
+            # sharpening away from it.
+            qn = query.norm(dim=-1) * math.sqrt(self.cfg.d)  # (..., n) or (B,)
+            qn = qn.clamp(min=1e-12)
+            # query has one fewer leading axis than `full` (no channel axis) and `full`
+            # carries the head domain last: line them up by unsqueezing.
+            while qn.dim() < full.dim() - 1:
+                qn = qn.unsqueeze(1)
+            return _mask(full / (self.cfg.lam_H * qn.unsqueeze(-1)))
+
+        # "qknorm": standardise the logit vector over the head domain to unit RMS, then
+        # apply `qk_gain` as the inverse temperature. Scale-free in d, in ||T||, and in the
+        # sharpness of either belief; the price is that the *absolute* size of the arc
+        # scores no longer controls attention sharpness, only their relative pattern does.
+        # The epsilon is added *inside* the square root, not clamped after it. A slot whose
+        # head domain is a single position (slot 0, which sees only ROOT) has variance
+        # exactly 0, and `sqrt(0)` has an infinite derivative: clamping the result blocks the
+        # gradient but autograd still evaluates `0 * inf = NaN` on the way through.
+        eps = 1e-8
+        if allowed is None:
+            centred = full - full.mean(dim=-1, keepdim=True)
+            var = centred.pow(2).mean(dim=-1, keepdim=True)
+            return self.cfg.qk_gain * centred / (var + eps).sqrt()
+        mask = allowed.to(full.dtype)
+        cnt = mask.sum(-1, keepdim=True).clamp(min=1.0)
+        mean = full.sum(-1, keepdim=True) / cnt  # `full` is already zeroed outside the mask
+        var = ((full - mean) * mask).pow(2).sum(-1, keepdim=True) / cnt
+        return _mask(self.cfg.qk_gain * (full - mean) / (var + eps).sqrt())
+
     # ------------------------------------------------------- messages, vectorised --
 
     def _causal_masks(self, n: int, device) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -228,8 +312,7 @@ class CausalPTDecoder(nn.Module):
         full = torch.cat([root_logit.unsqueeze(-1), logit], dim=-1)  # (B, h, n, 1+n)
 
         allowed, far_mask = self._causal_masks(n, query.device)
-        full = full.masked_fill(~allowed, NEG_INF)
-        alpha = torch.softmax(full / self.cfg.lam_H, dim=-1)
+        alpha = torch.softmax(self._scaled_logits(full, query, allowed), dim=-1)
 
         # --- message back to Z ---
         a_root, a_pos = alpha[..., 0], alpha[..., 1:]
@@ -292,6 +375,13 @@ class CausalPTDecoder(nn.Module):
             "attn_entropy": float(ent.mean()),
             "attn_entropy_frac": float((ent / support.log().clamp(min=1e-12)).mean()),
             "label_entropy": float(-(q * q.clamp(min=1e-30).log()).sum(-1).mean()),
+            # Belief sharpness. ||q||_2 is the *query norm* of this attention, and unlike a
+            # transformer's it is not a free activation: it lives in [1/sqrt(d), 1] by the
+            # simplex constraint. Since the head logit is <q_i, B_j>, this is the factor by
+            # which the effective attention temperature drifts away from the value
+            # lambda_H = 1/d was calibrated for. Reported scale-free as ||q||_2 * sqrt(d),
+            # which is 1 at the uniform belief and sqrt(d) at a one-hot.
+            "q_sharpness": float((q.norm(dim=-1) * math.sqrt(q.shape[-1])).mean()),
             # ROOT is column 0 of D_t. r^(c) reaches the attention in raw d-space while
             # the arc scores arrive contracted, so the sink is a *measured* variable:
             # if it appears, PTConfig.root_init_std is the knob that was already there.
@@ -395,7 +485,7 @@ class CausalPTDecoder(nn.Module):
         ``query`` is ``(B, d)``, ``B_full`` is ``(B, h, 1+t, d)``. Returns ``(ctx, Q_c)``.
         """
         logit = torch.einsum("ba,bcja->bcj", query, B_full)
-        alpha = torch.softmax(logit / self.cfg.lam_H, dim=-1)
+        alpha = torch.softmax(self._scaled_logits(logit, query, None), dim=-1)
         ctx = torch.einsum("bcj,bcja->ba", alpha, B_full)
         return ctx, alpha
 

@@ -90,8 +90,48 @@ class PTConfig:
     lambda_G: float = 1.0  # not specified by either paper; chosen to match lambda_Z
 
     # --- engineering ---
+    temp_mode: str = "fixed"  # "fixed" | "qnorm" | "qknorm"
+    qk_gain: float = 1.0
+    # Attention temperature of the head update. Wu & Tu App. A.5 fixes lambda_H = 1/d, and
+    # `"fixed"` reproduces that exactly. The other two modes are this project's proposal and
+    # are motivated by where 1/d comes from.
+    #
+    # The head logit is F_c(i,j) = <q_i, B^(c)_{j,.}> with q_i a *distribution*, so its
+    # Euclidean norm is not a constant of the architecture: ||q||_2 runs from 1/sqrt(d)
+    # (uniform) to 1 (one-hot), and B^(c)_{j,.} = E_{q_bar_j}[T^(c)_{.,b}] inherits the same
+    # sqrt(d) dynamic range from the *key* side. At initialisation both beliefs are near
+    # uniform, F ~ sigma_T / d, and dividing by lambda_H = 1/d leaves an O(sigma_T) logit --
+    # which is why the source's choice is the right one *there*. Once the beliefs sharpen,
+    # F ~ sigma_T and the same division leaves an O(d * sigma_T) logit. The temperature is
+    # calibrated for the uniform-belief limit and mis-calibrated by up to a factor d away
+    # from it; that mis-calibration is the loop this project measured running away at
+    # d = 32 (msg/unary 2.88 -> 20.57 within 500 steps) and damped with alpha_Z.
+    #
+    #   "qnorm"  divides the logit by ||q_i||_2 * sqrt(d), which is 1 at the uniform belief.
+    #            The mode therefore *agrees with Wu & Tu at initialisation* and only differs
+    #            as the query sharpens. Query-side normalisation only.
+    #   "qknorm" divides by ||q_i||_2 ||B_j||_2 -- the cosine of the two -- and multiplies by
+    #            `qk_gain`. This is QK-normalisation as used in modern transformers, and it
+    #            removes the key-side range as well. `qk_gain` is a temperature, not a
+    #            parameter: nothing learned is added, so the "every matrix is a factor"
+    #            constraint is untouched.
+    #
+    # Caveat, stated because it matters: lambda_H is also the entropy weight of Q_c in the
+    # slot free energy (`src/energy.py`). A query-dependent temperature is no longer the
+    # stationarity condition of a *fixed* functional, so the free-energy monotonicity check
+    # (validation check 8) applies to "fixed" only. That check is asserted on "fixed" and the
+    # other two modes are declared as what they are: an approximation deliberately taken
+    # outside the variational derivation, kept because it is what makes width transfer.
     vocab_chunk: int = 8192  # chunk width of the exact readout's LSE over the vocabulary
     init_std: float = 0.02  # not from either paper; the nanoGPT convention, see below
+    arc_init_std: Optional[float] = None  # None -> init_std; separate scale for T / U,V
+    init_dist: str = "normal"  # "normal" | "uniform" | "orthogonal"
+    # Prof. Tu, 2026-08-11: "Uniform initialisation (of what? B?) does not sound like a good
+    # choice. How does it work with random initialisation?" Every factor here has always been
+    # drawn from N(0, init_std^2) -- "uniform" in the 2026-08 report named the *treatment*
+    # (one scale and one L2 coefficient for every factor), not the distribution. `init_dist`
+    # makes the literal question answerable too: "uniform" draws U(-a, a) with a = sqrt(3)*std
+    # (matched variance), "orthogonal" gives semi-orthogonal factors scaled to the same std.
     root_init_std: Optional[float] = None
     # None -> init_std. The root/sink column r^(c) enters the attention in raw d-space,
     # whereas the arc scores reach it contracted, B^(c)_{j,a} = E_{q_bar_j}[T^(c)_{a,.}],
@@ -106,6 +146,10 @@ class PTConfig:
             raise ValueError(f"unknown schedule {self.schedule!r}")
         if self.readout not in ("exact", "mfvi"):
             raise ValueError(f"unknown readout {self.readout!r}")
+        if self.temp_mode not in ("fixed", "qnorm", "qknorm"):
+            raise ValueError(f"unknown temp_mode {self.temp_mode!r}")
+        if self.init_dist not in ("normal", "uniform", "orthogonal"):
+            raise ValueError(f"unknown init_dist {self.init_dist!r}")
         if self.gamma < 0:
             raise ValueError("gamma must be >= 0")
         if self.n_global > 0 and self.readout == "exact" and not self.allow_exact_global_head:
