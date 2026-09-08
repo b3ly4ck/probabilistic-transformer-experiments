@@ -1047,7 +1047,7 @@ def emit_exponents(out: Path, md: List[str]) -> None:
         return f"{v / 1e3:.0f}k" if v >= 1e4 else f"{v / 1e3:.1f}k"
 
     PAIRS = [("Tf", "Lp"), ("Lp", "Pt"), ("Lp", "Low"), ("Tf", "Pt"), ("Tf", "Low")]
-    table, mdrows, macros = [], [], {}
+    table, full, mdrows, macros = [], [], [], {}
     for a, b in PAIRS:
         (na, Pa), (nb, Pb) = C[a], C[b]
         if len(Pa) < 3 or len(Pb) < 3:
@@ -1065,12 +1065,23 @@ def emit_exponents(out: Path, md: List[str]) -> None:
             "LOO first": f"{ra[2][0]:+.3f}..{ra[2][1]:+.3f}" if ra[2] else "n too small",
             "second": round(rb[0].exponent, 3), "n ": rb[1],
             "LOO second": f"{rb[2][0]:+.3f}..{rb[2][1]:+.3f}" if rb[2] else "n too small"})
+        def _loo(r):
+            return f"${r[2][0]:.3f}$ to ${r[2][1]:.3f}$" if r[2] else "$n$ too small"
+        full.append([f"{na} / {nb}", f"{sci(lo)}--{sci(hi)}",
+                     str(ra[1]), f"${ra[0].exponent:.3f}$", _loo(ra),
+                     str(rb[1]), f"${rb[0].exponent:.3f}$", _loo(rb)])
         macros[f"Exp{a}v{b}{a}"] = f"{ra[0].exponent:.3f}"
         macros[f"Exp{a}v{b}{b}"] = f"{rb[0].exponent:.3f}"
 
     _latex_table(out / "table_exponents.tex",
                  ["pair", "range", "\\multicolumn{2}{r@{}}{exponents}"],
                  table, "@{}l@{\\ \\ }l@{\\ \\ }r@{\\ \\ }r@{}")
+    # The same comparison with the point counts and the leave-one-out ranges, for the appendix.
+    # Section 4 asserts that no single point decides any ordering; that assertion has to be
+    # checkable somewhere in the paper and not only in the repository.
+    _latex_table(out / "table_exponents_full.tex",
+                 ["pair", "range", "$n$", "exponent", "leave-one-out",
+                  "$n$", "exponent", "leave-one-out"], full, "@{}llrrlrrl@{}")
     md.append("\n## Scaling exponents, pair by pair on each pair's shared range\n\n"
               + markdown_table(mdrows, ["comparison", "window", "first", "n", "LOO first",
                                         "second", "n ", "LOO second"])

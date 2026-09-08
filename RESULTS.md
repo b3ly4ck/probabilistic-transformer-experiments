@@ -481,13 +481,14 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ## The B.3.3 global head, three seeds in the stable configuration (Exp. 5b)
 
-|   d |   m | init std | in L2 | init dist |   n | val mean |    sd | H(Q_g)/max | glob/unary |
-| --: | --: | -------: | ----- | --------- | --: | -------: | ----: | ---------: | ---------: |
-|  32 |   0 |       -- | True  | normal    |   1 |  244.300 | 0.000 |      0.000 |      0.000 |
-|  32 |  64 |    0.020 | False | normal    |   1 |  248.500 | 0.000 |      0.996 |      1.589 |
-|  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 | 7.200 |      1.000 |      0.229 |
-|  32 |  64 |    0.100 | False | normal    |   1 |  249.500 | 0.000 |      0.958 |      1.593 |
-|  32 |  64 |    0.500 | True  | normal    |   1 |  261.800 | 0.000 |      1.000 |      0.297 |
+|   d |   m | init std | in L2 | init dist |   n | val mean |     sd | H(Q_g)/max | glob/unary |
+| --: | --: | -------: | ----- | --------- | --: | -------: | -----: | ---------: | ---------: |
+|  32 |   0 |       -- | True  | normal    |   1 |  244.300 |  0.000 |      0.000 |      0.000 |
+|  32 |  64 |    0.020 | False | normal    |   1 |  248.500 |  0.000 |      0.996 |      1.589 |
+|  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
+|  32 |  64 |    0.100 | False | normal    |   1 |  249.500 |  0.000 |      0.958 |      1.593 |
+|  32 |  64 |    0.500 | False | normal    |   1 |  244.600 |  0.000 |      0.884 |      0.849 |
+|  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 | 12.200 |      0.978 |      0.276 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
