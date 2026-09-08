@@ -132,7 +132,10 @@ to separate the three empirically rather than argue about them.
 
 \begin{figure*}[t]
 \centering
-\input{figures/fig2_computation_graphs}
+% The three panels are laid out at fixed millimetre offsets, which is a little wider than
+% \textwidth; scaled to fit rather than re-spaced, so that the panels keep the alignment that
+% lets (a), (b) and (c) be read across.
+\resizebox{\textwidth}{!}{\input{figures/fig2_computation_graphs}}
 \caption{One layer of each model, same notation. \textbf{(a)} a causal transformer block;
 \textbf{(b)} a Looped transformer, the same block applied $\niter$ times with shared weights;
 \textbf{(c)} one MFVI iteration of the causal PT. Shaded boxes are learned maps with no factor

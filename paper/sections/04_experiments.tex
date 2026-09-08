@@ -275,9 +275,9 @@ $219.8 \pm 4.2$ at $\nlab = 64$, against $287.4 \pm 52.5$ and $470.0 \pm 160.7$ 
 
 \textbf{The gain transfers; the width limit does not disappear.} Sweeping the standardisation
 gain over $\{1, 1.5, 2, 3, 4, 6\}$ at four widths with three seeds each, the argmin is $1$ at
-every width, and the working range is the same $[1,2]$ at every width (\Cref{tab:gain}) --- which is what the
-mechanism predicts, since after standardisation the attention entropy depends on the gain and on
-the length of the head domain and not on $\nlab$ at all. Above the range the failure is sharp and
+every width, and the working range is the same $[1,2]$ at every width (\Cref{tab:gain}) --- as the mechanism
+predicts, since after standardisation the attention entropy depends on the gain and on the
+length of the head domain, not on $\nlab$. Above the range the failure is sharp and
 reproducible rather than noisy: at $\nlab=32$, gain $3$ collapses on $3/3$ seeds
 ($700.5 \pm 0.7$). But the correction does not remove the ceiling, it moves it: at
 $\nlab \in \{96, 128\}$ the rule ladder becomes unstable again ($372 \pm 277$, $509 \pm 187$,

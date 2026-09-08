@@ -109,7 +109,8 @@ the realised prefix labels $z_{\prefix{i}}$:
 \begin{aligned}
   &p\big(\Zv{i}, \{\Hv{i}{c}\}_c \mid z_{\prefix{i}}, w_{1:i}\big) \\
   &\quad \propto
-     \exp\Big(\Sfac_{w_i,\Zv{i}}
+     \exp\Big(\Sfac_{w_i,\Zv{i}} \\[-4pt]
+  &\qquad
       + \textstyle\sum_{c}\sum_{j \in \Dep{i}} \ind{\Hv{i}{c}{=}j}\, \tau^{(c)}_{\Zv{i}}(j)\Big),
 \end{aligned}
 \end{equation}
@@ -195,10 +196,11 @@ $p(w,z,h) = \prod_t p(\Wv{t}, \Zv{t}, \Hvar{t} \mid z_{\prefix{t}})$, with step 
 \begin{equation}
 \label{eq:unclamp}
 \begin{aligned}
- &p\big(\Wv{t}, \Zv{t}, \Hvar{t} \mid z_{\prefix{t}}\big) \propto
+ &p\big(\Wv{t}, \Zv{t}, \Hvar{t} \mid z_{\prefix{t}}\big) \\
+ &\quad \propto
    \exp\Big(\underbrace{\bfac_{\Wv{t}}}_{\text{word unary}}
    + \underbrace{\Sfac_{\Wv{t},\Zv{t}}}_{\text{word--label factor}} \\[-4pt]
- &\qquad\qquad\quad
+ &\qquad
    + \textstyle\sum_c \sum_{j\in\Dep{t}} \ind{\Hv{t}{c}{=}j}\, \Tfac{c}_{\Zv{t}, z_j}\Big).
 \end{aligned}
 \end{equation}
