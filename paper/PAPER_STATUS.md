@@ -170,6 +170,35 @@ No claim in Appendix C is unsourced. The one liberty taken is presentational: th
 lemmas become run-in paragraphs with two numbered environments, because this paper's format
 allows very few.
 
+## Grids finished, 2026-09-09 (early morning)
+
+Four of the five grids completed and two produced findings that changed the paper's argument
+rather than filling a gap in it.
+
+5. **The switch ladder's S2 column: the construction is a package.** Restoring *any* single
+   transformer property inside the all-PT rung makes it worse -- the mildest, weight sharing,
+   costs 2.1; layer normalisation, the feed-forward block, an unconstrained state and the
+   residual stream cost 205 to 390, the last landing on the unigram. The properties that are
+   free to *adopt* (S1: three at or below zero) are not free to *remove*. Pricing each
+   difference twice is what made this visible; a ladder pricing each once would have concluded
+   there was no structure there. S1's optima are all interior; six of S2's were at the top of
+   the swept grid, so a fifth learning rate (1e-1) was appended and is running.
+6. **The factored-label interaction, which the technical note registered in advance.** Along an
+   iso-parameter diagonal the exact readout's penalty against the mean-field one falls
+   monotonically: +52.2 at K=1, +29.9 at K=2, -3.7 at K=4. This is the one result in the paper
+   that cuts against its own thesis that the limit is optimisation rather than expressiveness,
+   and it suggests the readout was punished not for being richer but for having nothing extra
+   to be rich about at K=1. Reported as a trend, not a crossover: the last point is two seeds.
+7. **WikiText-2: both halves of the width finding transfer** with nothing retuned, on three
+   times the vocabulary. The gap to the baselines transfers too and is wider.
+
+**Two operational bugs found and fixed, both of which had been quietly misleading.** The
+Makefile did not depend on `figures/`, so regenerating a table did not rebuild the PDF and
+several overfull-box measurements were stale readings of an unchanged file. And
+`submit_queue.sh` removed a submitted line with `grep -v ... && mv`, which fails on the *last*
+line in the queue because grep exits 1 when it filters everything out -- so the queue resubmitted
+its final entry once a minute. Caught by the shard lock refusing every duplicate.
+
 ## Results added overnight, 2026-09-09
 
 Four findings the paper did not have when the verification pass above was written. All are in
