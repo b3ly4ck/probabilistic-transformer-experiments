@@ -455,8 +455,9 @@ proposed as --- including in the cells where its message is \emph{larger} than t
 posterior from an informative one, which is why \Cref{tab:globalhead} reports the entropy beside
 it. On Prof.\ Tu's question directly: Gaussian initialisation at three scales spanning
 $25\times$, with and without the head in the shared $L_2$, changes nothing that matters.
-\TODO{the $\nlab=64$ arm, the capacity axis $m \in \{16,256\}$, and the orthogonal draw, whose
-prediction is registered in the spec.}
+\TODO{the capacity axis $m \in \{16,256\}$, and the uniform and orthogonal draws --- the
+literal form of the question, with the prediction registered in the spec that an orthogonal
+$\Bglob$ should survive the shared $L_2$ that a small-scale Gaussian one does not.}
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
@@ -549,8 +550,9 @@ expensive half: the readouts have to be compared by \emph{training} under each.
 The construction of \Cref{sec:variants} predicts an interaction rather than a main effect:
 factoring the label variable should buy nothing under the mean-field readout, because the logits
 stay affine in the concatenated beliefs, and whatever it buys should appear only through the
-exact readout. The structural half is already confirmed --- the affine dimension of the
-log-conditionals is $8/7/5$ for $K = 1/2/4$ under the mean-field readout and maximal under the
-exact one --- and \Cref{app:factored} gives the parameter accounting, which the source states
+exact readout. The structural half is already confirmed: at $\nlab = 8$ the affine
+dimension of the log-conditionals is $8$, $7$ and $5$ for $K = 1, 2, 4$ under the mean-field
+readout --- never above $\nlab$, whatever $K$ is, which is the prediction --- and strictly
+above $\nlab$ under the exact readout on the same contexts. and \Cref{app:factored} gives the parameter accounting, which the source states
 incorrectly.
 \TODO{exp7: the measured (readout, $K$) interaction on iso-parameter diagonals.}
