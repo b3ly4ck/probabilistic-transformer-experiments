@@ -34,9 +34,10 @@
 \newtheorem{remark}[theorem]{Remark}
 
 % --- drafting aids -------------------------------------------------------------
-% \TODO renders visibly in the draft. Set \draftfalse before circulating the PDF; every
-% outstanding item then disappears, which is also a way to see how many remain — and, in this
-% format, whether the paper still fits in 8 pages once they are written out.
+% \TODO renders visibly in the draft. \draftfalse is for the finished paper only: it does not
+% hide outstanding items, it refuses to build while any exist (see the \else branch). That is
+% deliberate. The earlier version of this comment said to set \draftfalse before circulating the
+% PDF, which is precisely how a draft comes to be circulated looking finished.
 \newif\ifdraft
 \drafttrue
 
@@ -47,7 +48,19 @@
   % Marks a claim taken from a reference PDF that has not been re-read while writing.
   \newcommand{\FROMPDF}[1]{\textcolor{orange}{\textbf{[verify against PDF: #1]}}}
 \else
-  \newcommand{\TODO}[1]{}
+  % Non-draft mode does NOT silently swallow outstanding items. Hiding them is exactly how a
+  % build comes to look finished while claims in it are still unbacked, so each one is counted
+  % and the build fails at \end{document} if any remain. Clearing a TODO means deleting it from
+  % the source, not switching a flag.
+  \newcounter{todocount}
+  \newcommand{\TODO}[1]{\stepcounter{todocount}}
   \newcommand{\NOTE}[1]{}
-  \newcommand{\FROMPDF}[1]{}
+  \newcommand{\FROMPDF}[1]{\stepcounter{todocount}}
+  \AtEndDocument{%
+    \ifnum\value{todocount}>0
+      \PackageError{preamble}{%
+        \the\value{todocount}\space TODO/FROMPDF marker(s) remain while \string\draftfalse\space
+        is set. Non-draft builds must not hide outstanding items: either delete them from the
+        source or build with \string\drafttrue}{}%
+    \fi}
 \fi
