@@ -46,10 +46,14 @@ modelling constraints.
 * **A width mechanism.** Wu & Tu's head temperature `lambda_H = 1/d` is exactly right at the
   uniform belief and mis-calibrated by up to a factor `d` away from it — where training goes
   within a few hundred steps. Correcting it revives label-set sizes that otherwise sit exactly
-  on the unigram baseline, roughly doubles the usable width, and improves the model's own
-  scaling exponent from `-0.061` to `-0.082`. Per parameter it still gains less than either
-  baseline (`-0.175` for a causal transformer, `-0.107` for a Looped one, on the range where all
-  three are measured).
+  on the unigram baseline and roughly doubles the usable width.
+* **Where the shallow slope comes from.** On the one window where all three are measured
+  (13k–148k non-embedding parameters), the fitted exponents are `-0.175` for a causal
+  transformer, `-0.068` for a Looped one and `-0.045` for the causal PT at low rank: about four
+  fifths of the transformer-to-PT gap opens with the weight sharing and one fifth with the
+  structure. Exponents here are strongly window-dependent — the Looped transformer is `-0.042`
+  over the transformer's range and `-0.130` over the causal PT's, from the same runs — so none
+  of them means anything quoted without its window.
 * **The Kruskal rank inverts the received configuration.** Every earlier run used `rank = d`.
   At `d = 96`, `rank = 12` reaches 217.6 validation perplexity with 18,624 non-embedding
   parameters, against `rank = 96`'s 275.6 ± 27.1 with 147,648.
