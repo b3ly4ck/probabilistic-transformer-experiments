@@ -10,10 +10,10 @@ conditional random fields in which the prefix enters each step as a frozen condi
 anti-causal term is never formed. Promoting the word from an observed constant to a latent
 variable then yields a language-model head with no parameter outside the factor graph; tied
 embeddings, the output bias and a mixture-of-softmaxes readout follow as consequences, the last
-in closed form because the per-position subgraph is a tree. Empirically we find that the model's
-sensitivity to its own width is not diffuse but has a mechanism in the calibration of one
-temperature, and that correcting it roughly doubles the usable width and makes the model's
-scaling curve orderly. Comparing fitted scaling exponents pair by pair on the range each pair
-shares, the ordering is the same every time --- a standard transformer is steeper than a looped
-one, and a looped one steeper than the causal PT --- which locates most of the model's shallow
-slope in weight sharing and the remainder in the syntactic structure itself.
+in closed form because the per-position subgraph is a tree. Empirically, the model's sensitivity to its own width is not
+diffuse but has a mechanism in the calibration of a single attention temperature, and correcting
+it roughly doubles the label-set sizes at which the model trains at all. On the one parameter
+range where all three are measured, the fitted scaling exponents are $\ExpTriTf$ for a causal
+transformer, $\ExpTriLp$ for a looped one and $\ExpTriLow$ for the causal PT, which puts most of
+the
+model's shallow slope on weight sharing and the rest on the syntactic structure itself.
