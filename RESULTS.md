@@ -546,6 +546,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | G_gamma1  | 249.714 |       249.714 |  226.001 |   226.439 |                     0.893 |       3.010 | 414.000 |
 | G_gamma3  | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 493.400 |
 | G_gamma7  | 605.108 |       605.108 |  558.982 |   645.831 |                     8.432 |       0.281 | 813.500 |
+| G_gamma0  | 619.404 |       619.913 |  571.827 |   602.371 |                     1.950 |       0.037 | 324.700 |
 
 ### Grid X -- the exact readout, trained
 
@@ -554,15 +555,17 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | X_d32_exact | 348.807 |       349.380 |  319.996 |   333.393 |                     0.941 |       2.055 | 848.400 |
 | X_d32_mfvi  | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 494.900 |
 | X_d16_exact | 409.511 |       409.511 |  371.972 |   411.529 |                     2.610 |       1.391 | 541.700 |
+| X_d16_mfvi  | 315.460 |       315.553 |  285.760 |   314.086 |                     0.984 |       2.122 | 552.000 |
 
 ### Grid L -- the L2 coefficient on the arc scores
 
-| cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
-| --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
-| L_l20.005 | 249.794 |       249.794 |  227.580 |   233.756 |                     0.716 |       2.922 | 555.200 |
-| L_l20.05  | 697.047 |       697.447 |  641.265 |   741.198 |                     0.020 |       0.000 | 498.300 |
-| L_l20     | 273.345 |       273.345 |  249.627 |   258.402 |                     2.110 |       2.610 | 512.800 |
-| L_l25e-05 | 255.623 |       256.055 |  234.931 |   237.236 |                     1.685 |       2.984 | 531.100 |
+| cell.name  | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
+| ---------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
+| L_l20.005  | 249.794 |       249.794 |  227.580 |   233.756 |                     0.716 |       2.922 | 555.200 |
+| L_l20.05   | 697.047 |       697.447 |  641.265 |   741.198 |                     0.020 |       0.000 | 498.300 |
+| L_l20      | 273.345 |       273.345 |  249.627 |   258.402 |                     2.110 |       2.610 | 512.800 |
+| L_l25e-05  | 255.623 |       256.055 |  234.931 |   237.236 |                     1.685 |       2.984 | 531.100 |
+| L_l20.0005 | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 558.100 |
 
 ### Readout swap: the same trained weights scored under the other readout
 
@@ -604,6 +607,9 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | R_freezeb_off_s2      | mfvi         | 357.779 | exact        |    18739.000 |  327.325 |     18363.650 |
 | S_steps15000_floor0.1 | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
 | T_iters5              | mfvi         | 297.010 | exact        |     3058.428 |  270.866 |      2821.872 |
+| G_gamma0              | mfvi         | 619.404 | exact        |      657.374 |  571.827 |       609.548 |
+| X_d16_mfvi            | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
+| L_l20.0005            | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
 
 ## The switch ladder (Experiment 6)
 
@@ -637,13 +643,13 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
 | weight_sharing  | 298.800 |          -2.100 |   0.030 |   20800 |
+| attn_query_proj | 302.000 |          -5.300 |   0.030 |   12432 |
+| position        | 329.900 |         -33.200 |   0.030 |    8256 |
 | attn_value      | 358.700 |         -61.900 |   0.010 |   12432 |
-| attn_query_proj | 369.900 |         -73.200 |   0.010 |   12432 |
-| position        | 377.600 |         -80.900 |   0.010 |    8256 |
 | attn_out_proj   | 380.000 |         -83.300 |   0.003 |   12432 |
+| readout         | 424.600 |        -127.800 |   0.030 |    4176 |
 | norm            | 501.900 |        -205.200 |   0.010 |    8528 |
 | ffn             | 530.700 |        -234.000 |   0.003 |   41360 |
-| readout         | 537.500 |        -240.700 |   0.010 |    4176 |
 | state           | 686.800 |        -390.100 |   0.001 |    8272 |
 | residual        | 687.100 |        -390.400 |   0.001 |    8272 |
 
@@ -662,7 +668,7 @@ The ladder spans **167.5 perplexity**; every delta below is a share of that.
 |    7 | ffn             | 213.300 |  63.300 |   0.001 |    4176 |
 |    8 | residual        | 206.500 |  -6.800 |   0.003 |    4176 |
 |    9 | state           | 424.600 | 218.100 |   0.030 |    4176 |
-|   10 | readout         | 395.500 | -29.100 |   0.003 |    8272 |
+|   10 | readout         | 354.500 | -70.100 |   0.010 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -674,7 +680,12 @@ _grid empty_
 
 ## WikiText-2 transfer (Experiment 8)
 
-_not run yet_
+| ladder | config |   n |     val |     sd |    test | non-emb |   total |
+| ------ | ------ | --: | ------: | -----: | ------: | ------: | ------: |
+| fixed  | d=32   |   3 | 343.100 | 24.700 | 321.500 |   16448 | 1114622 |
+| rule   | d=32   |   2 | 306.600 |  0.600 | 287.700 |   16448 | 1114622 |
+
+WikiText-2 unigram baseline: **964.8**. Every hyperparameter is the one selected on PTB; nothing was retuned, which is what makes this a transfer test rather than a second experiment.
 
 
 ## Matched-budget comparison
