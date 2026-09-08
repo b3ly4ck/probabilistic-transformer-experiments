@@ -1,0 +1,2465 @@
+{
+ "checkpoint": "checkpoints/probe_d96_r12_s0.pt",
+ "d": 96,
+ "lexicon": [
+  {
+   "label": 0,
+   "words": [
+    "harrison",
+    "prudent",
+    "noble",
+    "runway",
+    "lets",
+    "bomber",
+    "channels",
+    "enjoyed"
+   ],
+   "contrast": [
+    1.61,
+    1.57,
+    1.33,
+    1.27,
+    1.14,
+    1.13,
+    1.1,
+    1.06
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 1,
+   "words": [
+    "prime",
+    "statutory",
+    "royalty",
+    "arteries",
+    "consist",
+    "disciplinary",
+    "bloated",
+    "unsecured"
+   ],
+   "contrast": [
+    1.37,
+    1.15,
+    1.06,
+    1.06,
+    1.04,
+    1.03,
+    1.02,
+    1.02
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 2,
+   "words": [
+    "dive",
+    "retreat",
+    "kids",
+    "ai",
+    "payouts",
+    "constraints",
+    "willingness",
+    "feedlots"
+   ],
+   "contrast": [
+    1.6,
+    1.24,
+    0.94,
+    0.84,
+    0.78,
+    0.71,
+    0.71,
+    0.69
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 3,
+   "words": [
+    "hong",
+    "deprived",
+    "iran",
+    "costa",
+    "nagging",
+    "institutional",
+    "abandoning",
+    "vast"
+   ],
+   "contrast": [
+    1.07,
+    1.05,
+    1.03,
+    1.0,
+    0.96,
+    0.93,
+    0.92,
+    0.92
+   ],
+   "median_log10_freq": -4.85
+  },
+  {
+   "label": 4,
+   "words": [
+    "pilot",
+    "generating",
+    "machinery",
+    "quake",
+    "cleared",
+    "deficit-reduction",
+    "peat",
+    "tops"
+   ],
+   "contrast": [
+    1.02,
+    0.87,
+    0.75,
+    0.72,
+    0.69,
+    0.63,
+    0.63,
+    0.56
+   ],
+   "median_log10_freq": -4.65
+  },
+  {
+   "label": 5,
+   "words": [
+    "tim",
+    "andy",
+    "timothy",
+    "chuck",
+    "tom",
+    "joel",
+    "jeffrey",
+    "joan"
+   ],
+   "contrast": [
+    3.65,
+    3.44,
+    3.33,
+    2.98,
+    2.94,
+    2.41,
+    2.26,
+    2.25
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 6,
+   "words": [
+    "bargain-hunting",
+    "rationale",
+    "compatible",
+    "plummet",
+    "opportunity",
+    "sideline",
+    "faster",
+    "contrasts"
+   ],
+   "contrast": [
+    1.75,
+    0.96,
+    0.89,
+    0.81,
+    0.65,
+    0.64,
+    0.63,
+    0.55
+   ],
+   "median_log10_freq": -5.27
+  },
+  {
+   "label": 7,
+   "words": [
+    "lock",
+    "sotheby",
+    "mitsubishi",
+    "brooklyn",
+    "soap",
+    "plumbing",
+    "favorite",
+    "clinical"
+   ],
+   "contrast": [
+    1.65,
+    1.5,
+    1.49,
+    1.36,
+    1.36,
+    1.35,
+    1.29,
+    1.26
+   ],
+   "median_log10_freq": -4.79
+  },
+  {
+   "label": 8,
+   "words": [
+    "completed",
+    "advance",
+    "conservatives",
+    "requires",
+    "released",
+    "jurisdiction",
+    "targets",
+    "streets"
+   ],
+   "contrast": [
+    1.06,
+    0.5,
+    0.48,
+    0.47,
+    0.45,
+    0.4,
+    0.38,
+    0.35
+   ],
+   "median_log10_freq": -4.42
+  },
+  {
+   "label": 9,
+   "words": [
+    "lunch",
+    "brewery",
+    "kobe",
+    "start-up",
+    "altogether",
+    "connaught",
+    "hdtv",
+    "sunday"
+   ],
+   "contrast": [
+    2.25,
+    1.65,
+    1.4,
+    1.36,
+    1.33,
+    1.27,
+    1.14,
+    1.14
+   ],
+   "median_log10_freq": -4.69
+  },
+  {
+   "label": 10,
+   "words": [
+    "distributor",
+    "yes",
+    "mr.",
+    "nwa",
+    "advice",
+    "upscale",
+    "troops",
+    "washington"
+   ],
+   "contrast": [
+    0.77,
+    0.51,
+    0.48,
+    0.33,
+    0.31,
+    0.29,
+    0.27,
+    0.2
+   ],
+   "median_log10_freq": -4.67
+  },
+  {
+   "label": 11,
+   "words": [
+    "evolution",
+    "families",
+    "aer",
+    "remedy",
+    "write-downs",
+    "voters",
+    "emigration",
+    "thailand"
+   ],
+   "contrast": [
+    -0.11,
+    -0.3,
+    -0.42,
+    -0.43,
+    -0.44,
+    -0.45,
+    -0.47,
+    -0.56
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 12,
+   "words": [
+    "liquidate",
+    "fend",
+    "modernize",
+    "extract",
+    "build",
+    "regain",
+    "enact",
+    "contribute"
+   ],
+   "contrast": [
+    2.15,
+    1.75,
+    1.55,
+    1.48,
+    1.4,
+    1.37,
+    1.25,
+    1.23
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 13,
+   "words": [
+    "damaging",
+    "usia",
+    "erased",
+    "importing",
+    "finnair",
+    "cherokee",
+    "court-appointed",
+    "scene"
+   ],
+   "contrast": [
+    1.92,
+    1.72,
+    1.68,
+    1.66,
+    1.64,
+    1.6,
+    1.57,
+    1.52
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 14,
+   "words": [
+    "bottled",
+    "farrell",
+    "preparation",
+    "pesticide",
+    "graduate",
+    "olympia",
+    "diversification",
+    "judicial"
+   ],
+   "contrast": [
+    1.65,
+    1.61,
+    1.52,
+    1.51,
+    1.49,
+    1.42,
+    1.41,
+    1.25
+   ],
+   "median_log10_freq": -5.01
+  },
+  {
+   "label": 15,
+   "words": [
+    "u",
+    "seagram",
+    "navigation",
+    "kellogg",
+    "rjr",
+    "marsh",
+    "defenders",
+    "enron"
+   ],
+   "contrast": [
+    1.67,
+    1.35,
+    1.33,
+    1.25,
+    0.87,
+    0.85,
+    0.82,
+    0.8
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 16,
+   "words": [
+    "tip",
+    "aer",
+    "launched",
+    "began",
+    "microprocessors",
+    "consumer",
+    "begins",
+    "stupid"
+   ],
+   "contrast": [
+    -0.23,
+    -0.25,
+    -0.28,
+    -0.3,
+    -0.39,
+    -0.43,
+    -0.43,
+    -0.45
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 17,
+   "words": [
+    "costing",
+    "skin",
+    "verdict",
+    "raises",
+    "negligible",
+    "solving",
+    "copying",
+    "greece"
+   ],
+   "contrast": [
+    1.95,
+    1.91,
+    1.39,
+    1.28,
+    1.25,
+    1.21,
+    1.16,
+    1.1
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 18,
+   "words": [
+    "persian",
+    "zero",
+    "plunging",
+    "root",
+    "hazard",
+    "killing",
+    "underestimated",
+    "glass"
+   ],
+   "contrast": [
+    1.53,
+    1.23,
+    1.03,
+    0.92,
+    0.87,
+    0.87,
+    0.85,
+    0.77
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 19,
+   "words": [
+    "orleans",
+    "zealand",
+    "hampshire",
+    "aftermath",
+    "washington-based",
+    "secondary",
+    "wake",
+    "restriction"
+   ],
+   "contrast": [
+    2.48,
+    2.24,
+    1.73,
+    1.69,
+    1.27,
+    1.2,
+    1.01,
+    0.82
+   ],
+   "median_log10_freq": -4.65
+  },
+  {
+   "label": 20,
+   "words": [
+    "suites",
+    "vendor",
+    "dress",
+    "neglected",
+    "context",
+    "ringer",
+    "pravda",
+    "sassy"
+   ],
+   "contrast": [
+    1.46,
+    1.36,
+    1.35,
+    1.34,
+    1.32,
+    1.27,
+    1.18,
+    1.13
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 21,
+   "words": [
+    "blues",
+    "ballooning",
+    "creeping",
+    "fetal-tissue",
+    "candela",
+    "secrets",
+    "spy",
+    "smiling"
+   ],
+   "contrast": [
+    3.33,
+    1.92,
+    1.68,
+    1.39,
+    1.36,
+    1.3,
+    1.23,
+    1.17
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 22,
+   "words": [
+    "deflator",
+    "lasted",
+    "yielding",
+    "grew",
+    "compares",
+    "adjustment",
+    "confirms",
+    "change"
+   ],
+   "contrast": [
+    2.75,
+    2.37,
+    2.34,
+    2.25,
+    2.11,
+    2.06,
+    2.04,
+    1.97
+   ],
+   "median_log10_freq": -4.71
+  },
+  {
+   "label": 23,
+   "words": [
+    "exceeding",
+    "equaling",
+    "or",
+    "grey",
+    "giovanni",
+    "internationally",
+    "upon",
+    "utilities"
+   ],
+   "contrast": [
+    2.19,
+    1.71,
+    1.68,
+    1.58,
+    1.37,
+    1.26,
+    1.14,
+    1.04
+   ],
+   "median_log10_freq": -4.79
+  },
+  {
+   "label": 24,
+   "words": [
+    "refusing",
+    "refer",
+    "subpoena",
+    "uptick",
+    "undertaking",
+    "do",
+    "visits",
+    "dismissed"
+   ],
+   "contrast": [
+    1.45,
+    1.38,
+    1.3,
+    1.12,
+    1.01,
+    1.0,
+    0.96,
+    0.9
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 25,
+   "words": [
+    "conviction",
+    "text",
+    "hoping",
+    "excesses",
+    "scripts",
+    "damages",
+    "col.",
+    "mansion"
+   ],
+   "contrast": [
+    1.68,
+    1.64,
+    1.55,
+    1.53,
+    1.28,
+    1.24,
+    1.24,
+    1.23
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 26,
+   "words": [
+    "sold",
+    "\\*",
+    "issued",
+    "flooding",
+    "abandoned",
+    "aer",
+    "shipyard",
+    "roadways"
+   ],
+   "contrast": [
+    0.39,
+    0.17,
+    0.1,
+    0.04,
+    -0.1,
+    -0.22,
+    -0.24,
+    -0.41
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 27,
+   "words": [
+    "attendants",
+    "firm",
+    "suisse",
+    "including",
+    "wires",
+    "between",
+    "tools",
+    "spill"
+   ],
+   "contrast": [
+    2.79,
+    2.6,
+    2.57,
+    2.54,
+    2.54,
+    2.54,
+    2.5,
+    2.36
+   ],
+   "median_log10_freq": -4.61
+  },
+  {
+   "label": 28,
+   "words": [
+    "fabric",
+    "making",
+    "microprocessors",
+    "aer",
+    "abandoned",
+    "shouting",
+    "short-term",
+    "remedy"
+   ],
+   "contrast": [
+    0.45,
+    0.35,
+    -0.21,
+    -0.25,
+    -0.25,
+    -0.31,
+    -0.33,
+    -0.34
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 29,
+   "words": [
+    "youngsters",
+    "invitation",
+    "threats",
+    "escaped",
+    "plain",
+    "privileges",
+    "tenders",
+    "similarity"
+   ],
+   "contrast": [
+    2.14,
+    2.03,
+    1.49,
+    1.4,
+    1.33,
+    1.27,
+    1.24,
+    1.24
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 30,
+   "words": [
+    "neat",
+    "catastrophic",
+    "influences",
+    "connecticut",
+    "foster",
+    "polaroid",
+    "bass",
+    "inco"
+   ],
+   "contrast": [
+    1.4,
+    1.22,
+    0.96,
+    0.83,
+    0.79,
+    0.68,
+    0.5,
+    0.46
+   ],
+   "median_log10_freq": -4.82
+  },
+  {
+   "label": 31,
+   "words": [
+    "chase",
+    "drexel",
+    "it",
+    "sec",
+    "hunter",
+    "aer",
+    "chevy",
+    "slack"
+   ],
+   "contrast": [
+    -0.08,
+    -0.09,
+    -0.11,
+    -0.13,
+    -0.15,
+    -0.17,
+    -0.24,
+    -0.29
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 32,
+   "words": [
+    "hyundai",
+    "semiconductors",
+    "sidhpur",
+    "hardware",
+    "gartner",
+    "minerals",
+    "quack",
+    "minimills"
+   ],
+   "contrast": [
+    2.06,
+    1.89,
+    1.8,
+    1.44,
+    1.3,
+    1.24,
+    1.2,
+    1.18
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 33,
+   "words": [
+    "hottest",
+    "advise",
+    "various",
+    "takeover-stock",
+    "certified",
+    "apt",
+    "anti-drug",
+    "synthetic"
+   ],
+   "contrast": [
+    1.85,
+    1.37,
+    1.34,
+    1.22,
+    0.91,
+    0.89,
+    0.87,
+    0.83
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 34,
+   "words": [
+    "otc",
+    "major",
+    "foreign",
+    "brilliant",
+    "partly",
+    "minor",
+    "other",
+    "perceptions"
+   ],
+   "contrast": [
+    1.74,
+    1.51,
+    1.1,
+    1.08,
+    0.98,
+    0.98,
+    0.88,
+    0.84
+   ],
+   "median_log10_freq": -4.1
+  },
+  {
+   "label": 35,
+   "words": [
+    "mixte",
+    "receipts",
+    "bills",
+    "witter",
+    "cds",
+    "receivables",
+    "hugo",
+    "indicators"
+   ],
+   "contrast": [
+    3.8,
+    3.65,
+    3.53,
+    3.46,
+    3.13,
+    2.9,
+    2.78,
+    2.5
+   ],
+   "median_log10_freq": -4.52
+  },
+  {
+   "label": 36,
+   "words": [
+    "remedy",
+    "significantly",
+    "ranks",
+    "aer",
+    "thailand",
+    "emigration",
+    "flooding",
+    "conservatives"
+   ],
+   "contrast": [
+    0.01,
+    -0.25,
+    -0.28,
+    -0.3,
+    -0.43,
+    -0.46,
+    -0.46,
+    -0.48
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 37,
+   "words": [
+    "entities",
+    "badly",
+    "whichever",
+    "reservations",
+    "colonial",
+    "deregulation",
+    "notification",
+    "unification"
+   ],
+   "contrast": [
+    1.95,
+    1.81,
+    1.61,
+    1.6,
+    1.48,
+    1.43,
+    1.42,
+    1.34
+   ],
+   "median_log10_freq": -5.01
+  },
+  {
+   "label": 38,
+   "words": [
+    "exercisable",
+    "mac",
+    "sachs",
+    "ago",
+    "trading",
+    "lufkin",
+    "collateral",
+    "mortgages"
+   ],
+   "contrast": [
+    5.17,
+    4.88,
+    4.08,
+    3.95,
+    3.94,
+    3.84,
+    3.48,
+    3.2
+   ],
+   "median_log10_freq": -4.4
+  },
+  {
+   "label": 39,
+   "words": [
+    "tenn.",
+    "voluntarily",
+    "broker-dealer",
+    "surprises",
+    "fraction",
+    "vendors",
+    "attitudes",
+    "pse"
+   ],
+   "contrast": [
+    1.55,
+    1.47,
+    1.4,
+    1.4,
+    1.34,
+    1.28,
+    1.25,
+    1.19
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 40,
+   "words": [
+    "hutton",
+    "ltd.",
+    "lambert",
+    "lehman",
+    "peck",
+    "plc",
+    "squibb",
+    "co"
+   ],
+   "contrast": [
+    5.26,
+    4.4,
+    4.17,
+    4.03,
+    3.8,
+    3.76,
+    3.51,
+    3.23
+   ],
+   "median_log10_freq": -4.08
+  },
+  {
+   "label": 41,
+   "words": [
+    "n't",
+    "not",
+    "something",
+    "so",
+    "unit",
+    "minneapolis",
+    "morning",
+    "subsidiary"
+   ],
+   "contrast": [
+    2.8,
+    2.43,
+    2.07,
+    2.02,
+    1.78,
+    1.5,
+    1.25,
+    0.82
+   ],
+   "median_log10_freq": -3.75
+  },
+  {
+   "label": 42,
+   "words": [
+    "p.m.",
+    "a.m.",
+    "women",
+    "years",
+    "people",
+    "barrels",
+    "shares",
+    "acres"
+   ],
+   "contrast": [
+    1.48,
+    1.15,
+    0.99,
+    0.87,
+    0.85,
+    0.74,
+    0.61,
+    0.5
+   ],
+   "median_log10_freq": -4.24
+  },
+  {
+   "label": 43,
+   "words": [
+    "equipment",
+    "consumer",
+    "jamaica",
+    "status",
+    "aer",
+    "hunter",
+    "soda",
+    "possible"
+   ],
+   "contrast": [
+    0.33,
+    -0.02,
+    -0.03,
+    -0.11,
+    -0.24,
+    -0.25,
+    -0.28,
+    -0.29
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 44,
+   "words": [
+    "aer",
+    "banknote",
+    "critics",
+    "military",
+    "microprocessors",
+    "educators",
+    "expiration",
+    "impetus"
+   ],
+   "contrast": [
+    -0.16,
+    -0.4,
+    -0.48,
+    -0.5,
+    -0.57,
+    -0.59,
+    -0.61,
+    -0.64
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 45,
+   "words": [
+    "pont",
+    "diego",
+    "andreas",
+    "femina",
+    "jose",
+    "yeargin",
+    "rubicam",
+    "marcos"
+   ],
+   "contrast": [
+    5.55,
+    4.73,
+    4.67,
+    4.65,
+    4.04,
+    3.95,
+    3.92,
+    3.71
+   ],
+   "median_log10_freq": -4.69
+  },
+  {
+   "label": 46,
+   "words": [
+    "forward",
+    "unsuccessfully",
+    "advantage",
+    "aside",
+    "rid",
+    "together",
+    "ex-dividend",
+    "unspecified"
+   ],
+   "contrast": [
+    2.32,
+    2.25,
+    2.04,
+    2.01,
+    2.01,
+    1.89,
+    1.81,
+    1.8
+   ],
+   "median_log10_freq": -4.82
+  },
+  {
+   "label": 47,
+   "words": [
+    "prevailing",
+    "merkur",
+    "justice",
+    "everyone",
+    "colors",
+    "monitoring",
+    "these",
+    "she"
+   ],
+   "contrast": [
+    0.88,
+    0.43,
+    0.36,
+    0.34,
+    0.22,
+    0.2,
+    0.18,
+    0.1
+   ],
+   "median_log10_freq": -4.59
+  },
+  {
+   "label": 48,
+   "words": [
+    "hooker",
+    "named",
+    "fitzwater",
+    "excluded",
+    "pills",
+    "risen",
+    "cough",
+    "guilty"
+   ],
+   "contrast": [
+    2.64,
+    2.3,
+    2.16,
+    2.16,
+    2.06,
+    1.88,
+    1.8,
+    1.59
+   ],
+   "median_log10_freq": -4.79
+  },
+  {
+   "label": 49,
+   "words": [
+    "composed",
+    "anti-takeover",
+    "eighth",
+    "intentionally",
+    "nasd",
+    "manic",
+    "computer-driven",
+    "strengthening"
+   ],
+   "contrast": [
+    2.18,
+    1.68,
+    1.61,
+    1.42,
+    1.38,
+    1.37,
+    1.31,
+    1.28
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 50,
+   "words": [
+    "fearful",
+    "bulk",
+    "portion",
+    "lack",
+    "tentative",
+    "type",
+    "verge",
+    "du"
+   ],
+   "contrast": [
+    2.67,
+    1.86,
+    1.85,
+    1.77,
+    1.63,
+    1.62,
+    1.58,
+    1.55
+   ],
+   "median_log10_freq": -4.45
+  },
+  {
+   "label": 51,
+   "words": [
+    "notion",
+    "aer",
+    "families",
+    "banknote",
+    "opponents",
+    "thailand",
+    "voters",
+    "washington"
+   ],
+   "contrast": [
+    -0.11,
+    -0.14,
+    -0.4,
+    -0.41,
+    -0.44,
+    -0.46,
+    -0.49,
+    -0.52
+   ],
+   "median_log10_freq": -4.65
+  },
+  {
+   "label": 52,
+   "words": [
+    "further",
+    "jamaica",
+    "dead",
+    "notion",
+    "downgrade",
+    "realities",
+    "any",
+    "either"
+   ],
+   "contrast": [
+    0.32,
+    0.02,
+    0.0,
+    -0.09,
+    -0.1,
+    -0.12,
+    -0.13,
+    -0.14
+   ],
+   "median_log10_freq": -4.65
+  },
+  {
+   "label": 53,
+   "words": [
+    "crystals",
+    "did",
+    "broken",
+    "black",
+    "wheat",
+    "merchants",
+    "survived",
+    "regret"
+   ],
+   "contrast": [
+    0.75,
+    0.44,
+    0.42,
+    0.41,
+    0.21,
+    0.03,
+    -0.0,
+    -0.07
+   ],
+   "median_log10_freq": -4.71
+  },
+  {
+   "label": 54,
+   "words": [
+    "<unk>",
+    "voters",
+    "marks",
+    "sources",
+    "gutfreund",
+    "microprocessors",
+    "elections",
+    "italy"
+   ],
+   "contrast": [
+    0.06,
+    -0.02,
+    -0.05,
+    -0.09,
+    -0.13,
+    -0.15,
+    -0.16,
+    -0.18
+   ],
+   "median_log10_freq": -4.2
+  },
+  {
+   "label": 55,
+   "words": [
+    "berlitz",
+    "calloway",
+    "aer",
+    "centrust",
+    "imports",
+    "emigration",
+    "theory",
+    "gm"
+   ],
+   "contrast": [
+    -0.2,
+    -0.25,
+    -0.25,
+    -0.29,
+    -0.37,
+    -0.4,
+    -0.41,
+    -0.43
+   ],
+   "median_log10_freq": -5.97
+  },
+  {
+   "label": 56,
+   "words": [
+    "payable",
+    "theory",
+    "coal",
+    "begins",
+    "ifi",
+    "representatives",
+    "berlitz",
+    "calloway"
+   ],
+   "contrast": [
+    0.17,
+    -0.09,
+    -0.13,
+    -0.16,
+    -0.26,
+    -0.26,
+    -0.27,
+    -0.28
+   ],
+   "median_log10_freq": -4.44
+  },
+  {
+   "label": 57,
+   "words": [
+    "court",
+    "veto",
+    "hopkins",
+    "burnham",
+    "nigel",
+    "breaker",
+    "delta",
+    "angeles"
+   ],
+   "contrast": [
+    4.94,
+    4.75,
+    3.69,
+    3.58,
+    3.49,
+    3.36,
+    3.28,
+    3.21
+   ],
+   "median_log10_freq": -4.46
+  },
+  {
+   "label": 58,
+   "words": [
+    "afford",
+    "attend",
+    "hesitate",
+    "prove",
+    "cease",
+    "compensate",
+    "suffer",
+    "sleep"
+   ],
+   "contrast": [
+    1.62,
+    1.56,
+    1.5,
+    1.41,
+    1.19,
+    1.17,
+    1.11,
+    1.09
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 59,
+   "words": [
+    "recent",
+    "egypt",
+    "hate",
+    "helicopter",
+    "clean",
+    "failed",
+    "arms",
+    "social"
+   ],
+   "contrast": [
+    1.68,
+    1.6,
+    1.57,
+    1.49,
+    1.26,
+    1.14,
+    1.13,
+    1.12
+   ],
+   "median_log10_freq": -4.59
+  },
+  {
+   "label": 60,
+   "words": [
+    "we",
+    "scientists",
+    "analysts",
+    "i",
+    "leaseway",
+    "researchers",
+    "colgate-palmolive",
+    "you"
+   ],
+   "contrast": [
+    1.29,
+    0.92,
+    0.91,
+    0.83,
+    0.8,
+    0.7,
+    0.66,
+    0.65
+   ],
+   "median_log10_freq": -4.04
+  },
+  {
+   "label": 61,
+   "words": [
+    "will",
+    "views",
+    "areas",
+    "and",
+    "of",
+    "night",
+    "for",
+    "shearson"
+   ],
+   "contrast": [
+    2.7,
+    2.4,
+    1.68,
+    1.68,
+    1.6,
+    1.59,
+    1.37,
+    1.33
+   ],
+   "median_log10_freq": -3.87
+  },
+  {
+   "label": 62,
+   "words": [
+    "300-a-share",
+    "trillion",
+    "cent",
+    "billion",
+    "days",
+    "belgian",
+    "million",
+    "units"
+   ],
+   "contrast": [
+    4.19,
+    3.11,
+    2.45,
+    1.39,
+    1.37,
+    1.1,
+    1.09,
+    1.01
+   ],
+   "median_log10_freq": -4.2
+  },
+  {
+   "label": 63,
+   "words": [
+    "aer",
+    "berlitz",
+    "banknote",
+    "guterman",
+    "kia",
+    "exceed",
+    "gitano",
+    "ipo"
+   ],
+   "contrast": [
+    -0.32,
+    -0.44,
+    -0.62,
+    -0.68,
+    -0.68,
+    -0.7,
+    -0.79,
+    -0.83
+   ],
+   "median_log10_freq": -5.97
+  },
+  {
+   "label": 64,
+   "words": [
+    "multiples",
+    "high-grade",
+    "interbank",
+    "montedison",
+    "refiners",
+    "legent",
+    "winnebago",
+    "r.h."
+   ],
+   "contrast": [
+    1.79,
+    0.58,
+    0.56,
+    0.46,
+    0.41,
+    0.41,
+    0.36,
+    0.33
+   ],
+   "median_log10_freq": -4.97
+  },
+  {
+   "label": 65,
+   "words": [
+    "antibody",
+    "offensive",
+    "dispute",
+    "uncertainty",
+    "1920s",
+    "complaints",
+    "intellectuals",
+    "testify"
+   ],
+   "contrast": [
+    2.07,
+    1.67,
+    1.63,
+    1.56,
+    1.52,
+    1.5,
+    1.5,
+    1.48
+   ],
+   "median_log10_freq": -4.93
+  },
+  {
+   "label": 66,
+   "words": [
+    "oldest",
+    "representatives",
+    "linear",
+    "aer",
+    "berlitz",
+    "imports",
+    "voters",
+    "nwa"
+   ],
+   "contrast": [
+    -0.04,
+    -0.09,
+    -0.2,
+    -0.23,
+    -0.23,
+    -0.23,
+    -0.29,
+    -0.33
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 67,
+   "words": [
+    "resilience",
+    "if",
+    "remark",
+    "dealerships",
+    "maybe",
+    "survival",
+    "why",
+    "whether"
+   ],
+   "contrast": [
+    1.46,
+    1.26,
+    1.19,
+    1.04,
+    0.97,
+    0.95,
+    0.91,
+    0.76
+   ],
+   "median_log10_freq": -4.76
+  },
+  {
+   "label": 68,
+   "words": [
+    "arizona",
+    "government",
+    "test",
+    "shot",
+    "reorganization",
+    "deceptive",
+    "fleet",
+    "short"
+   ],
+   "contrast": [
+    0.96,
+    0.66,
+    0.6,
+    0.58,
+    0.53,
+    0.49,
+    0.48,
+    0.4
+   ],
+   "median_log10_freq": -4.16
+  },
+  {
+   "label": 69,
+   "words": [
+    "infringed",
+    "second",
+    "berlitz",
+    "calloway",
+    "bourbon",
+    "aer",
+    "centrust",
+    "surveys"
+   ],
+   "contrast": [
+    0.4,
+    0.09,
+    -0.16,
+    -0.18,
+    -0.2,
+    -0.21,
+    -0.3,
+    -0.32
+   ],
+   "median_log10_freq": -5.97
+  },
+  {
+   "label": 70,
+   "words": [
+    "incest",
+    "c.d.s",
+    "rico",
+    "pricings",
+    "triple-a",
+    "compiled",
+    "treasurer",
+    "rican"
+   ],
+   "contrast": [
+    3.97,
+    3.49,
+    3.48,
+    3.34,
+    3.32,
+    3.1,
+    2.84,
+    2.82
+   ],
+   "median_log10_freq": -4.67
+  },
+  {
+   "label": 71,
+   "words": [
+    "voters",
+    "abolished",
+    "aer",
+    "berlitz",
+    "emigration",
+    "these",
+    "famous",
+    "emerson"
+   ],
+   "contrast": [
+    -0.21,
+    -0.3,
+    -0.3,
+    -0.35,
+    -0.4,
+    -0.41,
+    -0.54,
+    -0.54
+   ],
+   "median_log10_freq": -5.27
+  },
+  {
+   "label": 72,
+   "words": [
+    "leipzig",
+    "addition",
+    "albany",
+    "commons",
+    "charlotte",
+    "contrast",
+    "philadelphia",
+    "limbo"
+   ],
+   "contrast": [
+    2.31,
+    1.54,
+    1.45,
+    1.33,
+    1.32,
+    1.27,
+    1.23,
+    0.91
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 73,
+   "words": [
+    "in",
+    "matter",
+    "more",
+    "nose",
+    "development",
+    "positions",
+    "early",
+    "tied"
+   ],
+   "contrast": [
+    0.86,
+    0.76,
+    0.55,
+    0.42,
+    0.41,
+    0.37,
+    0.29,
+    0.29
+   ],
+   "median_log10_freq": -4.02
+  },
+  {
+   "label": 74,
+   "words": [
+    "share",
+    "republican",
+    "pride",
+    "famous",
+    "prospects",
+    "country",
+    "merchants",
+    "arguments"
+   ],
+   "contrast": [
+    0.6,
+    0.59,
+    0.39,
+    0.33,
+    0.23,
+    0.07,
+    -0.03,
+    -0.05
+   ],
+   "median_log10_freq": -4.54
+  },
+  {
+   "label": 75,
+   "words": [
+    "existence",
+    "flavor",
+    "distance",
+    "realities",
+    "massage",
+    "dead",
+    "jamaica",
+    "warning"
+   ],
+   "contrast": [
+    0.34,
+    0.2,
+    0.18,
+    0.12,
+    0.02,
+    -0.0,
+    -0.02,
+    -0.09
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 76,
+   "words": [
+    "lobby",
+    "microprocessors",
+    "top",
+    "athletic",
+    "per",
+    "revenue",
+    "leasing",
+    "consumer"
+   ],
+   "contrast": [
+    0.41,
+    -0.01,
+    -0.04,
+    -0.16,
+    -0.18,
+    -0.2,
+    -0.26,
+    -0.27
+   ],
+   "median_log10_freq": -4.74
+  },
+  {
+   "label": 77,
+   "words": [
+    "oldest",
+    "aer",
+    "banknote",
+    "theory",
+    "families",
+    "thailand",
+    "newsweek",
+    "thrifts"
+   ],
+   "contrast": [
+    -0.29,
+    -0.31,
+    -0.52,
+    -0.53,
+    -0.53,
+    -0.54,
+    -0.57,
+    -0.58
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 78,
+   "words": [
+    "movements",
+    "accusations",
+    "retailers",
+    "target",
+    "'80s",
+    "advantages",
+    "flag",
+    "authors"
+   ],
+   "contrast": [
+    1.41,
+    1.05,
+    0.87,
+    0.73,
+    0.71,
+    0.69,
+    0.69,
+    0.57
+   ],
+   "median_log10_freq": -4.76
+  },
+  {
+   "label": 79,
+   "words": [
+    "completing",
+    "entering",
+    "joining",
+    "keeping",
+    "dominate",
+    "contemplating",
+    "during",
+    "pledge"
+   ],
+   "contrast": [
+    1.96,
+    1.4,
+    1.33,
+    1.29,
+    1.27,
+    1.11,
+    1.06,
+    1.05
+   ],
+   "median_log10_freq": -4.93
+  },
+  {
+   "label": 80,
+   "words": [
+    "detrex",
+    "ohbayashi",
+    "bnl",
+    "cilcorp",
+    "ekco",
+    "convex",
+    "sheraton",
+    "esb"
+   ],
+   "contrast": [
+    2.25,
+    1.44,
+    1.23,
+    1.19,
+    1.13,
+    0.9,
+    0.65,
+    0.58
+   ],
+   "median_log10_freq": -5.12
+  },
+  {
+   "label": 81,
+   "words": [
+    "company",
+    "directors",
+    "second",
+    "aer",
+    "labor",
+    "nation",
+    "consumer",
+    "banknote"
+   ],
+   "contrast": [
+    1.24,
+    0.19,
+    -0.19,
+    -0.21,
+    -0.26,
+    -0.4,
+    -0.41,
+    -0.42
+   ],
+   "median_log10_freq": -3.78
+  },
+  {
+   "label": 82,
+   "words": [
+    "bottle",
+    "par",
+    "tripled",
+    "double",
+    "pound",
+    "capita",
+    "tenfold",
+    "bushel"
+   ],
+   "contrast": [
+    3.44,
+    3.28,
+    2.94,
+    2.85,
+    2.68,
+    2.48,
+    2.48,
+    2.44
+   ],
+   "median_log10_freq": -4.85
+  },
+  {
+   "label": 83,
+   "words": [
+    "hurt",
+    "lower",
+    "aer",
+    "significantly",
+    "flooding",
+    "risk",
+    "launched",
+    "begins"
+   ],
+   "contrast": [
+    0.11,
+    -0.01,
+    -0.1,
+    -0.16,
+    -0.19,
+    -0.19,
+    -0.22,
+    -0.25
+   ],
+   "median_log10_freq": -4.21
+  },
+  {
+   "label": 84,
+   "words": [
+    "argue",
+    "unlikely",
+    "acknowledge",
+    "glory",
+    "call",
+    "sponsor",
+    "open",
+    "contend"
+   ],
+   "contrast": [
+    1.66,
+    1.64,
+    1.52,
+    1.45,
+    1.44,
+    1.42,
+    1.26,
+    1.22
+   ],
+   "median_log10_freq": -4.55
+  },
+  {
+   "label": 85,
+   "words": [
+    "fastest",
+    "surprised",
+    "chart",
+    "province",
+    "used",
+    "enabled",
+    "eating",
+    "citing"
+   ],
+   "contrast": [
+    1.87,
+    1.2,
+    1.16,
+    0.76,
+    0.76,
+    0.74,
+    0.73,
+    0.67
+   ],
+   "median_log10_freq": -4.82
+  },
+  {
+   "label": 86,
+   "words": [
+    "zip",
+    "permits",
+    "nowhere",
+    "titled",
+    "too",
+    "abortions",
+    "plaintiff",
+    "seems"
+   ],
+   "contrast": [
+    1.82,
+    1.46,
+    1.23,
+    1.13,
+    0.91,
+    0.9,
+    0.8,
+    0.79
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 87,
+   "words": [
+    "perception",
+    "hint",
+    "thousands",
+    "proliferation",
+    "dislike",
+    "speculate",
+    "grip",
+    "withdrawal"
+   ],
+   "contrast": [
+    1.28,
+    1.25,
+    1.2,
+    1.11,
+    1.05,
+    0.98,
+    0.97,
+    0.95
+   ],
+   "median_log10_freq": -4.89
+  },
+  {
+   "label": 88,
+   "words": [
+    "both",
+    "importance",
+    "upper",
+    "management",
+    "finland",
+    "expiration",
+    "bidding",
+    "greens"
+   ],
+   "contrast": [
+    2.75,
+    0.79,
+    0.5,
+    0.46,
+    0.43,
+    0.35,
+    0.3,
+    0.26
+   ],
+   "median_log10_freq": -4.61
+  },
+  {
+   "label": 89,
+   "words": [
+    "aichi",
+    "productivity",
+    "ideas",
+    "strengths",
+    "affiliated",
+    "resistance",
+    "atoms",
+    "newcomers"
+   ],
+   "contrast": [
+    1.94,
+    1.82,
+    1.69,
+    1.52,
+    1.51,
+    1.44,
+    1.41,
+    1.36
+   ],
+   "median_log10_freq": -5.07
+  },
+  {
+   "label": 90,
+   "words": [
+    "hastily",
+    "potentially",
+    "newly",
+    "mildly",
+    "divisive",
+    "extremely",
+    "environmentally",
+    "widely"
+   ],
+   "contrast": [
+    1.69,
+    1.45,
+    1.44,
+    1.42,
+    1.21,
+    1.17,
+    0.99,
+    0.99
+   ],
+   "median_log10_freq": -5.19
+  },
+  {
+   "label": 91,
+   "words": [
+    "clothing",
+    "imports",
+    "short-term",
+    "candidates",
+    "standard",
+    "merchants",
+    "regular",
+    "aer"
+   ],
+   "contrast": [
+    0.12,
+    0.02,
+    -0.08,
+    -0.2,
+    -0.23,
+    -0.28,
+    -0.3,
+    -0.32
+   ],
+   "median_log10_freq": -4.29
+  },
+  {
+   "label": 92,
+   "words": [
+    "milan",
+    "began",
+    "surgeon",
+    "aer",
+    "treasury",
+    "emerson",
+    "within",
+    "bank"
+   ],
+   "contrast": [
+    0.16,
+    0.01,
+    -0.09,
+    -0.15,
+    -0.26,
+    -0.29,
+    -0.32,
+    -0.33
+   ],
+   "median_log10_freq": -4.71
+  },
+  {
+   "label": 93,
+   "words": [
+    "cs",
+    "penn",
+    "unexpectedly",
+    "proven",
+    "stretched",
+    "donaldson",
+    "soft",
+    "asset-backed"
+   ],
+   "contrast": [
+    2.11,
+    1.32,
+    1.22,
+    1.13,
+    1.09,
+    0.96,
+    0.93,
+    0.89
+   ],
+   "median_log10_freq": -4.82
+  },
+  {
+   "label": 94,
+   "words": [
+    "berlitz",
+    "aer",
+    "calloway",
+    "emigration",
+    "centrust",
+    "imports",
+    "ifi",
+    "families"
+   ],
+   "contrast": [
+    -0.21,
+    -0.23,
+    -0.26,
+    -0.27,
+    -0.29,
+    -0.4,
+    -0.42,
+    -0.45
+   ],
+   "median_log10_freq": -5.97
+  },
+  {
+   "label": 95,
+   "words": [
+    "century",
+    "couple",
+    "time",
+    "decade",
+    "phase",
+    "term",
+    "1970s",
+    "few"
+   ],
+   "contrast": [
+    5.68,
+    5.45,
+    5.15,
+    4.69,
+    4.41,
+    3.79,
+    3.68,
+    3.29
+   ],
+   "median_log10_freq": -4.15
+  }
+ ],
+ "attention": {
+  "root_mass": 0.2767,
+  "distance_profile_full": [
+   0.32676,
+   0.102363,
+   0.073432,
+   0.024064,
+   0.022877,
+   0.021616,
+   0.020397,
+   0.01947,
+   0.018483,
+   0.017943,
+   0.017123,
+   0.016309,
+   0.015588,
+   0.014912,
+   0.014218,
+   0.013715,
+   0.013346,
+   0.012607,
+   0.01229,
+   0.011664,
+   0.011245,
+   0.01082,
+   0.010424,
+   0.010014,
+   0.009536,
+   0.009229,
+   0.008946,
+   0.008575,
+   0.008159,
+   0.007824,
+   0.007438,
+   0.007275,
+   0.006856,
+   0.006352,
+   0.006326,
+   0.00598,
+   0.005723,
+   0.005565,
+   0.005268,
+   0.004916,
+   0.004686,
+   0.004531,
+   0.004173,
+   0.003929,
+   0.003646,
+   0.003628,
+   0.003278,
+   0.003174,
+   0.002908,
+   0.002753,
+   0.002485,
+   0.002323,
+   0.002138,
+   0.001911,
+   0.001712,
+   0.001517,
+   0.001329,
+   0.001184,
+   0.00097,
+   0.000817,
+   0.000646,
+   0.000394,
+   0.000222,
+   0.0
+  ],
+  "uniform_profile_full": [
+   0.063182,
+   0.054744,
+   0.049118,
+   0.044899,
+   0.041524,
+   0.038711,
+   0.036301,
+   0.034191,
+   0.032316,
+   0.030628,
+   0.029094,
+   0.027688,
+   0.02639,
+   0.025184,
+   0.024059,
+   0.023005,
+   0.022012,
+   0.021074,
+   0.020186,
+   0.019342,
+   0.018539,
+   0.017772,
+   0.017038,
+   0.016335,
+   0.01566,
+   0.015011,
+   0.014386,
+   0.013783,
+   0.013201,
+   0.012638,
+   0.012094,
+   0.011567,
+   0.011055,
+   0.010559,
+   0.010077,
+   0.009608,
+   0.009152,
+   0.008708,
+   0.008275,
+   0.007853,
+   0.007442,
+   0.00704,
+   0.006647,
+   0.006264,
+   0.005889,
+   0.005522,
+   0.005163,
+   0.004811,
+   0.004467,
+   0.004129,
+   0.003798,
+   0.003474,
+   0.003155,
+   0.002843,
+   0.002536,
+   0.002235,
+   0.001939,
+   0.001648,
+   0.001362,
+   0.00108,
+   0.000804,
+   0.000532,
+   0.000264,
+   0.0
+  ],
+  "mean_attachment_distance": 11.06,
+  "peakedness_over_uniform": 0.2349,
+  "distance_profile_first10": [
+   0.3268,
+   0.1024,
+   0.0734,
+   0.0241,
+   0.0229,
+   0.0216,
+   0.0204,
+   0.0195,
+   0.0185,
+   0.0179
+  ]
+ },
+ "prior_posterior": {
+  "n_slots": 4032,
+  "pearson_r_kl_vs_nll": 0.4712,
+  "mean_kl_predictable_quartile": 4.0654,
+  "mean_kl_surprising_quartile": 6.5576
+ }
+}
