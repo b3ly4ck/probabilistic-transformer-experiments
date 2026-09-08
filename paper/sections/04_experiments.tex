@@ -398,6 +398,19 @@ measurable here once each rung is tuned --- at a single learning rate it appeare
 $18.5$, and that was the rate, not the switch. What does cost is the feed-forward block
 ($15.1$) and weight sharing ($12.5$), neither of which is specific to this construction.
 
+Two rungs are not costs but cliffs --- the readout and the simplex state, at $+558$ and $+564$
+--- and they are the two the construction is most answerable for. The second is discussed below,
+because its number does not mean what it appears to. The first does. Giving an otherwise
+ordinary decoder the mixture readout of \Cref{sec:output} in place
+of its linear head --- at matched width, with the embeddings tied as the factor graph requires
+--- does not train at all: $686.8$ against a unigram of $688.8$, with a \emph{training}
+perplexity of $736.6$, and the same at every learning rate we ran it at ($10^{-3}$ to
+$10^{-2}$). That is the evaluation-time swap of \Cref{sec:exp3} arrived at from the opposite
+direction: there, weights trained for one readout are useless under the other; here, a readout
+transplanted into a model built around the other cannot be trained in the first place. The
+mixture readout is not a drop-in for a linear head, and neither experiment on its own would
+establish that.
+
 \textbf{The ladder is one seed per cell}, unlike every other result in this paper, because
 $128$ cells at three seeds was not affordable. Differences of a point or two in the S1 column
 should therefore be read as ``not distinguishable from zero'' rather than as small effects with
