@@ -39,7 +39,18 @@ direction: it is what sum--product inference on the slot tree \emph{is}, with th
 components fixed by the word--label factor and the weights supplied by the prefix, and it costs
 no parameters. \Cref{prop:readout} states the consequence and \Cref{sec:exp3} measures it.
 
-\paragraph{Syntax in neural models.}
-The broader line that \citet{wu2023probabilistic} situate themselves in --- structured latent
-variables, syntactic inductive bias, and analyses reading dependency structure out of attention
---- applies here unchanged, and we do not repeat it.
+\paragraph{Reading syntax out of attention, and putting it in.}
+A long line of work asks whether a trained transformer's attention encodes dependency structure,
+by probing the representations \citep{hewitt2019structural} or the attention maps themselves
+\citep{clark2019what,htut2019attention}, with the qualified conclusion that some heads track
+some relations and that how much one finds depends on the training objective and the probe
+\citep{ravishankar2021attention}. A second line builds the structure in, inducing dependency or
+constituency trees jointly with a language-modelling objective
+\citep{shen2021structformer,shen2022udgn}. The present model sits on the second side by
+construction --- its head variable \emph{is} an attachment, not a quantity read out of one ---
+which is what makes \Cref{app:interpretability} a measurement rather than an interpretation. Our
+finding there is a caution addressed to both lines: the same probe on the same corpus and the
+same model class gives opposite answers about whether attachment is learned, depending on a
+temperature and a rank. The relative attachment scores of \Cref{sec:chain} are the relative
+position representations of \citet{shaw2018self}, arrived at as the only position encoding the
+factor graph admits.

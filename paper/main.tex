@@ -62,6 +62,11 @@
 \bibliography{refs}
 
 \appendix
+% Everything after \appendix is an appendix, so cleveref should say so: without these two lines
+% the paper refers to "Section D" and "Section G" for material that is lettered, not numbered,
+% and a reader looking for Section G in the body will not find one.
+\crefalias{section}{appendix}
+\crefalias{subsection}{appendix}
 \input{sections/A_derivations}
 \input{sections/B_variants}
 \input{sections/C_proof}
