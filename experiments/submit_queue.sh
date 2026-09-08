@@ -4,19 +4,28 @@
 # The `critical` QOS allows a small number of *submitted* jobs per user
 # (QOSMaxSubmitJobPerUserLimit, observed as 9 including jobs from other projects), so a
 # 90-cell grid split into shards cannot all be submitted at once. This loop keeps the queue
-# full: one line of `experiments/pending.txt` is one set of arguments to
-# `sbatch experiments/sweep.slurm`, and a line is removed only once sbatch accepts it.
+# full without ever tripping the limit.
 #
-#   echo "experiments.exp4_width_transfer.spec_width --shard 4/6" >> experiments/pending.txt
+# One line of `experiments/pending.txt` is one submission. Two forms:
+#
+#   <spec-module> [args...]        -> sbatch <DEFAULT_OPTS> experiments/sweep.slurm <line>
+#   ! <shell command>              -> run the command verbatim (for one-off jobs that need
+#                                     their own sbatch options, e.g. pinning a node)
+#
+# A line is removed only once the submission is accepted, so a refusal simply retries later.
+#
 #   nohup bash experiments/submit_queue.sh > queue.log 2>&1 &
 #
-# MAXJOBS is the number of *this project's* jobs to keep in flight; it is counted by job
-# name so an unrelated job of the same user does not starve the queue or overrun the limit.
+# MAXJOBS counts *all* of this user's jobs except the ones named in FOREIGN, because the QOS
+# limit counts them too: an earlier version counted only `pt-sweep` and therefore kept trying
+# to submit while the account was already at the cap, filling the log with refusals.
 set -uo pipefail
 cd /public/home/belyack/work/pt
 PENDING=experiments/pending.txt
-MAXJOBS=${MAXJOBS:-7}
+MAXJOBS=${MAXJOBS:-8}
+FOREIGN=${FOREIGN:-ts-llm}
 SLEEP=${SLEEP:-60}
+DEFAULT_OPTS=${DEFAULT_OPTS:-"--time=06:00:00 --exclude=ai_gpu32,ai_gpu33"}
 touch "$PENDING"
 
 while :; do
@@ -25,11 +34,14 @@ while :; do
     echo "$(date +%H:%M:%S) queue empty, exiting"
     exit 0
   fi
-  running=$(squeue -u "$USER" -h -n pt-sweep 2>/dev/null | wc -l)
-  if [ "$running" -lt "$MAXJOBS" ]; then
+  mine=$(squeue -u "$USER" -h -o "%j" 2>/dev/null | grep -vc "^${FOREIGN}$" || true)
+  if [ "${mine:-99}" -lt "$MAXJOBS" ]; then
     line=$(grep -ve '^\s*$' "$PENDING" | head -1)
-    # shellcheck disable=SC2086
-    if out=$(sbatch --time=06:00:00 --exclude=ai_gpu32,ai_gpu33 experiments/sweep.slurm $line 2>&1); then
+    case "$line" in
+      "!"*) cmd="${line#\! }" ;;
+      *)    cmd="sbatch $DEFAULT_OPTS experiments/sweep.slurm $line" ;;
+    esac
+    if out=$(eval "$cmd" 2>&1); then
       echo "$(date +%H:%M:%S) submitted [$line] -> $out"
       grep -vxF "$line" "$PENDING" > "$PENDING.tmp" && mv "$PENDING.tmp" "$PENDING"
     else

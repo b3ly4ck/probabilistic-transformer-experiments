@@ -365,6 +365,31 @@ def run_sweep(
         print(f"shard {i}/{n}: {len(cells)} cells", flush=True)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Refuse to run if another live job is already writing this file. Two jobs on the same
+    # shard interleave their writes to one JSON and the loser's completed cells vanish; it
+    # happened on 2026-09-08 when a shard was queued twice by hand. The lock records the slurm
+    # job id so a stale lock from a killed job can be told apart from a live one.
+    lock = out_path.with_suffix(".lock")
+    me = os.environ.get("SLURM_JOB_ID", str(os.getpid()))
+    if lock.exists():
+        holder = lock.read_text().strip()
+        alive = False
+        if holder.isdigit():
+            alive = subprocess.call(
+                ["squeue", "-h", "-j", holder], stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL) == 0 and bool(
+                subprocess.check_output(["squeue", "-h", "-j", holder],
+                                        stderr=subprocess.DEVNULL).strip())
+        if alive and holder != me:
+            raise SystemExit(
+                f"FATAL: {out_path.name} is already being written by job {holder}. "
+                f"Two jobs on one shard interleave their writes and lose cells. "
+                f"Cancel one, or remove {lock} if that job is gone."
+            )
+        print(f"stale lock from job {holder} ignored", flush=True)
+    lock.write_text(me)
+
     existing: List[Dict[str, Any]] = []
     if resume and out_path.exists():
         try:
