@@ -12,6 +12,21 @@ stated number of seeds with the sample standard deviation, and a cell that finis
 of the unigram baseline is counted as collapsed rather than averaged into a mean, because a mean
 over a mixture of runs that learned and runs that did not measures neither.
 
+\subsection{Scaling exponents, with their point counts}
+\label{app:grid-exponents}
+
+\begin{table*}[h]
+\centering\small
+\input{figures/table_exponents_full}
+\caption{The pairwise exponent comparison of \Cref{sec:exp-scaling} with the two things the
+main-text table omits for width: how many frontier points each fit rests on, and the range the
+exponent takes when any single one of them is dropped. Where the two leave-one-out ranges in a
+row do not overlap, no single point decides the ordering. Two of the five rows rest on three
+points a side, which is the minimum this project's fitting code will accept and too few to leave
+one out; they are reported rather than dropped, with that stated.}
+\label{tab:exponents-full}
+\end{table*}
+
 \subsection{The standardisation gain across width}
 \label{app:grid-gain}
 
