@@ -29,7 +29,9 @@ Transformers \citep{dehghani2019universal} and of the looped transformers studie
 property by construction, because every MFVI iteration is inference in the \emph{same} model;
 untying the iterations would make each one inference in a different model. This is why the
 looped transformer, and not only a standard decoder, is a necessary baseline here
-(\Cref{tab:three-point}).
+(\Cref{tab:three-point}). We note in \Cref{sec:exp-depth} that on this corpus the causal PT is
+nonetheless best at one iteration, so the property it shares with those models is present in the
+construction and not exercised by the data.
 
 \paragraph{The softmax bottleneck.}
 \citet{yang2018breaking} show that a linear--softmax output head confines the log-conditionals

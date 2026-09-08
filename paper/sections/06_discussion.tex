@@ -36,6 +36,15 @@ the cost squarely there: every difference in the \emph{static} description of th
 key and value, no query or output projection, relative positions --- is free, while the two that
 concern what the state \emph{is} and how it moves are not.
 
+Two of our results sharpen that into something a successor should take seriously. The exact
+readout is a strictly richer family than the mean-field one at zero parameter cost, and training
+under it is a hundred perplexity \emph{worse} (\Cref{sec:exp3}); and more mean-field iterations
+make the model monotonically worse, so at this scale the best version of it runs one
+(\Cref{sec:exp-depth}). Both say the same thing from different directions --- that the limit
+here is not what the family can express but what this objective and this optimiser can reach
+inside it --- and both point away from expressiveness arguments and towards the optimisation of
+the inference loop as the thing to fix next.
+
 \paragraph{Hyperparameters are the practical obstacle, and they are analysable.}
 The most useful thing we can report to anyone who wants to build on this is that the causal
 model's sensitivity to width is not diffuse. It has a mechanism --- a head temperature
