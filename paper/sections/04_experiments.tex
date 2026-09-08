@@ -159,6 +159,12 @@ signature the mechanism predicts --- the message runs away (msg/unary $1.7 \to 1
 label beliefs then go flat (sharpness $1.09 \to 5.57 \to 1.34$, prefix-ablation KL exactly
 zero). \TODO{final numbers once grid A completes}
 
+\Cref{fig:mechanism} shows why, within a run, and it separates two failures that a
+final perplexity conflates: at $\nlab = 96$ the beliefs never leave the uniform point at all,
+while at $\nlab = 32$ they sharpen to $5.5$, hold for two thousand steps and then collapse back
+to uniform. Both end at the unigram baseline; only the second is the runaway the mechanism
+predicts, and only a within-run trace tells them apart.
+
 \Cref{fig:width}(b) is the repair. Standardising the head logits over the head domain before
 the softmax --- so that the attention pattern is invariant to the overall scale of the arc
 scores, and only their relative pattern selects --- revives widths that are entirely dead under
@@ -178,6 +184,21 @@ specific consequence of the factor-graph constraint, and it is the same price a 
 knowingly when it puts a layer normalisation in front of its attention. The variational reading
 survives for the content stream and the readout; it is the head-update temperature alone that
 steps outside.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_mechanism_sharp.png}
+\caption{The mechanism, within a run. Solid lines are validation perplexity (left axis), dashed
+lines the \emph{belief sharpness} $\|\QZ{}\|_2\sqrt{\nlab}$ (right axis), which is $1$ at the
+uniform belief and $\sqrt{\nlab}$ at a one-hot --- exactly the factor by which the effective
+attention temperature departs from the value $\lamH = 1/\nlab$ is calibrated for. At the source
+temperature the runs fail in two distinct ways: at $\nlab=96$ the beliefs never leave the
+uniform point, and at $\nlab=32$ they spike to $5.5$, hold, and then collapse back to it, taking
+perplexity nowhere in either case. Under the standardised temperature the sharpness rises
+smoothly to a moderate value and \emph{stays} there, and perplexity falls monotonically from the
+first evaluation. Both undamped; $\alpha_Z = 1$ throughout.}
+\label{fig:mechanism}
+\end{figure}
 
 \paragraph{Initialisation, and the global variables.}
 \label{sec:exp-ablations}
