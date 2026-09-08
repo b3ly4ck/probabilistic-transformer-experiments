@@ -169,3 +169,32 @@ against Part I of the technical note, section by section:
 No claim in Appendix C is unsourced. The one liberty taken is presentational: the note's numbered
 lemmas become run-in paragraphs with two numbered environments, because this paper's format
 allows very few.
+
+## Length — 2026-09-08
+
+Main body currently runs to **page 14**; references start on 15; total 29 with appendices. The
+format budget adopted in the 2026-08-09 decision is 8 pages of main body, matching Wu & Tu.
+
+The overrun is not padding. Their Section 4 reports one table over five tasks; ours reports a
+scaling comparison over three architectures and nine widths, a width-transfer mechanism with
+four grids behind it, a ten-rung ablation ladder, an initialisation study, a readout comparison
+and a corpus transfer. Sections 2 and 3 are close to their budget (2431 and 1448 words against
+~1950 and ~2040); Section 4 is at 2847 against ~1360.
+
+**Plan, in the order it should be executed, once the results are final.**
+
+1. Move the per-grid detail of Section 4 to appendices, leaving in the main text one paragraph
+   per finding with its headline number and pointing at the appendix table. The grids that
+   should go: the gain sweep table, the learning-rate transfer table, the rank table, and the
+   per-switch S1/S2 tables (keeping the cumulative ladder figure).
+2. Cut Section 2.1 (Background) hard --- it currently restates more of the encoder model than
+   Sections 2.2 and 2.4 actually use.
+3. Fold the two mechanism figures into one two-panel figure.
+4. Only then trim prose.
+
+Do **not** cut the reproducibility paragraph, the statement that the working repair leaves the
+graph, or the width-ceiling limitation. Those are the three places where the paper says
+something against its own interest, and they are what make the rest credible.
+
+For an arXiv preprint the present length is acceptable; the cut is for a conference version, and
+should be made against a specific venue's limit rather than in the abstract.
