@@ -67,3 +67,20 @@ Every posterior sums to one along its variable axis at every iteration (maximum 
 $1.2\times10^{-7}$ in float32), the logits are finite, and a single batch can be overfitted to
 near-zero loss. The numeric worked example of \Cref{app:worked-example} reproduces an
 independently derived reference digit for digit.
+
+\paragraph{Reproducing these numbers.}
+Every figure and every table in this paper is generated from committed run records by one
+script, and no number in either is typed by hand; the same script regenerates them from the
+repository at any commit. Each record carries the full configuration of its cell, its validation
+and diagnostic traces, the machine it ran on and the commit that produced it. That last field is
+not bookkeeping: it is what identified the device on which our earlier result reproduces exactly
+(\Cref{sec:exp-repro}), and without it we would have concluded that a refactor had changed the
+mathematics.
+
+Two warnings for anyone comparing against these numbers. Perplexities from the undamped
+configurations of this model are not stable to the last bit --- across seeds they move by up to
+$130$, and across GPU models by $215$ --- so a difference of tens of perplexity in that region is
+not evidence of anything; we report a seed count and a device for every result and recommend the
+same. And a causal PT number is meaningless without its parameterisation: the same probe of the
+same trained model class gives opposite answers about whether it learns dependency structure
+depending on the head temperature and the arc-score rank (\Cref{app:interpretability}).
