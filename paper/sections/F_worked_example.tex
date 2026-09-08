@@ -185,10 +185,13 @@ The steep part covers exactly the distances the clipped table gives their own ar
 \paragraph{Prior against posterior.}
 Part~IV's contraction bound predicts that the divergence between a slot's predictive and observed
 beliefs is small on predictable tokens and grows with the surprisal of the word actually
-observed. Measured over 4{,}032 slots, the correlation is positive but weak
-($r = 0.16$), with mean divergence $1.98$ on the most predictable quartile of tokens against
-$2.58$ on the most surprising. The direction the theory predicts is there; its strength is not
-something the bound claims and we do not read one into it.
+observed. Measured over $4{,}032$ slots in each model, the direction the theory predicts is
+present in both and its strength separates them exactly as the attachment probe does: in the
+selected configuration the correlation is $r = 0.47$, with mean divergence $4.07$ on the most
+predictable quartile of tokens against $6.56$ on the most surprising, while in the earlier one
+it is $r = 0.16$, $1.98$ against $2.58$. The bound claims a direction and not a strength, so we
+read nothing into the magnitudes beyond the same conclusion the rest of this section reaches ---
+that the parameterisation decides how much of the predicted structure is there to find.
 
 The label lexicon above is from the $\nlab=32$ model, where $32$ labels over a $10{,}000$-word
 vocabulary give each label enough words to be readable. At $\nlab=96$ the same probe finds
