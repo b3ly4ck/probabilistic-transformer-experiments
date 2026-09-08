@@ -29,14 +29,24 @@ DEFAULT_OPTS=${DEFAULT_OPTS:-"--time=06:00:00 --exclude=ai_gpu32,ai_gpu33"}
 touch "$PENDING"
 
 while :; do
-  n_pending=$(grep -cve '^\s*$' "$PENDING" 2>/dev/null || echo 0)
-  if [ "$n_pending" -eq 0 ]; then
+  # `grep -c` prints 0 AND exits 1 on an empty file, so `|| echo 0` appended a second zero and
+  # the test below failed with "integer expression expected" -- the loop then fell through and
+  # submitted `head -1` of an empty file, i.e. an empty spec. Observed 2026-09-09: one job
+  # submitted with no arguments, which died on the sweep script's `set -u` without writing
+  # anything. Count without the fallback, and refuse to submit a blank line whatever the count.
+  n_pending=$(grep -cve '^\s*$' "$PENDING" 2>/dev/null)
+  n_pending=${n_pending:-0}
+  if [ "$n_pending" -eq 0 ] 2>/dev/null || [ -z "$n_pending" ]; then
     echo "$(date +%H:%M:%S) queue empty, exiting"
     exit 0
   fi
   mine=$(squeue -u "$USER" -h -o "%j" 2>/dev/null | grep -vc "^${FOREIGN}$" || true)
   if [ "${mine:-99}" -lt "$MAXJOBS" ]; then
     line=$(grep -ve '^\s*$' "$PENDING" | head -1)
+    if [ -z "$line" ]; then
+      echo "$(date +%H:%M:%S) queue empty, exiting"
+      exit 0
+    fi
     case "$line" in
       "!"*) cmd="${line#\! }" ;;
       *)    cmd="sbatch $DEFAULT_OPTS experiments/sweep.slurm $line" ;;
