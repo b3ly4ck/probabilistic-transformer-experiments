@@ -865,9 +865,11 @@ def plot_scaling(
     if hline is not None:
         value, hlabel = hline
         ax.axhline(value, color="0.35", linestyle=(0, (1, 2)), linewidth=1.2)
+        # Left-aligned, because the legend sits top-right in these plots and a right-aligned
+        # reference label collides with its first entry.
         ax.annotate(
-            hlabel, xy=(0.99, value), xycoords=("axes fraction", "data"),
-            ha="right", va="bottom", fontsize=8, color="0.25",
+            hlabel, xy=(0.01, value), xycoords=("axes fraction", "data"),
+            ha="left", va="bottom", fontsize=8, color="0.25",
         )
 
     ax.set_xscale("log")
@@ -880,7 +882,10 @@ def plot_scaling(
         ax.set_title(title)
     ax.grid(True, which="both", linewidth=0.4, alpha=0.4)
     if ax.get_legend_handles_labels()[0]:
-        ax.legend(fontsize=8, frameon=False)
+        # Framed and placed away from the reference line: with five series the legend is large
+        # enough that an unframed one sitting on top of the curves is unreadable.
+        ax.legend(fontsize=8, frameon=True, framealpha=0.92, edgecolor="0.8",
+                  loc="upper right", borderpad=0.5)
     return _save(fig, out_path, dpi)
 
 
