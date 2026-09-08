@@ -694,7 +694,7 @@ The ladder spans **148.1 perplexity**; every delta below is a share of that.
 | P      | 128 |   4 | mfvi    |   3 | 223.800 |  9.400 |   32896 |    1024 |
 | W      |  32 |   4 | exact   |   3 | 253.000 |  1.700 |    2080 |    1182 |
 | W      |  32 |   4 | mfvi    |   3 | 250.500 |  7.000 |    2080 |   22665 |
-| W      |  64 |   1 | exact   |   1 | 476.000 |  0.000 |  131328 |     804 |
+| W      |  64 |   1 | exact   |   3 | 460.100 | 14.100 |  131328 |     956 |
 | W      |  64 |   1 | mfvi    |   3 | 697.300 |  2.200 |  131328 |     700 |
 
 Family **W** holds the total label width fixed and is what tests the note's prediction that factoring buys nothing under the mean-field readout. Family **P** walks an iso-parameter diagonal, where `d` rises with `K`, so a gain there is a gain from *width at fixed arc budget* and not from factoring as such. `swapped` is the same trained weights scored under the other readout.
