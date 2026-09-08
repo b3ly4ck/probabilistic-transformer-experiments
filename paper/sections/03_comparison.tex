@@ -10,8 +10,11 @@
 \citet{wu2023probabilistic} show that MFVI in the encoder model reproduces the computation graph
 of a transformer encoder, with the posterior over dependency heads playing the role of
 self-attention. We ask the same question of the causal model. The correspondence turns out to be
-\emph{closer} than in the encoder, and the three places where it fails are what the experiments
-of \Cref{sec:experiments} measure.
+\emph{closer} than in the encoder --- the factor of two from symmetrisation disappears, and no
+symmetry assumption on the arc scores is needed --- and where it stops holding is where
+\Cref{sec:experiments} looks. This section identifies ten independent differences from a causal
+transformer and singles out the one that is not merely a difference but a mis-calibration:
+the temperature of an attention whose query is a probability vector.
 
 \subsection{Tensor form}
 \label{sec:tensor-form}
