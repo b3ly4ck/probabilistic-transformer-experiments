@@ -520,7 +520,7 @@ otherwise ordinary decoder (S1), once as the benefit of restoring it inside the 
 \textbf{three of the ten differences are free}, and two of those three are the ones this model
 class is most often criticised for. Tying the value to the key, which the factor graph forces
 because both roles are the same message through the same arc factor, costs $-0.6$; relative
-positions cost $-0.4$; removing the query projection costs $1.9$. Layer normalisation costs nothing
+positions cost $-1.0$; removing the query projection costs $1.9$. Layer normalisation costs nothing
 measurable here once each rung is tuned --- at a single learning rate it appeared to cost
 $18.5$, and that was the rate, not the switch. What does cost is the feed-forward block
 ($15.1$) and weight sharing ($12.5$), neither of which is specific to this construction.
@@ -554,16 +554,23 @@ geometry without changing the temperature that geometry requires, and the intera
 two differences lands on one of them. The real decoder, which is simplex-constrained and has a
 temperature suited to it, reaches $\LadderTopVal$. \Cref{fig:ladder} draws the cumulative
 ladder, where that interaction is visible as a spike the last flip partly undoes.
-\textbf{Why the S1 column is the one we read.} Every S1 rung's best learning rate is interior to
-the four we swept, so each is a tuned number. Six of the ten S2 rungs are instead best at the
-highest rate they have been run at, and so is the all-PT anchor they are measured against, whose
-perplexity falls monotonically across the whole sweep ($687.2$, $395.5$, $354.5$, $296.7$). An
-optimum at the boundary of a grid is a lower bound on the tuning, not a tuned number, so the S2
-deltas are not yet measurements and we do not draw conclusions from them; what the column can
-already say is which restorations move the all-PT rung at all. Extending the sweep upwards is
-the obvious next step and we have not run it.
-\TODO{the S2 column at a learning-rate grid whose optimum is interior, and the three ladder
-rungs still missing their top rate.}
+\textbf{The S2 column says something S1 cannot.} Restoring \emph{any} single transformer
+property inside the all-PT rung makes it worse. The mildest, weight sharing, costs $2.1$; four
+of them --- layer normalisation, the feed-forward block, an unconstrained state and the residual
+stream --- cost between $205$ and $390$, the last landing on the unigram. The construction is
+not a collection of independent choices that happen to have been made together: several of its
+parts hold each other up, and removing one in isolation is not a step towards a transformer but
+a broken model. That is the strongest evidence here for reading the causal PT as a package
+rather than as a transformer with substitutions, and it is invisible from S1, where the same
+properties are free or nearly so.
+
+One caveat, and it bounds the magnitudes rather than the sign. Six of the ten S2 rungs and the
+anchor they are measured against are all best at $3\times10^{-2}$, the top of the swept grid,
+and the anchor falls monotonically across the whole sweep ($687.2$, $395.5$, $354.5$, $296.7$)
+without turning over. An optimum at a boundary is a lower bound on the tuning, so the S2 numbers
+are provisional in size though not in direction. Every S1 rung's optimum is interior, which is
+why that column and not this one carries the per-switch attributions.
+\TODO{the S2 magnitudes at a learning-rate grid whose optimum is interior.}
 
 \begin{figure}[t]
 \centering
