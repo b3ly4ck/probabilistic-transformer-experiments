@@ -94,6 +94,10 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | ---------- | ----------: | -----------: | -----: | ------: | ------: | -------: | --------: | -------------------: | -----------: | --------: | --------: |
 | pt         |         160 |            4 |     32 |   0.020 | 255.663 |  234.663 |   245.198 |                 4160 |       334160 |     15000 |         8 |
 | pt         |         160 |            4 |     64 |   0.020 | 230.453 |  210.824 |   205.675 |                 8320 |       658320 |     14500 |         8 |
+| pt         |         160 |            4 |     96 |   0.020 | 217.558 |  197.353 |   175.809 |                18624 |       988624 |     15000 |        12 |
+| pt         |         160 |            4 |    128 |   0.020 | 212.768 |  193.988 |   179.669 |                33024 |      1323024 |     15000 |        16 |
+| pt         |         160 |            4 |    192 |   0.020 | 208.021 |  190.023 |   160.613 |                74112 |      2004112 |     15000 |        24 |
+| pt         |         160 |            4 |    256 |   0.020 | 208.754 |  189.022 |   128.639 |               131584 |      2701584 |     10500 |        32 |
 
 **Fitted power-law exponents on the non-embedding axis**
 
@@ -103,7 +107,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            |   9 | -0.087 (r2 0.87) |          5 | -0.107 (r2 0.95) |
 | causal PT, source constants   |   4 | -0.061 (r2 0.84) |          4 | -0.061 (r2 0.84) |
 | causal PT, standardised temp. |   6 | -0.082 (r2 0.98) |          6 | -0.082 (r2 0.98) |
-| causal PT, + low rank         |   2 | --               |          2 | --               |
+| causal PT, + low rank         |   5 | -0.069 (r2 0.89) |          5 | -0.069 (r2 0.89) |
 
 **Fitted power-law exponents on the total axis**
 
@@ -113,7 +117,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            |   9 | -0.158 (r2 0.86) |          0 | --      |
 | causal PT, source constants   |   4 | -0.119 (r2 0.83) |          0 | --      |
 | causal PT, standardised temp. |   6 | -0.158 (r2 0.98) |          0 | --      |
-| causal PT, + low rank         |   2 | --               |          0 | --      |
+| causal PT, + low rank         |   5 | -0.118 (r2 0.96) |          0 | --      |
 
 ## Width transfer (Experiment 4)
 
@@ -479,10 +483,10 @@ _grid empty_
 | anchor | val | test | non-emb | best lr |
 |---|---|---|---|---|
 | all-transformer | 129.2 | 118.2 | 200,064 | 0.001 |
-| all-PT | 687.2 | 642.9 | 8,272 | 0.001 |
+| all-PT | 395.5 | 358.8 | 8,272 | 0.003 |
 
 
-The ladder spans **557.9 perplexity**; every delta below is a share of that.
+The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 
 ### S1 -- cost of one PT property in an otherwise ordinary decoder
@@ -494,7 +498,7 @@ The ladder spans **557.9 perplexity**; every delta below is a share of that.
 | position        | 128.900 |          -0.400 |   0.001 |  200128 |
 | attn_query_proj | 131.100 |           1.900 |   0.001 |  183424 |
 | residual        | 136.700 |           7.500 |   0.001 |  200064 |
-| weight_sharing  | 144.200 |          14.900 |   0.001 |   50112 |
+| weight_sharing  | 141.800 |          12.500 |   0.003 |   50112 |
 | ffn             | 144.400 |          15.100 |   0.001 |   67200 |
 | state           | 693.500 |         564.300 |   0.003 |  200064 |
 
@@ -502,25 +506,29 @@ The ladder spans **557.9 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
-| position        | 530.600 |         156.600 |   0.001 |    8256 |
-| attn_query_proj | 564.100 |         123.000 |   0.001 |   12432 |
-| norm            | 686.800 |           0.400 |   0.001 |    8528 |
-| ffn             | 686.900 |           0.300 |   0.001 |   41360 |
-| attn_out_proj   | 686.900 |           0.200 |   0.001 |   12432 |
-| weight_sharing  | 687.200 |           0.000 |   0.001 |   20800 |
-| readout         | 688.800 |          -1.600 |   0.001 |    4176 |
+| attn_query_proj | 473.400 |         -77.900 |   0.003 |   12432 |
+| position        | 530.600 |        -135.100 |   0.001 |    8256 |
+| norm            | 560.100 |        -164.600 |   0.003 |    8528 |
+| state           | 686.800 |        -291.300 |   0.001 |    8272 |
+| ffn             | 686.900 |        -291.400 |   0.001 |   41360 |
+| attn_out_proj   | 686.900 |        -291.400 |   0.001 |   12432 |
+| residual        | 687.100 |        -291.600 |   0.001 |    8272 |
+| weight_sharing  | 687.200 |        -291.700 |   0.001 |   20800 |
+| readout         | 688.800 |        -293.300 |   0.001 |    4176 |
 
 ### L -- the cumulative ladder, transformer to PT
 
 `step` is the change from the previous rung, so the column locates the cliff.
 
-| rung | switch flipped |     val |    step | best lr | non-emb |
-| ---: | -------------- | ------: | ------: | ------: | ------: |
-|    1 | weight_sharing | 144.100 |  14.800 |   0.001 |   50112 |
-|    3 | norm           | 157.100 |  13.100 |   0.001 |   49744 |
-|    6 | attn_value     | 158.600 |   1.500 |   0.001 |   37264 |
-|    7 | ffn            | 213.300 |  54.700 |   0.001 |    4176 |
-|    9 | state          | 688.800 | 475.500 |   0.001 |    4176 |
+| rung | switch flipped  |     val |    step | best lr | non-emb |
+| ---: | --------------- | ------: | ------: | ------: | ------: |
+|    1 | weight_sharing  | 144.100 |  14.800 |   0.001 |   50112 |
+|    3 | norm            | 157.100 |  13.100 |   0.001 |   49744 |
+|    4 | attn_out_proj   | 151.600 |  -5.500 |   0.001 |   45584 |
+|    5 | attn_query_proj | 156.100 |   4.500 |   0.001 |   41424 |
+|    6 | attn_value      | 158.600 |   2.500 |   0.001 |   37264 |
+|    7 | ffn             | 213.300 |  54.700 |   0.001 |    4176 |
+|    9 | state           | 688.800 | 475.500 |   0.001 |    4176 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -533,3 +541,17 @@ _grid empty_
 ## WikiText-2 transfer (Experiment 8)
 
 _not run yet_
+
+
+## Matched-budget comparison
+
+| config      | non-emb |      PT | transformer | ratio |  looped | ratio  |
+| ----------- | ------: | ------: | ----------: | ----: | ------: | -----: |
+| d=32, r=8   |    4160 | 255.700 |          -- |    -- | 204.700 |  1.250 |
+| d=64, r=8   |    8320 | 230.500 |          -- |    -- | 178.500 |  1.290 |
+| d=96, r=12  |   18624 | 217.600 |     178.500 | 1.220 | 157.600 |  1.380 |
+| d=128, r=16 |   33024 | 212.800 |     155.900 | 1.370 | 147.700 |  1.440 |
+| d=192, r=24 |   74112 | 208.000 |     139.600 | 1.490 | 139.100 |  1.500 |
+| d=256, r=32 |  131584 | 208.800 |     132.600 | 1.570 | 136.200 |  1.530 |
+
+Baselines are interpolated in log-log space at the causal PT's own parameter count, and left blank outside the range where they were measured -- extrapolating a baseline into a region it was not run in would be inventing the comparison.

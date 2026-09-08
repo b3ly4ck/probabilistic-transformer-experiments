@@ -749,6 +749,65 @@ def _pm(vals) -> str:
     return f"{m:.1f} $\\pm$ {sd:.1f}"
 
 
+def _loginterp(table, x):
+    """Log-log interpolation of a baseline curve at a parameter count.
+
+    The baselines were run at their own widths, so almost never at exactly a causal PT's
+    parameter count. Interpolating the baseline curve in log-log space -- where these curves are
+    close to straight -- is what lets the comparison be made at the PT's budget rather than at
+    whichever baseline point happens to be nearest, which would silently favour one side.
+    Returns None outside the measured range: extrapolating a baseline into a region where it was
+    not run would be inventing the comparison.
+    """
+    import bisect, math
+    xs = [a for a, _ in table]
+    i = bisect.bisect_left(xs, x)
+    if i == 0 or i >= len(xs):
+        return None
+    (x0, y0), (x1, y1) = table[i - 1], table[i]
+    t = (math.log(x) - math.log(x0)) / (math.log(x1) - math.log(x0))
+    return math.exp(math.log(y0) + t * (math.log(y1) - math.log(y0)))
+
+
+def emit_matched_budget(out: Path, md: List[str]) -> None:
+    """The matched-budget comparison, at each causal PT point, against both baselines."""
+    base = load("baselines")
+    low = load("pt_lowrank")
+    if not base or not low:
+        _placeholder(out / "table_matched.tex", "matched-budget comparison not yet complete")
+        return
+    bw = best_by([r for r in base if get_path(r, "cell.tags.family") == "width"],
+                 ["cell.model", "cell.n_embd"], metric="val_ppl")
+    curves = {m: sorted((r["params"]["non_embedding"], r["val_ppl"])
+                        for r in bw if r["cell"]["model"] == m)
+              for m in ("gpt", "looped")}
+    pts = best_by(low, ["cell.d", "cell.rank"], metric="val_ppl")
+    table, mdrows = [], []
+    for r in sorted(pts, key=lambda r: r["params"]["non_embedding"]):
+        n, v = r["params"]["non_embedding"], r["val_ppl"]
+        g, l = _loginterp(curves["gpt"], n), _loginterp(curves["looped"], n)
+        table.append([f"$\\nlab={r['cell']['d']}$, $\\krank={r['cell']['rank']}$", n,
+                      f"{v:.1f}",
+                      f"{g:.1f}" if g else "---", f"{v / g:.2f}" if g else "---",
+                      f"{l:.1f}" if l else "---", f"{v / l:.2f}" if l else "---"])
+        mdrows.append({"config": f"d={r['cell']['d']}, r={r['cell']['rank']}", "non-emb": n,
+                       "PT": round(v, 1),
+                       "transformer": round(g, 1) if g else None,
+                       "ratio": round(v / g, 2) if g else None,
+                       "looped": round(l, 1) if l else None,
+                       "ratio ": round(v / l, 2) if l else None})
+    _latex_table(out / "table_matched.tex",
+                 ["causal PT", "non-emb.", "val ppl", "transformer", "ratio", "looped", "ratio"],
+                 table, "lrrrrrr")
+    md.append("\n## Matched-budget comparison\n")
+    md.append(markdown_table(mdrows, ["config", "non-emb", "PT", "transformer", "ratio",
+                                      "looped", "ratio "]))
+    md.append("\nBaselines are interpolated in log-log space at the causal PT's own parameter "
+              "count, and left blank outside the range where they were measured -- "
+              "extrapolating a baseline into a region it was not run in would be inventing the "
+              "comparison.\n")
+
+
 def emit_grid_tables(out: Path) -> None:
     """Emit the per-grid detail tables that Appendix G inputs.
 
@@ -902,6 +961,7 @@ def main() -> None:
     try:
         emit_main_table(out)
         emit_grid_tables(out)
+        emit_matched_budget(out, md)
     except Exception:
         import traceback
         traceback.print_exc()
