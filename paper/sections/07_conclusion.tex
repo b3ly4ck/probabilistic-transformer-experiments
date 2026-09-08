@@ -10,5 +10,9 @@ field by a directed chain of conditional random fields in which the prefix enter
 frozen condition and the anti-causal term is never formed; and we obtain a language-model head
 by unclamping a variable the model already had, which makes tied embeddings, the output bias
 and a mixture-of-softmaxes readout consequences of the construction rather than additions to it.
-\TODO{one sentence of measured result, written to the numbers.} We hope this extends the
-probabilistic account of contextual representation from analysis to generation.
+Empirically the model trains, reaches roughly $1.6$ times a causal transformer's perplexity at a
+comparable budget, and learns label variables that carry recognisable syntactic categories
+without supervision --- while its head variables, the ones the dependency reading rests on, do
+not learn attachment. We hope this extends the probabilistic account of contextual representation
+from analysis to generation, and that saying where it fails is as useful as saying where it
+holds.
