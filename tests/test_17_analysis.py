@@ -397,7 +397,11 @@ def test_fit_power_law_recovers_a_known_exponent():
     assert law.intercept == pytest.approx(math.log10(3.0), abs=1e-6)
     assert law.r2 == pytest.approx(1.0, abs=1e-6)
     assert law.predict(1e4) == pytest.approx(3.0 * 1e4 ** (-0.5), rel=1e-9)
-    assert "slope -0.500" in law.label()
+    # The legend qualifies the exponent as an own-range fit: on this project's data the same
+    # curve gives a different exponent on a different window, so a bare "slope" in a legend
+    # invites exactly the comparison the paper refuses to make.
+    assert "-0.500" in law.label()
+    assert "own range" in law.label()
 
 
 def test_fit_power_law_needs_three_distinct_points():
