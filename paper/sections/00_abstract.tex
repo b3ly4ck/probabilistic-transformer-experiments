@@ -1,18 +1,15 @@
-% Wu & Tu's abstract is a single paragraph of about 150 words, and it ends on the "we hope this
-% informs transformers" note rather than on a number. Match both. Written last; the version
-% below fixes the claim so the rest of the paper has a target.
+% Wu & Tu's abstract is a single paragraph of about 150 words and ends on the framing rather
+% than on a number. Match both. Written to the measured result; revise it, do not extend it.
 
 The probabilistic transformer of \citet{wu2023probabilistic} models contextual word
 representation as posterior inference in a conditional random field over dependency structure,
-and its mean-field inference procedure turns out to resemble a transformer encoder. That model
-is an encoder only. In this work we derive its autoregressive counterpart. We show that
-causality, a single global energy function and contextuality cannot hold simultaneously, and
-resolve the conflict with a directed chain of conditional random fields in which the prefix
-enters each step as a frozen condition. We further obtain a language-model head without adding
-any parameter outside the factor graph, by promoting the word variable from observed to latent;
-tied input and output embeddings then follow as a consequence rather than a design choice.
-Because the per-position subgraph is a tree, the vocabulary readout is available in closed form.
-Experiments on \TODO{corpora} compare our model against a standard causal transformer and
-against a looped transformer, the latter isolating the effect of syntactic structure from that
-of weight sharing. \TODO{one sentence of result} We hope that this work helps extend the
-probabilistic account of contextual representation to generation.
+and its mean-field inference procedure turns out to resemble a transformer encoder. That model is
+an encoder only. We derive its autoregressive counterpart. Causality, a single global energy and
+contextuality cannot hold together, so we replace the single field by a directed chain of
+conditional random fields in which the prefix enters each step as a frozen condition and the
+anti-causal term is never formed. Promoting the word from an observed constant to a latent
+variable then yields a language-model head with no parameter outside the factor graph; tied
+embeddings, the output bias and a mixture-of-softmaxes readout follow as consequences, the last
+in closed form because the per-position subgraph is a tree. Empirically we find the model's
+sensitivity to its own width is not diffuse but has a mechanism, and that correcting it restores
+the model's scaling exponent to a transformer's.
