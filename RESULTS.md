@@ -489,9 +489,9 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  32 |  64 |    0.100 | False | normal    |   3 |  254.100 |   4.400 |      0.976 |      1.480 |
 |  32 |  64 |    0.100 | True  | normal    |   3 |  246.600 |   9.800 |      1.000 |      0.250 |
 |  32 |  64 |    0.500 | False | normal    |   3 |  248.400 |   3.500 |      0.942 |      1.190 |
-|  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 |  12.200 |      0.978 |      0.276 |
+|  32 |  64 |    0.500 | True  | normal    |   3 |  250.300 |   9.900 |      0.973 |      0.267 |
 |  64 |   0 |       -- | True  | normal    |   2 |  460.500 | 344.600 |      0.000 |      0.000 |
-|  64 |  64 |    0.020 | True  | normal    |   1 |  233.300 |   0.000 |      1.000 |      0.199 |
+|  64 |  64 |    0.020 | True  | normal    |   2 |  231.600 |   2.400 |      1.000 |      0.220 |
 |  64 |  64 |    0.100 | False | normal    |   1 |  227.700 |   0.000 |      0.938 |      1.524 |
 |  64 |  64 |    0.100 | True  | normal    |   1 |  235.200 |   0.000 |      1.000 |      0.202 |
 |  64 |  64 |    0.500 | True  | normal    |   1 |  240.600 |   0.000 |      0.999 |      0.242 |
@@ -522,6 +522,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | cell.name | val_ppl | val_ppl_final | test_ppl | train_ppl | diag_final.msg_over_unary | ablation_kl | seconds |
 | --------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
 | T_iters1  | 241.306 |       241.487 |  220.176 |   215.161 |                     1.229 |       3.015 | 347.000 |
+| T_tau1    | 242.105 |       242.105 |  221.038 |   217.676 |                     1.205 |       3.176 | 447.700 |
 
 ### Grid G -- the relative positional encoding
 
@@ -552,6 +553,7 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | R_d48_s1            | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
 | R_record_s2         | mfvi         | 259.734 | exact        |    15555.806 |  236.412 |     14517.776 |
 | T_iters1            | mfvi         | 241.306 | exact        |     2675.675 |  220.176 |      2461.938 |
+| T_tau1              | mfvi         | 242.105 | exact        |     2645.932 |  221.038 |      2486.356 |
 
 ## The switch ladder (Experiment 6)
 
@@ -599,18 +601,18 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 `step` is the change from the previous rung, so the column locates the cliff.
 
-| rung | switch flipped  |     val |     step | best lr | non-emb |
-| ---: | --------------- | ------: | -------: | ------: | ------: |
-|    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
-|    2 | position        | 142.900 |   -1.200 |   0.001 |   50128 |
-|    3 | norm            | 139.500 |   -3.400 |   0.003 |   49744 |
-|    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
-|    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
-|    6 | attn_value      | 156.900 |   10.600 |   0.010 |   37264 |
-|    7 | ffn             | 213.300 |   56.300 |   0.001 |    4176 |
-|    8 | residual        | 206.500 |   -6.800 |   0.003 |    4176 |
-|    9 | state           | 537.500 |  331.000 |   0.010 |    4176 |
-|   10 | readout         | 395.500 | -142.000 |   0.003 |    8272 |
+| rung | switch flipped  |     val |    step | best lr | non-emb |
+| ---: | --------------- | ------: | ------: | ------: | ------: |
+|    1 | weight_sharing  | 144.100 |  14.800 |   0.001 |   50112 |
+|    2 | position        | 142.900 |  -1.200 |   0.001 |   50128 |
+|    3 | norm            | 139.500 |  -3.400 |   0.003 |   49744 |
+|    4 | attn_out_proj   | 145.200 |   5.700 |   0.003 |   45584 |
+|    5 | attn_query_proj | 146.300 |   1.100 |   0.003 |   41424 |
+|    6 | attn_value      | 156.900 |  10.600 |   0.010 |   37264 |
+|    7 | ffn             | 213.300 |  56.300 |   0.001 |    4176 |
+|    8 | residual        | 206.500 |  -6.800 |   0.003 |    4176 |
+|    9 | state           | 424.600 | 218.100 |   0.030 |    4176 |
+|   10 | readout         | 395.500 | -29.100 |   0.003 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 

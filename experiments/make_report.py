@@ -536,9 +536,22 @@ def section_repro(md: List[str], out: Path) -> None:
             md.append(f"\n`alpha_Z = {a}`: **{mean:.2f} +- {sd:.2f}** over n={len(vals)} "
                       f"(min {min(vals):.2f}, max {max(vals):.2f})\n")
     if rows:
-        plot_traces(rows, out / "fig_repro_traces.png",
-                    label=lambda r: f"alpha_Z={get_path(r,'cell.alpha_Z')} seed {get_path(r,'cell.seed')}",
-                    title=None)
+        lab = (lambda r: f"alpha_Z={get_path(r,'cell.alpha_Z')} seed {get_path(r,'cell.seed')}")
+        plot_traces(rows, out / "fig_repro_traces.png", label=lab, title=None)
+        # A second, plainer version for the paper. Twelve series on twin axes is the right
+        # figure for a report that is being read for the mechanism; for one column of a
+        # two-column paper the six perplexity traces alone make the point -- three undamped
+        # seeds fanning out and three damped ones on top of each other -- and the message/unary
+        # diagnostic has its own figure later in the same section.
+        # Sorted so the legend lists the three undamped runs as a block and then the three
+        # damped ones: the figure's whole content is that one block fans out and the other does
+        # not, and an interleaved legend hides exactly that.
+        ordered = sorted(rows, key=lambda r: (-(get_path(r, "cell.alpha_Z") or 0),
+                                              get_path(r, "cell.seed") or 0))
+        plot_traces(ordered, out / "fig_repro_seeds.png", diag=None, title=None,
+                    figsize=(6.0, 3.4),
+                    label=lambda r: ("undamped" if (get_path(r, "cell.alpha_Z") or 0) >= 1.0
+                                     else "damped") + f", seed {get_path(r, 'cell.seed')}")
 
 
 def section_switches(md: List[str], out: Path) -> None:
