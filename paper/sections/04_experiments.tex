@@ -263,12 +263,17 @@ width axis against the attention temperature rule, all undamped. Hatched cells d
 \Cref{sec:temperature} predicted that Wu \& Tu's head temperature $\lamH = 1/\nlab$, being
 calibrated for the uniform-belief limit, would make the label update's feedback loop worse as
 the model is widened, so that any damping of that update must be strengthened with $\nlab$.
-\Cref{fig:width}(a) is that prediction measured: the argmin of the damping step $\alpha_Z$
-falls from $0.25$ at $\nlab=16$ to $0.125$ at $\nlab=24$ and $\nlab=64$, and at
-$\nlab \in \{32, 96, 128\}$ the undamped model sits exactly on the unigram baseline with the
-collapse signature the mechanism predicts --- the message runs away (msg/unary $1.7 \to 16.7$)
-and the label beliefs then go flat (sharpness $1.09 \to 5.57 \to 1.34$, prefix-ablation KL
-exactly zero).
+\Cref{fig:width}(a) is that prediction measured, and it is worth being
+precise about how much of it the grid resolves. The undamped model is the worst cell at every
+width, and at $\nlab \in \{32, 96, 128\}$ it sits on the unigram baseline ($700.7$, $698.1$ and
+$701.4$ against $688.8$) with the collapse signature the mechanism predicts: the message
+overwhelms the unary term and the label beliefs go flat, with a prefix-ablation KL of exactly
+zero --- the model's prediction at slot $t$ stops depending on the prefix at all. But the best
+damping sits at the smallest value we swept, $\alpha_Z = 0.125$, at five of the seven widths,
+so the grid \emph{bounds} $\alpha^\star(\nlab)$ rather than locating it. What it establishes is
+that damping is necessary at the source temperature and that the necessity does not lift as
+$\nlab$ grows; the functional form of $\alpha^\star(\nlab)$ would need a sweep that goes below
+$0.125$, which we did not run.
 
 The consequence is visible in the ladders of \Cref{tab:main}. Carrying the constants tuned at
 $\nlab = 32$ across the width axis --- which is what one does in the absence of a rule ---
