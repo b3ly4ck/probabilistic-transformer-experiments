@@ -18,10 +18,32 @@ Euclidean norms range over `[1/sqrt(d), 1]`. At initialisation both beliefs are 
 logit. **The temperature is calibrated for a limit the model leaves within a few hundred steps,
 and the error is linear in the width.** Correcting it (standardising the head logits over the
 head domain) revives widths that sit exactly on the unigram under the source parameterisation,
-and restores the model's scaling exponent to a transformer's: fitted power laws give -0.086 for
-a causal transformer, -0.087 for a Looped one, **-0.082 for the corrected causal PT** and -0.061
-for the same model with the constants carried across widths unchanged. What remains is a
-vertical offset of about 1.6x, against 2.17x in the 2026-08 report.
+and roughly doubles the usable width. What remains is a vertical offset of about 1.5x, against
+2.17x in the 2026-08 report.
+
+**Correction, 2026-09-08 evening — the scaling claim above was wrong twice, and is now
+measured a third way.** The first version read the exponents off each curve's *own* range
+(-0.086 transformer, -0.087 looped, -0.090 corrected PT) and concluded the correction had
+restored a transformer's exponent. It had not: those ranges differ by more than an order of
+magnitude and the baselines extend into the regime where this corpus, not the parameter count,
+binds. The second version fixed a 1.3e4-1.3e5 window and concluded PT scales *like* a looped
+transformer. That was also wrong -- the window silently stopped being one all four curves were
+measured on, and comparing "sharing costs X" on one window with "structure costs Y" on another
+is not a decomposition.
+
+What is measured now: **transformer, looped and low-rank causal PT share the window
+13k-148k non-embedding parameters, where their exponents are -0.175, -0.068 and -0.045.** Four
+fifths of the transformer-to-PT gap opens with the weight sharing and one fifth with the
+structure; the ordering holds in all five pairwise comparisons on their own shared ranges and
+survives leave-one-out wherever there are enough points to compute it. The causal PT does *not*
+scale like a looped transformer -- it is shallower than one.
+
+The lesson generalised beyond this number: **fitted exponents on this corpus are strongly
+window-dependent** (the looped transformer is -0.042 over the transformer's range and -0.130
+over the causal PT's, from the same runs), so no exponent here means anything without its
+window. `experiments/make_report.py` now emits every headline number the paper quotes as a
+LaTeX macro, so prose cannot drift from the table beside it; the eight numbers that had already
+drifted are listed in `paper/PAPER_STATUS.md`.
 
 **The methodological finding, which changes how earlier numbers must be read.** The 2026-08
 record configuration has a **seed standard deviation of 130 perplexity** (462.4 +- 130.2 over
