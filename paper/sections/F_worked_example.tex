@@ -3,17 +3,87 @@
 
 % Wu & Tu's Appendix F holds case studies of the dependency structures their model infers. Ours
 % holds the numeric example, which serves the same purpose: showing the reader what the model
-% actually computes rather than asserting that it computes it.
+% actually computes rather than asserting that it computes it. Every number below is asserted in
+% `tests/test_07_worked_example.py` against an independently derived reference, so the appendix
+% and the test suite cannot drift apart -- change one and the other fails.
 
-\TODO{reproduce \texttt{causal\_pt\_output\_note.pdf} \S5 --- $\Vocab = \{\textit{the},
-\textit{cat}, \textit{sat}, \textit{mat}\}$, $\nlab = 2$, one channel, both readout modes, with
-printed posteriors and logits at every step.}
+The example is small enough to check by hand and is worked through by an independent reference
+document, which is what makes reproducing it worth anything: these are not numbers this
+implementation produced and then enshrined.
 
-\NOTE{take the numbers from the test-suite output rather than retyping them, so the appendix and
-the tests cannot drift apart, and say in the caption that they agree with the independently
-derived reference.}
+\paragraph{Setting.}
+$\Vocab = \{\textit{the}, \textit{cat}, \textit{sat}, \textit{mat}\}$, two labels which we read
+as $\{\textsc{n}, \textsc{v}\}$, one channel, $\lamZ = \lamH = \lamW = 1$, a
+distance-insensitive arc score ($\clip = 0$), one inner round per observed slot and $\tau = 2$
+in predictive mode. The factors are
+%
+\[
+  \Sfac = \begin{pmatrix} 1.5 & -1.5 \\ 2 & -2 \\ -2 & 2 \\ 2 & -2 \end{pmatrix},\quad
+  \bfac = (1,0,0,0),\quad
+  \Tfac{} = \begin{pmatrix} 0 & 2 \\ 1 & 0 \end{pmatrix},\quad
+  \rfac{} = (0, 1.5).
+\]
+%
+The prefix is \emph{the cat sat} and the model is asked for the word at slot 4.
 
-\TODO{if space allows, add the analogue of Wu \& Tu's Appendix F proper: a case study of the
-dependency structures the causal model infers on real text. Their finding was that the induced
-structures are only partially consistent with human intuition --- reporting the same honestly is
-better than omitting the section.}
+\paragraph{Observed pass.}
+Each slot initialises from its own unary, $\QZ{}^{(0)} = \sigma(\Sfac_{w,\cdot})$, giving
+$(.953,.047)$, $(.982,.018)$ and $(.018,.982)$; one round of the head and label updates against
+the frozen prefix then gives the filtering marginals
+%
+\[
+  \qbar{1} = (.818,.182),\quad \qbar{2} = (.957,.043),\quad \qbar{3} = (.006,.994).
+\]
+%
+The third is the verb, and the model has found it. Contracting these into arc scores by
+\Cref{eq:contract} gives the cache the next slot reads,
+$\Bfac{}_{1,\cdot} = (.365,.818)$, $\Bfac{}_{2,\cdot} = (.085,.957)$,
+$\Bfac{}_{3,\cdot} = (1.987,.006)$ --- three numbers per position, and nothing else of the
+prefix survives.
+
+\paragraph{Predictive slot.}
+The word variable is unclamped, so it initialises from its own unary factor:
+$\QW{}^{(0)} = \sigma(\bfac) = (.475,.175,.175,.175)$, whence the query
+$\tilde{s} = (1.063,-1.063)$ and $\QZ{}^{(0)} = (.893,.107)$. This is the \textsc{[mask]}
+embedding, and it was not designed --- it is what the initialisation rule of every other
+variable produces for this one. Two rounds of the inner loop over the head domain
+$\{\textsc{root}, 1, 2, 3\}$:
+%
+\begin{center}\small
+\begin{tabular}{llll}
+\toprule
+round & attention logits $F$ & $\QH{}{}$ & $\QZ{}$ \\
+\midrule
+1 & $(.160,.413,.178,1.776)$ & $(.120,.154,.122,.604)$ & $(.951,.049)$ \\
+2 & $(.074,.387,.128,1.890)$ & $(.104,.143,.110,.642)$ & $(.956,.044)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+%
+The slot attends mostly to position 3, the verb, which is the head a noun object should choose.
+The word update then \emph{is} the output layer: logits
+$(2.368, 1.824, -1.824, 1.824)$ and
+%
+\[
+  \hat{p}(\Wv{4}) = (.460, .267, .007, .267)
+\]
+%
+over $(\textit{the},\textit{cat},\textit{sat},\textit{mat})$ --- the verb correctly almost
+excluded, and \emph{mat} and \emph{cat} tied because nothing in this two-label toy
+distinguishes two nouns.
+
+\paragraph{Prior against posterior, on one slot.}
+Clamping $\Wv{4} = \textit{mat}$ and running the observed step of the same slot sharpens the
+label belief --- entropy $0.180 \to 0.040$ nats --- and moves the attention on the verb from
+$.642$ to $.663$. That is the prior-to-posterior behaviour the construction predicts: observing
+the word makes the slot both more certain of its label and more sure of its head.
+
+\paragraph{The exact readout on the same slot.}
+Replacing the mean-field readout by \Cref{eq:exact-readout} on the identical parameters gives
+$\hat{p}(\Wv{4}) = (.365,.215,.206,.215)$. It is visibly flatter, and in particular it does not
+almost exclude the verb. This is the Jensen gap made concrete: the mean-field readout commits to
+a single soft label and then reads the vocabulary off it, while the exact readout mixes over
+labels, so a word compatible with a label the slot considers unlikely retains more mass. Which
+behaviour is preferable is an empirical question and \Cref{sec:exp3} is where we answer it; the
+example only shows that the two are genuinely different objects rather than two computations of
+one.
