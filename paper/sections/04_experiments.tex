@@ -161,7 +161,18 @@ At matched \emph{total} parameters the standard transformer wins everywhere. Thi
 into the experiment's falsification criterion before it ran, and it revises the framing of
 \Cref{tab:three-point}: at this scale weight sharing is not a handicap that the causal PT pays
 for structure, it is a saving --- which makes the causal-PT-versus-looped comparison the
-sharper one rather than the more forgiving one. \TODO{PT curve and the matched-budget reading}
+sharper one rather than the more forgiving one.
+
+Against those curves the causal PT sits above but \emph{parallel}. Fitting a power law to each
+Pareto envelope gives exponents $-0.086$ for the causal transformer and $-0.087$ for the looped
+one, against $-0.082$ for the causal PT once its head temperature is corrected --- and $-0.061$
+for the same model with the constants carried across widths unchanged, which is the ladder we
+would have run without \Cref{sec:exp-width}. \textbf{The correction restores the model's scaling
+exponent to the baselines' value; what remains is a vertical offset, not a divergence.} At its
+best measured point the causal PT reaches $219.8 \pm 4.2$ at $\nlab = 64$ (65{,}664 non-embedding
+parameters), against $144.8$ for a transformer at $50{,}880$ and $133.9$ at $113{,}184$ --- a
+factor of about $1.6$ at bracketing budgets, where the same comparison in our earlier work gave
+$2.17$.
 
 \begin{figure}[t]
 \centering
@@ -181,11 +192,17 @@ width axis against the attention temperature rule, all undamped. Hatched cells d
 calibrated for the uniform-belief limit, would make the label update's feedback loop worse as
 the model is widened, so that any damping of that update must be strengthened with $\nlab$.
 \Cref{fig:width}(a) is that prediction measured: the argmin of the damping step $\alpha_Z$
-falls from $0.25$ at $\nlab=16$ to $0.125$ at $\nlab=24$ and $\nlab=64$, and at $\nlab \in
-\{32, 96, 128\}$ the undamped model sits exactly on the unigram baseline with the collapse
-signature the mechanism predicts --- the message runs away (msg/unary $1.7 \to 16.7$) and the
-label beliefs then go flat (sharpness $1.09 \to 5.57 \to 1.34$, prefix-ablation KL exactly
-zero). \TODO{final numbers once grid A completes}
+falls from $0.25$ at $\nlab=16$ to $0.125$ at $\nlab=24$ and $\nlab=64$, and at
+$\nlab \in \{32, 96, 128\}$ the undamped model sits exactly on the unigram baseline with the
+collapse signature the mechanism predicts --- the message runs away (msg/unary $1.7 \to 16.7$)
+and the label beliefs then go flat (sharpness $1.09 \to 5.57 \to 1.34$, prefix-ablation KL
+exactly zero).
+
+The consequence is visible in the ladders of \Cref{tab:main}. Carrying the constants tuned at
+$\nlab = 32$ across the width axis --- which is what one does in the absence of a rule ---
+reproduces our earlier record at that width ($253.0 \pm 6.0$ against $250.7 \pm 2.3$) and then
+degrades, to $287.4 \pm 52.5$ at $\nlab=48$ and $470.0 \pm 160.7$ at $\nlab=64$. The means matter
+less than the standard deviations: the ladder does not gently worsen, it becomes unpredictable.
 
 \Cref{fig:mechanism} shows why, within a run, and it separates two failures that a
 final perplexity conflates: at $\nlab = 96$ the beliefs never leave the uniform point at all,
@@ -197,8 +214,42 @@ predicts, and only a within-run trace tells them apart.
 the softmax --- so that the attention pattern is invariant to the overall scale of the arc
 scores, and only their relative pattern selects --- revives widths that are entirely dead under
 the source temperature, \emph{with no damping at all}: at $\alpha_Z = 1$, $\nlab = 32$ goes from
-700.7 to $282.2 \pm 6.6$ over three seeds, and $\nlab = 96$ from 698.1 to 234.4. \TODO{finalise
-from the three-seed gain sweep}
+700.7 to $282.2 \pm 6.6$ over three seeds and $\nlab = 64$ from a collapse to $254.0 \pm 1.9$.
+Run as a full ladder at the baselines' budget it reaches $229.8 \pm 8.5$ at $\nlab = 48$ and
+$219.8 \pm 4.2$ at $\nlab = 64$, against $287.4 \pm 52.5$ and $470.0 \pm 160.7$ for the control.
+
+\textbf{The gain transfers; the width limit does not disappear.} Sweeping the standardisation
+gain over $\{1, 1.5, 2, 3, 4, 6\}$ at four widths with three seeds each, the argmin is $1$ at
+every width, and the working range is the same $[1,2]$ at every width --- which is what the
+mechanism predicts, since after standardisation the attention entropy depends on the gain and on
+the length of the head domain and not on $\nlab$ at all. Above the range the failure is sharp and
+reproducible rather than noisy: at $\nlab=32$, gain $3$ collapses on $3/3$ seeds
+($700.5 \pm 0.7$). But the correction does not remove the ceiling, it moves it: at
+$\nlab \in \{96, 128\}$ the rule ladder becomes unstable again ($372 \pm 277$, $509 \pm 187$,
+with one collapsed seed each). The usable width roughly doubles; it does not become unbounded,
+and we say so rather than reporting only the widths where it works.
+
+\textbf{Learning-rate transfer is not what changes.} We also ran the diagnostic that maximal
+update parametrisation is judged by \citep{yang2022tensor} and that \citet{kuang2026scaling}
+apply to the encoder: validation perplexity against learning rate at four widths, under both
+temperatures. The argmin moves by one step of a $2\times$ grid over an $8\times$ range of width
+in \emph{both} arms ($2\times10^{-2} \to 10^{-2}$ under the source temperature,
+$4\times10^{-2} \to 2\times10^{-2}$ under the standardised one). So the two results are about
+different things, and we do not claim ours as a substitute for theirs: what the temperature fixes
+is not where the optimal learning rate sits, but whether the model learns at all at a given
+width.
+
+\textbf{The Kruskal rank inverts the configuration.} The arc scores are decomposed as
+$\Tfac{c} = \Ufac{c}\Vfac{c}{}^{\!\top}$ with $\Ufac{c},\Vfac{c} \in \R^{\nlab\times\krank}$, and
+every configuration in this literature sets $\krank = \nlab$, which is the most expensive setting
+of the decomposition. It is also not the best one: at $\nlab = 96$, $\krank = 48$ gives
+$242.6 \pm 3.3$ against $\krank = 96$'s $275.6 \pm 27.1$ --- better perplexity at half the arc
+parameters and a fifth of the seed variance --- and $\krank = 12$ gives $257.8 \pm 4.5$ at
+18{,}624 non-embedding parameters, eight times smaller and still ahead of the best $\nlab = 32$
+configuration at a comparable budget. The reason is structural: the arc score reaches inference
+only contracted against a belief, $\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, so what
+is usable is its rank on the affine hull of the reachable beliefs, and those are measurably
+concentrated. \TODO{the low-rank ladder at full budget}
 
 \textbf{We report what this repair costs, because it is not free.} A query-dependent temperature
 is still a temperature, and $\lamH$ is a free per-variable message weight in the source, so
