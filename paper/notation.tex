@@ -59,3 +59,10 @@
 \newcommand{\softmax}{\operatorname{softmax}}
 \newcommand{\prefix}[1]{{<}#1}                   % "the prefix before position #1"
 \newcommand{\stopgrad}[1]{\left\lfloor #1 \right\rfloor}  % frozen condition: no gradient path
+
+% --- added while writing Section 2 ---
+\newcommand{\qbar}[1]{\bar{q}_{#1}}              % frozen filtering marginal of position #1
+\newcommand{\Bglob}{B'}                          % global-variable factor matrix (App. B.3.3)
+\newcommand{\ncomp}{K}                           % number of label components (factored labels)
+\newcommand{\ind}[1]{\mathbf{1}\!\left[#1\right]}  % indicator; \mathbb{1} is not in the ACL fonts
+\newcommand{\Hvar}[1]{H_{#1}}                    % the head-variable block at position #1

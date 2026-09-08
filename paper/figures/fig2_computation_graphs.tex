@@ -1,0 +1,74 @@
+% Figure 2 --- one layer of each of the three models, side by side.
+%
+% The analogue of Wu & Tu's Figure 3, which does the same for transformer / pre-LN / PT. Its
+% job is to make the ten differences of Section 3.4 visible rather than asserted, so the
+% *shading convention* is load-bearing: a shaded box is a learned map with no factor behind it.
+% Panel (c) must therefore contain no shaded boxes at all. Do not restyle one panel alone.
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={rectangle,draw,rounded corners=1.2pt,minimum height=5.2mm,minimum width=21mm,
+              inner sep=1.5pt,align=center,font=\scriptsize},
+  map/.style={box,fill=black!12},                 % learned map with no factor behind it
+  fac/.style={box,fill=white},                    % operation that is a message through a factor
+  op/.style={circle,draw,inner sep=0.6pt,font=\scriptsize},
+  fl/.style={-{Latex[length=1.4mm]},black!70,line width=0.35pt},
+  lbl/.style={font=\scriptsize\itshape,black!60},
+  node distance=3.6mm,
+]
+
+% ------------------------------------------------------------------ (a) transformer
+\begin{scope}
+  \node[lbl] (ha) at (0,5.55) {(a) causal transformer};
+  \node[box,draw=none] (ain) at (0,4.9) {$x_\ell$};
+  \node[map,below=of ain] (aln1) {LayerNorm};
+  \node[map,below=of aln1] (aatt) {masked attention\\{\tiny $W^Q,W^K,W^V,W^O$}};
+  \node[op,below=of aatt] (aadd1) {$+$};
+  \node[map,below=of aadd1] (aln2) {LayerNorm};
+  \node[map,below=of aln2] (affn) {feed-forward\\{\tiny $4d$ GELU}};
+  \node[op,below=of affn] (aadd2) {$+$};
+  \node[box,draw=none,below=of aadd2] (aout) {$x_{\ell+1}$};
+  \foreach \a/\b in {ain/aln1,aln1/aatt,aatt/aadd1,aadd1/aln2,aln2/affn,affn/aadd2,aadd2/aout}
+    \draw[fl] (\a) -- (\b);
+  \draw[fl] (ain.west) -- ++(-11mm,0) |- (aadd1.west);
+  \draw[fl] (aadd1.east) -- ++(11mm,0) |- (aadd2.east);
+  \node[lbl,align=center,below=1.5mm of aout] {$L$ blocks,\\distinct weights};
+\end{scope}
+
+% ------------------------------------------------------------------ (b) looped
+\begin{scope}[xshift=57mm]
+  \node[lbl] (hb) at (0,5.55) {(b) looped transformer};
+  \node[box,draw=none] (bin) at (0,4.9) {$x^{(t)}$};
+  \node[map,below=of bin] (bln1) {LayerNorm};
+  \node[map,below=of bln1] (batt) {masked attention\\{\tiny $W^Q,W^K,W^V,W^O$}};
+  \node[op,below=of batt] (badd1) {$+$};
+  \node[map,below=of badd1] (bln2) {LayerNorm};
+  \node[map,below=of bln2] (bffn) {feed-forward\\{\tiny $4d$ GELU}};
+  \node[op,below=of bffn] (badd2) {$+$};
+  \node[box,draw=none,below=of badd2] (bout) {$x^{(t+1)}$};
+  \foreach \a/\b in {bin/bln1,bln1/batt,batt/badd1,badd1/bln2,bln2/bffn,bffn/badd2,badd2/bout}
+    \draw[fl] (\a) -- (\b);
+  \draw[fl] (bin.west) -- ++(-11mm,0) |- (badd1.west);
+  \draw[fl] (badd1.east) -- ++(11mm,0) |- (badd2.east);
+  \draw[fl,dashed] (bout.east) -- ++(17mm,0) |- (bin.east);
+  \node[lbl,align=center,below=1.5mm of bout] {one block, $\niter$ times,\\shared weights};
+\end{scope}
+
+% ------------------------------------------------------------------ (c) causal PT
+\begin{scope}[xshift=114mm]
+  \node[lbl] (hc) at (0,5.55) {(c) causal probabilistic transformer};
+  \node[box,draw=none] (cin) at (0,4.9) {$\QZ{}^{(t)} \in \Delta^{\nlab-1}$};
+  \node[fac,below=of cin,minimum width=30mm] (ccon) {contract prefix\\{\tiny $\Bfac{c}_{j,a}=\sum_b\qbar{j}(b)\Tfac{c}_{a,b}$}};
+  \node[fac,below=of ccon,minimum width=30mm] (catt) {head posterior $\QH{}{c}$\\{\tiny $\softmax(\langle \QZ{},\Bfac{c}_{j,\cdot}\rangle/\lamH)$, keys $=$ values}};
+  \node[fac,below=of catt,minimum width=30mm] (cmsg) {message back\\{\tiny $\mathcal{G}=\sum_c\sum_j \QH{}{c}(j)\Bfac{c}_{j,\cdot}$}};
+  \node[op,below=of cmsg] (cadd) {$+$};
+  \node[fac,below=of cadd,minimum width=30mm] (csm) {$\softmax\big((\Sfac_{w,\cdot}+\mathcal{G})/\lamZ\big)$};
+  \node[box,draw=none,below=of csm] (cout) {$\QZ{}^{(t+1)}$};
+  \foreach \a/\b in {cin/ccon,ccon/catt,catt/cmsg,cmsg/cadd,cadd/csm,csm/cout}
+    \draw[fl] (\a) -- (\b);
+  \node[lbl,left=1mm of cadd] {$\Sfac_{w,\cdot}$};
+  \draw[fl] ($(cadd)+(-13mm,0)$) -- (cadd);
+  \draw[fl,dashed] (cout.east) -- ++(20mm,0) |- (cin.east);
+  \node[lbl,align=center,below=1.5mm of cout] {$\niter$ iterations, shared weights;\\no map without a factor};
+\end{scope}
+
+\end{tikzpicture}

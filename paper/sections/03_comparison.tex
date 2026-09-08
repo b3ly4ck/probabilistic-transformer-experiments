@@ -9,61 +9,159 @@
 
 \citet{wu2023probabilistic} show that MFVI in the encoder model reproduces the computation graph
 of a transformer encoder, with the posterior over dependency heads playing the role of
-self-attention. We ask the same question of the causal model, and the answer is the reason the
-experiments in \Cref{sec:experiments} take the shape they do.
+self-attention. We ask the same question of the causal model. The correspondence turns out to be
+\emph{closer} than in the encoder, and the three places where it fails are what the experiments
+of \Cref{sec:experiments} measure.
 
 \subsection{Tensor form}
 \label{sec:tensor-form}
 
-\TODO{re-derive the update equations of \Cref{sec:inference} in tensor form, following the
-structure of Wu \& Tu \S3.1 so the two papers can be read side by side. Their $Q_z^{(t)}$,
-$Q_{h,c}^{(t)}$, $\mathcal{F}$, $\mathcal{G}$ notation should be reused verbatim wherever the
-quantity is the same one --- deviating from it without reason costs the reader the comparison.}
+Collect the label beliefs of the prefix into $\bar{Q} \in \R^{\seqlen \times \nlab}$ with rows
+$\qbar{j}$, and write $Q_Z^{(t)} \in \R^{\seqlen\times\nlab}$ for the beliefs at iteration $t$.
+With $\Tfac{c} = \Ufac{c}\Vfac{c}{}^{\top}$ and $\Ufac{c},\Vfac{c} \in \R^{\nlab\times\krank}$,
+\Cref{eq:update-H,eq:update-Z} become, for channel $c$,
+%
+\begin{equation}
+\label{eq:tensor}
+\begin{aligned}
+  \mathcal{F}^{(c)} &= \tfrac{1}{\lamH}\big(Q_Z^{(t-1)}\Ufac{c}\big)\big(\bar{Q}\Vfac{c}\big)^{\!\top}
+      + M, \\
+  A^{(c)} &= \softmax_{\text{rows}}\big(\mathcal{F}^{(c)}\big), \\
+  \mathcal{G} &= \textstyle\sum_c A^{(c)}\, \bar{Q}\Vfac{c}\Ufac{c}{}^{\top}, \\
+  Q_Z^{(t)} &= \softmax_{\text{rows}}\big(\tfrac{1}{\lamZ}(\Sfac_{w,\cdot} + \mathcal{G})\big),
+\end{aligned}
+\end{equation}
+%
+where $M$ is the strict lower-triangular mask with the \textsc{root} column prepended. Read
+against a transformer layer, $Q_Z^{(t-1)}\Ufac{c}$ is the query projection, $\bar{Q}\Vfac{c}$ is
+the key projection, $\lamH$ is the attention temperature, and $\mathcal{G}$ is the attention
+output. Four structural differences are visible in \Cref{eq:tensor} itself and we take them in
+turn.
 
-\subsection{Single-channel update vs.\ masked self-attention}
+\subsection{The single-channel update vs.\ masked self-attention}
 \label{sec:vs-attention}
 
-\TODO{the causal analogue of their \S3.2. The claim to establish: the single-channel update
-under the causal chain reduces to scaled dot-product attention with a causal mask, and the
-correspondence $Q_c \leftrightarrow W^Q$, $K_c = V_c \leftrightarrow W^K = W^V$ carries over.
-State precisely where it stops holding --- that is more interesting than where it does.}
+\paragraph{Keys are values.}
+$\bar{Q}\Vfac{c}$ appears twice in \Cref{eq:tensor}: once as the key against which the query is
+scored and once as the value that is mixed. A transformer has independent $W^K$ and $W^V$. This
+is not an economy measure; it is forced, because both roles are the \emph{same message} through
+the \emph{same} arc factor --- the score $\Bfac{c}_{j,a}$ that decides how much position $j$ is
+attended to is the score that position $j$ then contributes. Similarly there is no output
+projection $W^O$: channel messages are summed, because the energy sums over channels, and a
+learned mixing matrix would be a map with no factor behind it.
+
+\paragraph{The residual is the unary, and the state is a distribution.}
+There is no residual stream and no layer normalisation. What plays the residual role is the
+re-injection of $\Sfac_{w_i,\cdot}$ at every iteration, and what plays the normalisation role is
+the simplex constraint: $Q_Z^{(t)}$ is a probability vector by construction, so activations
+cannot blow up at fixed parameters. Only the \emph{parameters} can grow, and the original paper's
+control for that is an explicit $L_2$ penalty on the arc scores.
+
+\paragraph{The query is a distribution, and the temperature is calibrated for one point of its
+range.}
+\label{sec:temperature}
+This difference has no counterpart in the encoder discussion and it is, empirically, the one
+that matters most. A transformer's query and key are unconstrained vectors whose scale is held
+near a constant by layer normalisation, which is why a single temperature $1/\sqrt{d_{\text{head}}}$
+serves at every point of training. Here the query $\QZ{i}$ and the key source $\qbar{j}$ are
+\emph{probability vectors}, and a distribution on $\nlab$ labels has Euclidean norm anywhere in
+$[\nlab^{-1/2}, 1]$: a $\sqrt{\nlab}$ dynamic range, from uniform to one-hot, and the model
+traverses it during training. Since the head logit is $\langle \QZ{i}, \Bfac{c}_{j,\cdot}\rangle$
+and $\Bfac{c}_{j,\cdot}$ inherits the same range from the key side, the logit scale moves by up
+to a factor $\nlab$ between the two extremes.
+
+\citet{wu2023probabilistic} set $\lamH = 1/\nlab$. At initialisation both beliefs are near
+uniform, so $\mathcal{F}^{(c)} \sim \sigma_T/\nlab$ and dividing by $1/\nlab$ leaves an
+$O(\sigma_T)$ logit: the choice is exactly right \emph{there}. Once training sharpens the
+beliefs, $\mathcal{F}^{(c)} \sim \sigma_T$ and the same division leaves $O(\nlab\,\sigma_T)$. The
+temperature is calibrated for a limit the model leaves within a few hundred steps, and the
+error grows linearly in the width. This predicts a specific pathology --- a positive feedback
+loop $\qbar{j} \to \Bfac{c}_{j,\cdot} \to \mathcal{G} \to \qbar{j}$ whose gain increases with $\nlab$ --- and
+therefore that any damping of the label update must be strengthened as the model is widened.
+\Cref{sec:exp-width} tests both halves of that prediction, and \Cref{sec:exp-width} also tests
+the repair it suggests: a temperature $\lamH \| \QZ{i}\|_2 \sqrt{\nlab}$, which equals
+$\lamH$ exactly at the uniform belief --- so it agrees with the source's choice at
+initialisation and differs only where the source's calibration does not reach.
 
 \subsection{The readout vs.\ a language-model head}
-\label{sec:vs-lm-head}
+\label{sec:cmp-readout}
 
-\TODO{no counterpart in Wu \& Tu, because the encoder has no LM head. Show that
-\Cref{eq:exact-readout} is a mixture of $\nchan$ softmaxes over a $\nlab$-dimensional space,
-compare with the ordinary $\R^{\nlab\times|\Vocab|}$ head, and connect to
-\citet{yang2018breaking}: the rank-$\nlab$ bottleneck is real, but a mixture of softmaxes is not
-rank-limited in the way a single softmax is. Whether that helps is measured in
-\Cref{sec:exp3}.}
+The encoder has no output layer, so this comparison is new. Fix a set of contexts and let $A$
+be the matrix whose rows are the log-conditionals $\log p(\cdot \mid \text{context})$ over the
+vocabulary.
+
+\begin{proposition}[Readout expressivity]
+\label{prop:readout}
+\emph{(i)} Under the mean-field readout $\ell = \bfac + \Sfac\QZ{t}$ with
+$\QZ{t}\in\Delta^{\nlab-1}$, the rows of $A$ lie in an affine subspace of dimension at most
+$\nlab$. \emph{(ii)} Under a linear--softmax head of width $m$ they lie in an affine subspace of
+dimension at most $m+1$. \emph{(iii)} The exact readout of \Cref{eq:exact-readout} is not an
+affine family: unless the component distributions $p(\cdot\mid a)\propto e^{\bfac + \Sfac_{\cdot,a}}$
+are all identical, $\readout{} \mapsto \log\hat p(\cdot)$ is nonlinear in its parameters and its
+image is a curved $(\nlab{-}1)$-dimensional manifold not contained in the subspace of (i).
+\end{proposition}
+
+The consequence should be stated bluntly, because it corrects a natural first reading of the
+model. \textbf{The mean-field readout's bottleneck is the classical softmax bottleneck}
+\citep{yang2018breaking}, \emph{in identical kind and degree} to a baseline transformer's own
+output head at $\nlab = d_{\text{model}}$. The comparison unit is $\nlab \leftrightarrow
+d_{\text{model}}$, not $\nlab \leftrightarrow$ anything smaller, and parity of the readout
+requires only $\nlab \approx d_{\text{model}}$. The exact readout is a different family
+altogether: a mixture over $\nlab$ fixed component softmaxes with context-dependent weights ---
+weaker than a full mixture-of-softmaxes head, whose components are themselves
+context-dependent, but strictly outside the linear family at zero parameter cost.
+
+Two further bottlenecks are often conflated with this one and are worth separating.
+The \emph{chain} bottleneck: $\Wv{t} \perp w_{\prefix{t}} \mid z_{\prefix{t}}$ compresses the
+prefix into one point of $\Delta^{\nlab-1}$ per position, consumed linearly by the future
+through \Cref{eq:contract}. A transformer's KV cache is one point of $\R^{d_{\text{model}}}$ per
+position, consumed linearly through $W^K$ and $W^V$: the same structure, with the per-position
+width $\nlab{-}1$ against $d_{\text{model}}$, and the genuine difference being the simplex
+geometry --- bounded, non-negative, summing to one. And the \emph{dynamics} bottleneck: with the
+pipe width matched, the risk is not the pipe but the pump, that is, whether attention-only
+iterations with tied parameters and simplex-constrained states can deposit as much usable
+information into those $\nlab$ numbers as a transformer stack deposits into
+$d_{\text{model}}$. We regard the third as the real one, and \Cref{sec:exp-switches} is designed
+to separate the three empirically rather than argue about them.
 
 \subsection{Full model comparison}
 \label{sec:full-comparison}
 
 \begin{figure*}[t]
 \centering
-\TODO{Figure 2, full width. Three computation graphs side by side --- (a) GPT-style decoder,
-(b) Looped decoder, (c) causal probabilistic transformer --- in the visual style of Wu \& Tu's
-Figure 3. This figure is what makes \Cref{tab:three-point} unnecessary to argue for in words.}
-\caption{Computation graphs for a causal transformer, a Looped transformer, and a causal
-probabilistic transformer.}
+\input{figures/fig2_computation_graphs}
+\caption{One layer of each model, same notation. \textbf{(a)} a causal transformer block;
+\textbf{(b)} a Looped transformer, the same block applied $\niter$ times with shared weights;
+\textbf{(c)} one MFVI iteration of the causal PT. Shaded boxes are learned maps with no factor
+behind them, which is what (c) has none of. Reading (a)$\to$(c), the differences are: parameters
+shared across depth, no feed-forward block, no output projection, keys tied to values, no query
+projection, no residual stream and no layer normalisation, a simplex-constrained state, relative
+rather than absolute positions, and a mixture readout in place of a linear head.}
 \label{fig:computation-graphs}
 \end{figure*}
 
-\TODO{prose. The differences to draw out, following their \S3.4:}
+\Cref{fig:computation-graphs} places one layer of each model side by side. Reading it from the
+transformer to the causal PT gives ten independent differences, and this decomposition is not
+merely expository: \Cref{sec:exp-switches} implements each as a switch and measures what it
+costs, so that ``the causal PT is worse than a transformer'' becomes a statement about
+identified components rather than about architectures as wholes.
 
-\begin{itemize}
-  \item \textbf{No feed-forward structure.} Inherited from the encoder model, and the reason
-        the global variables of \Cref{sec:variants} are worth measuring.
-  \item \textbf{No residual connections or layer norm.} The unary scores are re-added at each
-        iteration instead.
-  \item \textbf{Parameters shared across iterations.} This is the property the Looped
-        transformer \citep{dehghani2019universal, giannou2023looped} also has, and it is why a
-        comparison against a standard decoder alone cannot attribute any difference to
+\begin{itemize}\itemsep0pt
+  \item \textbf{Parameters shared across iterations.} The property a Looped transformer
+        \citep{dehghani2019universal,giannou2023looped,yang2024looped} also has, and the reason
+        a comparison against a standard decoder alone cannot attribute any difference to
         structure.
-  \item \textbf{The output is a posterior, not a projection.} No parameter exists outside the
-        factor graph (\Cref{sec:output}).
+  \item \textbf{No feed-forward structure.} Inherited from the encoder model. The in-graph
+        substitute --- the global variables of \Cref{sec:variants} --- is measured rather than
+        assumed in \Cref{sec:exp-ablations}.
+  \item \textbf{No output projection and keys tied to values} (\Cref{sec:vs-attention}).
+  \item \textbf{No query projection}: the query is the evolving belief itself.
+  \item \textbf{No residual stream and no layer normalisation}; the unary is re-injected and
+        the simplex bounds the state instead.
+  \item \textbf{Relative, clipped positions} rather than a learned absolute embedding.
+  \item \textbf{The output is a posterior, not a projection}: no parameter exists outside the
+        factor graph (\Cref{sec:output}), and the readout is a mixture rather than a linear map
+        (\Cref{sec:cmp-readout}).
 \end{itemize}
 
 \begin{table}[t]

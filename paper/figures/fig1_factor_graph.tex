@@ -1,0 +1,66 @@
+% Figure 1 --- the same factor graph in its two conditioning patterns.
+%
+% This is the analogue of Wu & Tu's Figure 1 and it appears at the same point in the paper.
+% The claim it carries is that encoding and decoding are two conditioning patterns of ONE
+% model, so the two panels must be drawn with the same nodes, the same factor squares and the
+% same parameters -- only the shading (what is observed), the arc directions and the frozen
+% box may differ. Do not "improve" one panel without the other.
+%
+% Conventions: circles are variables, filled squares are factors, shaded circles are observed.
+\begin{tikzpicture}[
+  every node/.style={inner sep=1pt},
+  var/.style={circle,draw,minimum size=13pt,font=\scriptsize},
+  obs/.style={var,fill=black!14},
+  fac/.style={rectangle,draw,fill=black!70,minimum size=4.2pt,inner sep=0pt},
+  edge/.style={draw,black!55,line width=0.35pt},
+  x=13.5mm, y=8.2mm,
+]
+
+% ---------------------------------------------------------------- panel (a): encoder
+\begin{scope}
+  \foreach \i in {1,2,3} {
+    \node[obs]  (wa\i) at (\i,0)   {$w_\i$};
+    \node[var]  (za\i) at (\i,1.5) {$Z_\i$};
+    \node[fac]  (sa\i) at (\i,0.75) {};
+    \draw[edge] (wa\i) -- (sa\i) -- (za\i);
+  }
+  % ternary factors, undirected: one per unordered pair, drawn above the labels
+  \node[var,minimum size=11pt] (ha12) at (1.5,3.0) {$H$};
+  \node[var,minimum size=11pt] (ha23) at (2.5,3.0) {$H$};
+  \node[fac] (ta12) at (1.5,2.25) {};
+  \node[fac] (ta23) at (2.5,2.25) {};
+  \draw[edge] (za1) -- (ta12) -- (za2);
+  \draw[edge] (ta12) -- (ha12);
+  \draw[edge] (za2) -- (ta23) -- (za3);
+  \draw[edge] (ta23) -- (ha23);
+  \node[font=\scriptsize] at (2,-0.75) {(a) encoder};
+\end{scope}
+
+% ---------------------------------------------------------------- panel (b): decoder
+\begin{scope}[xshift=48mm]
+  % frozen prefix box
+  \node[draw,dashed,black!55,rounded corners=1.5pt,fit={(0.60,-0.42) (2.40,2.02)},
+        inner sep=0pt] (frozen) {};
+  \node[font=\scriptsize,black!55,anchor=north] at (1.5,-0.44) {frozen prefix};
+
+  \foreach \i in {1,2} { \node[obs] (wb\i) at (\i,0) {$w_\i$}; }
+  \node[var] (wb3) at (3,0) {$W_3$};
+  \foreach \i in {1,2,3} {
+    \node[var] (zb\i) at (\i,1.5) {$Z_\i$};
+    \node[fac] (sb\i) at (\i,0.75) {};
+    \draw[edge] (wb\i) -- (sb\i) -- (zb\i);
+  }
+  % arcs reach backwards only: both heads of slot 3 sit on slot 3
+  \node[var,minimum size=11pt] (hb1) at (2.30,3.05) {$H_3^{(c)}$};
+  \node[fac] (tb1) at (2.0,2.25) {};
+  \node[fac] (tb2) at (2.7,2.25) {};
+  \draw[edge] (zb1) to[out=60,in=200] (tb1);
+  \draw[edge] (tb1) -- (zb3);
+  \draw[edge] (tb1) -- (hb1);
+  \draw[edge] (zb2) to[out=70,in=210] (tb2);
+  \draw[edge] (tb2) -- (zb3);
+  \draw[edge] (tb2) -- (hb1);
+  \node[font=\scriptsize] at (2,-1.15) {(b) decoder, slot $t=3$};
+\end{scope}
+
+\end{tikzpicture}
