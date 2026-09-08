@@ -143,6 +143,15 @@ claim to the label variables, and because it identifies where a reader should lo
 improvement: a head posterior that never leaves distance $1$ is not using the arc factors the
 model is built around.
 
+It does not, however, make the model a bigram. An add-one bigram on this corpus reaches $445.2$
+on the identical token set and the model reaches $217.6$ --- better by a factor of two. The
+resolution is that locality \emph{composes}: the belief at position $t$ is computed from the
+belief at $t-1$, which was itself computed from $t-2$, so $\niter$ iterations of a
+distance-one attachment give a receptive field of $\niter$ positions even though every
+individual attachment is local. What the model has learned is closer to a stack of local
+operators than to a dependency parser, which is a coherent thing to be and is not the thing the
+construction was designed to be.
+
 \paragraph{Prior against posterior.}
 Part~IV's contraction bound predicts that the divergence between a slot's predictive and observed
 beliefs is small on predictable tokens and grows with the surprisal of the word actually

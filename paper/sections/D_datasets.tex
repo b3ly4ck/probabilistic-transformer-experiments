@@ -29,6 +29,7 @@ Scored test tokens          & 81{,}081  & 241{,}731 \\
 \midrule
 Unigram val.\ ppl.          & 688.82    & 964.82 \\
 \quad slot $0$ included     & 687.45    & 965.37 \\
+Bigram val.\ ppl.           & 445.24    & 692.50 \\
 \bottomrule
 \end{tabular}
 \caption{The two corpora as the loader sees them. Types include \texttt{<eos>} and are counted
@@ -36,7 +37,9 @@ on the training split, from which the vocabulary is built; neither corpus has a 
 test type absent from train. Blocks are the fixed non-overlapping blocks of $\seqlen = 64$
 tokens of the evaluation protocol, and the scored tokens are what the perplexities average
 over: $63$ per block, slot $0$ dropped so that the causal PT and the transformer baseline score
-the identical set. Every value was measured through the loader and the evaluation protocol
+the identical set. The bigram is add-$1$ smoothed towards the unigram rather than towards
+uniform, and is scored on the same set; it is the reference that matters once a trained model's
+attention turns out to sit at distance one (\Cref{app:interpretability}). Every value was measured through the loader and the evaluation protocol
 described here, which are the ones every run in this paper uses.}
 \label{tab:datasets}
 \end{table}
