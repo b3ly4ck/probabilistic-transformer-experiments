@@ -18,10 +18,11 @@ distance-insensitive arc score ($\clip = 0$), one inner round per observed slot 
 in predictive mode. The factors are
 %
 \[
-  \Sfac = \begin{pmatrix} 1.5 & -1.5 \\ 2 & -2 \\ -2 & 2 \\ 2 & -2 \end{pmatrix},\quad
-  \bfac = (1,0,0,0),\quad
-  \Tfac{} = \begin{pmatrix} 0 & 2 \\ 1 & 0 \end{pmatrix},\quad
-  \rfac{} = (0, 1.5).
+  \Sfac = \begin{pmatrix} 1.5 & -1.5 \\ 2 & -2 \\ -2 & 2 \\ 2 & -2 \end{pmatrix}\!,\;\;
+  \Tfac{} = \begin{pmatrix} 0 & 2 \\ 1 & 0 \end{pmatrix}\!,
+\]
+\[
+  \bfac = (1,0,0,0), \qquad \rfac{} = (0, 1.5).
 \]
 %
 The prefix is \emph{the cat sat} and the model is asked for the word at slot 4.
@@ -32,7 +33,11 @@ $(.953,.047)$, $(.982,.018)$ and $(.018,.982)$; one round of the head and label 
 the frozen prefix then gives the filtering marginals
 %
 \[
-  \qbar{1} = (.818,.182),\quad \qbar{2} = (.957,.043),\quad \qbar{3} = (.006,.994).
+  \qbar{1} = (.818,.182), \quad \qbar{2} = (.957,.043),
+\]
+\vspace{-1.2em}
+\[
+  \qbar{3} = (.006,.994).
 \]
 %
 The third is the verb, and the model has found it. Contracting these into arc scores by
@@ -49,23 +54,21 @@ embedding, and it was not designed --- it is what the initialisation rule of eve
 variable produces for this one. Two rounds of the inner loop over the head domain
 $\{\textsc{root}, 1, 2, 3\}$:
 %
-\begin{center}\small
-\begin{tabular}{llll}
-\toprule
-round & attention logits $F$ & $\QH{}{}$ & $\QZ{}$ \\
-\midrule
-1 & $(.160,.413,.178,1.776)$ & $(.120,.154,.122,.604)$ & $(.951,.049)$ \\
-2 & $(.074,.387,.128,1.890)$ & $(.104,.143,.110,.642)$ & $(.956,.044)$ \\
-\bottomrule
-\end{tabular}
-\end{center}
+\begin{align*}
+  F^{(1)} &= (.160,.413,.178,1.776) \\
+  \QH{}{(1)} &= (.120,.154,.122,.604) \\
+  \QZ{}^{(1)} &= (.951,.049) \\[3pt]
+  F^{(2)} &= (.074,.387,.128,1.890) \\
+  \QH{}{(2)} &= (.104,.143,.110,.642) \\
+  \QZ{}^{(2)} &= (.956,.044)
+\end{align*}
 %
 The slot attends mostly to position 3, the verb, which is the head a noun object should choose.
 The word update then \emph{is} the output layer: logits
 $(2.368, 1.824, -1.824, 1.824)$ and
 %
 \[
-  \hat{p}(\Wv{4}) = (.460, .267, .007, .267)
+  \hat{p}(\Wv{4}) = (.460,\, .267,\, .007,\, .267)
 \]
 %
 over $(\textit{the},\textit{cat},\textit{sat},\textit{mat})$ --- the verb correctly almost

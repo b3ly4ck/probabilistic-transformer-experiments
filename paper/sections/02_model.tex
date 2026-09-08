@@ -147,8 +147,9 @@ and binary factors $\exp(\Bfac{c}_{j,a})$, with updates
 \label{eq:update-H}
   \QH{i}{c}(j) &\propto \exp\Big(\tfrac{1}{\lamH}\textstyle\sum_a \QZ{i}(a)\, \Bfac{c}_{j,a}\Big),\\
 \label{eq:update-Z}
-  \QZ{i}(a) &\propto \exp\Big(\tfrac{1}{\lamZ}\big[\Sfac_{w_i,a}
-      + \textstyle\sum_c\sum_{j\in\Dep{i}} \QH{i}{c}(j)\, \Bfac{c}_{j,a}\big]\Big).
+  \QZ{i}(a) &\propto \exp\Big(\tfrac{1}{\lamZ}\big[\Sfac_{w_i,a} + \mathcal{G}_i(a)\big]\Big),
+  \nonumber\\
+  \mathcal{G}_i(a) &= \textstyle\sum_c\sum_{j\in\Dep{i}} \QH{i}{c}(j)\, \Bfac{c}_{j,a}.
 \end{align}
 %
 Once $\Tfac{c}$ is decomposed as $\Ufac{c}\Vfac{c}{}^{\top}$ this is masked scaled dot-product
