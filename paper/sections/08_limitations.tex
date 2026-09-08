@@ -48,10 +48,14 @@ The ladder's transformer endpoint is exact; its PT endpoint is an approximation 
 gaps, chiefly that its mixture readout keeps a free projection into label space where the real
 model reads the label posterior directly. The residue --- the difference between that endpoint and the
 real decoder at the same label-set size, corpus, loop and budget --- is what bounds how much
-weight the per-switch attributions can carry, and we cannot yet put a number on it: the
-endpoint's own learning-rate sweep has not turned over (\Cref{sec:exp-switches}), so the
-residue is still shrinking as the endpoint is tuned. It has fallen from roughly $170$ to roughly
-$77$ perplexity over the sweep so far. Until it stops moving, the S1 column stands and the
+weight the per-switch attributions can carry, and we cannot yet put a number on it. Two reasons,
+both instructive. The endpoint's own learning-rate sweep has not turned over
+(\Cref{sec:exp-switches}), so the residue is still shrinking as the endpoint is tuned: from
+roughly $170$ to roughly $77$ perplexity over the sweep so far. And the ladder runs at four
+iterations and four channels while the decoder we compare it against runs at three and two, so
+part of what the residue measures is the depth cost of \Cref{sec:exp-depth} rather than the four
+named gaps --- a confound we did not anticipate when the ladder was designed, because at that
+point we did not know depth had a cost. Until both are settled, the S1 column stands and the
 cumulative ladder should be read for its shape rather than its arithmetic.
 
 \paragraph{What the latent variables learn depends on the parameterisation, and we cannot have
