@@ -114,3 +114,65 @@ width" is the operational form of the transfer claim.
 | 2026-09-08 | 2c58a7a | 998656, 998664, 998671 | 4, 3 of 6 | died in 2 s on the new allocation check — the fix working as intended. Re-queued automatically by `experiments/requeue.py`. |
 | 2026-09-08 | 2c58a7a | 998658, 998662 | 5 of 6 | **submitted twice by hand**; two jobs interleaved writes to one JSON. 998662 cancelled; the runner now takes a per-shard lock naming the slurm job that holds it. |
 | 2026-09-08 | e1fdac8 | 998675-998677 | 0-2 of 4 | `spec_gain`, 72 cells, three seeds |
+
+## Results (2026-09-08, grids A–D and 4b–4d complete)
+
+### Grid A — `alpha*(d)` falls with width, as predicted
+Argmin of the damping step: `d=16 → 0.25`, `d=24 → 0.125`, `d=48 → 0.25`, `d=64 → 0.125`.
+Undamped, `d ∈ {32, 96, 128}` sit on the unigram with the collapse signature: message runs away
+(msg/unary 1.7 → 16.7) then the beliefs go flat (sharpness 1.09 → 5.57 → 1.34, ablation KL 0).
+
+### Grid B / 4b — the standardised temperature, and whether its gain transfers
+72 cells, `d × gain` at three seeds. **The argmin over the gain is 1 at every width, and the
+working range is the same [1, 2] at every width** — which is what standardisation predicts, since
+the attention entropy then depends on the gain and on `|D_t|` and not on `d`. Above the range the
+failure is sharp and reproducible rather than noisy: `d=32, gain 3` collapses on 3/3 seeds at
+700.5 ± 0.7.
+
+| `d` | gain 1 | gain 1.5 | gain 2 | gain 3 |
+|---|---|---|---|---|
+| 32  | **282.2 ± 6.6** | 302.7 ± 26.6 | 290.5 ± 8.4 | 700.5 ± 0.7 (3 dead) |
+| 64  | **254.0 ± 1.9** | 262.3 ± 3.6 | 260.3 ± 0.8 | 415.3 ± 245.2 (1 dead) |
+| 96  | **275.6 ± 27.1** | 548.0 ± 276.0 (2 dead) | 418.4 ± 260.6 (1 dead) | 702.6 ± 7.4 (3 dead) |
+| 128 | **433.6 ± 205.6** | 601.7 ± 186.4 (2 dead) | 709.7 ± 5.9 (3 dead) | 690.6 ± 13.1 (3 dead) |
+
+**The ceiling moves; it does not disappear.** The correction roughly doubles the usable width
+(`d = 64` is solid at 254.0 ± 1.9 where the source parameterisation collapses) and then the model
+becomes unstable again at `d ≥ 96`. Reported as such.
+
+### 4c — learning-rate transfer is *not* what the temperature fixes
+
+Argmin over `lr ∈ {5e-3 … 8e-2}` at four widths:
+
+| `d` | source temperature | standardised |
+|---|---|---|
+| 16  | 2e-2 | 4e-2 |
+| 32  | 1e-2 | 4e-2 |
+| 64  | 1e-2 | 2e-2 |
+| 128 | 1e-2 | 2e-2 |
+
+**One step of a 2× grid over an 8× range of width, in both arms.** This is a clean negative
+result on the muP-style reading of our mechanism, and it matters for how the paper positions
+itself against `kuang2026scaling`: their result is about learning-rate transfer, ours is about
+whether the model learns at all at a given width. Different quantities; not substitutes.
+
+### 4d — the Kruskal rank inverts the configuration
+
+| `d` | `r` | non-emb | val (3 seeds) |
+|---|---|---|---|
+| 32 | 4 | 2,112 | 308.4 ± 17.2 |
+| 32 | 8 | 4,160 | 295.8 ± 1.1 |
+| 32 | 16 | 8,256 | 294.3 ± 3.6 |
+| 32 | 32 | 16,448 | 282.2 ± 6.6 |
+| 96 | 12 | 18,624 | **257.8 ± 4.5** |
+| 96 | 24 | 37,056 | 256.2 ± 3.8 |
+| 96 | 48 | 73,920 | **242.6 ± 3.3** |
+| 96 | 96 | 147,648 | 275.6 ± 27.1 |
+
+At `d = 96`, halving the rank **improves** perplexity while halving the parameters and cutting
+the seed variance by a factor of eight. `r = 12` gives 257.8 at 18,624 parameters — eight times
+smaller than `r = 96` and still ahead of the best `d = 32` configuration at a comparable budget
+(282.2 at 16,448). Mechanism: the arc score reaches inference only contracted against a belief,
+so what is usable is its rank on the affine hull of the reachable beliefs, and the measured
+sharpness says those are concentrated. `spec_pt_lowrank.py` runs the ladder at `r ∈ {d/8, d/4}`
+and full budget.
