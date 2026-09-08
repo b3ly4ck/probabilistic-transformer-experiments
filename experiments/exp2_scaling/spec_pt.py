@@ -37,7 +37,7 @@ with `alpha_map` a comma-separated `d:alpha` list, e.g. `16:0.25,32:0.25,64:0.12
 
 from experiments.sweep import Cell
 
-WIDTHS = [16, 24, 32, 48, 64, 96, 128, 192, 256]
+WIDTHS = [16, 24, 32, 48, 64, 96, 128]
 SEEDS = [0, 1, 2]
 STEPS = 15000
 
@@ -62,9 +62,13 @@ def _base(**kw):
     return Cell(**defaults)
 
 
-def build_cells(temp_mode="qnorm", qk_gain="1.0", alpha_fixed="0.25", alpha_map=""):
+def build_cells(temp_mode="qknorm", qk_gain="1.0", alpha_fixed="0.25", alpha_map="",
+                alpha_rule="1.0"):
     qk_gain = float(qk_gain)
     alpha_fixed = float(alpha_fixed)
+    # The rule ladder is undamped by default and that is the claim being tested: if the
+    # temperature is what the damping was compensating for, the rule should not need it.
+    alpha_rule = float(alpha_rule)
     amap = {}
     for part in alpha_map.split(","):
         if part.strip():
@@ -87,7 +91,8 @@ def build_cells(temp_mode="qnorm", qk_gain="1.0", alpha_fixed="0.25", alpha_map=
                     tags={"ladder": "alpha", "d": d, "alpha_Z": amap[d]}))
             # the transfer rule: one setting for every width
             cells.append(_base(
-                name=f"PTrule_d{d}_s{seed}", d=d, rank=d, alpha_Z=alpha_fixed,
+                name=f"PTrule_d{d}_s{seed}", d=d, rank=d, alpha_Z=alpha_rule,
                 temp_mode=temp_mode, qk_gain=qk_gain, seed=seed,
-                tags={"ladder": "rule", "d": d, "temp": temp_mode}))
+                tags={"ladder": "rule", "d": d, "temp": temp_mode,
+                      "alpha_Z": alpha_rule, "qk_gain": qk_gain}))
     return cells

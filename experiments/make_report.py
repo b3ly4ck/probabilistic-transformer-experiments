@@ -170,9 +170,14 @@ def section_width(md: List[str], out: Path) -> None:
          sorted(B, key=lambda r: (r["cell"]["d"], r["cell"]["tags"]["temp"])),
          ["cell.d", "cell.tags.temp", "cell.qk_gain", "val_ppl", "test_ppl", "train_ppl"] + diag)
     if B:
-        both = A + B
-        plot_heatmap([r for r in both if r["cell"]["alpha_Z"] == 1.0],
-                     "cell.d", "cell.tags.temp", "val_ppl", out / "fig_width_temp.png",
+        # `plot_heatmap` takes categorical axis values in first-seen order, and the rows arrive
+        # in shard order, which is arbitrary. Sort so the axis reads as the ladder it is:
+        # the source temperature first, then the query-normalised one, then the standardised
+        # one by increasing gain.
+        order = {"fixed": 0, "qnorm": 1, "qkn2": 2, "qkn4": 3, "qkn8": 4}
+        both = sorted([r for r in A + B if r["cell"]["alpha_Z"] == 1.0],
+                      key=lambda r: order.get(get_path(r, "cell.tags.temp"), 9))
+        plot_heatmap(both, "cell.d", "cell.tags.temp", "val_ppl", out / "fig_width_temp.png",
                      x_label="label-set size $d$", y_label="attention temperature rule",
                      v_label="validation perplexity")
     emit(md, "Grid C -- temperature and damping together",
