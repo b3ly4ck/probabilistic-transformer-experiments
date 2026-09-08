@@ -97,9 +97,23 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 
 **Fitted power-law exponents on the non-embedding axis**
 
+| curve                         |   n | own range        | n (common) | 4k-150k          |
+| ----------------------------- | --: | ---------------- | ---------: | ---------------- |
+| causal transformer            |   8 | -0.086 (r2 0.81) |          4 | -0.175 (r2 0.95) |
+| looped transformer            |   9 | -0.087 (r2 0.87) |          5 | -0.107 (r2 0.95) |
+| causal PT, source constants   |   4 | -0.061 (r2 0.84) |          4 | -0.061 (r2 0.84) |
+| causal PT, standardised temp. |   6 | -0.082 (r2 0.98) |          6 | -0.082 (r2 0.98) |
+| causal PT, + low rank         |   2 | --               |          2 | --               |
 
-_section section_scaling failed: TypeError: float() argument must be a string or a real number, not 'NoneType'_
+**Fitted power-law exponents on the total axis**
 
+| curve                         |   n | own range        | n (common) | 4k-150k |
+| ----------------------------- | --: | ---------------- | ---------: | ------- |
+| causal transformer            |   8 | -0.137 (r2 0.78) |          0 | --      |
+| looped transformer            |   9 | -0.158 (r2 0.86) |          0 | --      |
+| causal PT, source constants   |   4 | -0.119 (r2 0.83) |          0 | --      |
+| causal PT, standardised temp. |   6 | -0.158 (r2 0.98) |          0 | --      |
+| causal PT, + low rank         |   2 | --               |          0 | --      |
 
 ## Width transfer (Experiment 4)
 

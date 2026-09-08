@@ -155,7 +155,18 @@ def section_scaling(md: List[str], out: Path) -> None:
             rowsx = []
             for label, data in curves:
                 fr = scaling_frontier(data, x=xkey, y="val_ppl")
-                P = [(float(get_path(r, xkey)), float(r["val_ppl"])) for r in fr]
+                # `scaling_frontier` returns rows when given rows and (x, y) pairs when given
+                # pairs; accept both rather than assuming which.
+                P = []
+                for r in fr:
+                    if isinstance(r, (list, tuple)):
+                        P.append((float(r[0]), float(r[1])))
+                    else:
+                        xv, yv = get_path(r, xkey), r.get("val_ppl")
+                        if xv is not None and yv is not None:
+                            P.append((float(xv), float(yv)))
+                if not P:
+                    continue
                 full = fit_power_law([a for a, _ in P], [b for _, b in P])
                 lo, hi = 4e3, 1.5e5
                 Q = [q for q in P if lo <= q[0] <= hi]
