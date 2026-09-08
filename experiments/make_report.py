@@ -459,31 +459,84 @@ def section_repro(md: List[str], out: Path) -> None:
 
 
 def section_switches(md: List[str], out: Path) -> None:
+    """The ladder, reported as deltas against the anchors rather than as raw perplexities.
+
+    "The transformer with the feed-forward block removed reaches 144.4" is not the finding; "the
+    feed-forward block is worth 15.1 perplexity in an otherwise ordinary decoder, and 0 once the
+    other nine differences are in place" is. So every row carries its distance from the anchor
+    of its own family, and the two families are reported side by side: a switch whose S1 cost is
+    small while its S2 benefit is large only matters in combination, which is the interesting
+    case and the one a single ladder hides.
+    """
     md.append("\n## The switch ladder (Experiment 6)\n")
     rows = load("switches")
     if not rows:
         md.append("_grid empty_\n")
         return
-    best = best_by(rows, ["cell.name"], metric="val_ppl")
     best = best_by(rows, ["cell.tags.family", "cell.tags.switch", "cell.tags.rung",
                           "cell.tags.which"], metric="val_ppl")
-    cols = ["cell.tags.family", "cell.tags.switch", "cell.tags.rung", "cell.lr", "val_ppl",
-            "test_ppl", "params.non_embedding", "params.total"]
-    for fam, title in (("anchor", "Anchors"),
-                       ("S1", "S1 -- the transformer with one PT property"),
-                       ("S2", "S2 -- PT with one transformer property restored"),
-                       ("L", "L -- the cumulative ladder")):
+
+    def anchor(which):
+        hit = [r for r in best if get_path(r, "cell.tags.which") == which]
+        return min(hit, key=lambda r: r["val_ppl"]) if hit else None
+
+    a_tr, a_pt = anchor("transformer"), anchor("pt")
+    md.append(
+        "\n| anchor | val | test | non-emb | best lr |\n|---|---|---|---|---|\n"
+        + "".join(
+            f"| {n} | {r['val_ppl']:.1f} | {r['test_ppl']:.1f} | "
+            f"{r['params']['non_embedding']:,} | {r['cell']['lr']:g} |\n"
+            for n, r in (("all-transformer", a_tr), ("all-PT", a_pt)) if r
+        )
+    )
+    if a_tr and a_pt:
+        md.append(f"\nThe ladder spans **{a_pt['val_ppl'] - a_tr['val_ppl']:.1f} perplexity**; "
+                  "every delta below is a share of that.\n")
+
+    for fam, ref, sign, title in (
+        ("S1", a_tr, +1, "S1 -- cost of one PT property in an otherwise ordinary decoder"),
+        ("S2", a_pt, -1, "S2 -- benefit of restoring one transformer property inside PT"),
+    ):
         sub = [r for r in best if get_path(r, "cell.tags.family") == fam]
-        sub.sort(key=lambda r: (get_path(r, "cell.tags.rung") or 0,
-                                str(get_path(r, "cell.tags.switch"))))
-        emit(md, title, sub, cols)
+        if not sub or ref is None:
+            continue
+        table = []
+        for r in sorted(sub, key=lambda r: r["val_ppl"]):
+            table.append({
+                "switch": get_path(r, "cell.tags.switch"),
+                "val": round(r["val_ppl"], 1),
+                "delta vs anchor": round(sign * (r["val_ppl"] - ref["val_ppl"]), 1),
+                "best lr": r["cell"]["lr"],
+                "non-emb": r["params"]["non_embedding"],
+            })
+        emit(md, title, table, ["switch", "val", "delta vs anchor", "best lr", "non-emb"])
+
     L = [r for r in best if get_path(r, "cell.tags.family") == "L"]
     if L:
         L.sort(key=lambda r: get_path(r, "cell.tags.rung"))
-        plot_scaling([("cumulative ladder", [(get_path(r, "cell.tags.rung"), r["val_ppl"]) for r in L])],
+        table = [{"rung": get_path(r, "cell.tags.rung"),
+                  "switch flipped": get_path(r, "cell.tags.switch"),
+                  "val": round(r["val_ppl"], 1),
+                  "step": round(r["val_ppl"] - (L[i - 1]["val_ppl"] if i else
+                                                (a_tr["val_ppl"] if a_tr else r["val_ppl"])), 1),
+                  "best lr": r["cell"]["lr"],
+                  "non-emb": r["params"]["non_embedding"]}
+                 for i, r in enumerate(L)]
+        emit(md, "L -- the cumulative ladder, transformer to PT",
+             table, ["rung", "switch flipped", "val", "step", "best lr", "non-emb"],
+             "`step` is the change from the previous rung, so the column locates the cliff.")
+        plot_scaling([("cumulative ladder",
+                       [(get_path(r, "cell.tags.rung"), r["val_ppl"]) for r in L])],
                      out / "fig_switch_ladder.png",
                      x_label="switches flipped towards the causal PT (count)",
                      frontier=False, fit=False)
+
+    if a_pt:
+        md.append("\n**Endpoint residue.** The all-PT rung is an approximation of the real "
+                  "decoder (see this experiment's status file for the four named gaps). The "
+                  "difference between it and the causal PT at the same width, corpus, loop and "
+                  "budget is the size of everything the ladder cannot express, and it bounds "
+                  "how much weight the attributions above can carry.\n")
 
 
 def section_factored(md: List[str], out: Path) -> None:
