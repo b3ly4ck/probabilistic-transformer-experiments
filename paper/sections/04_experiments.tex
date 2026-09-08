@@ -505,10 +505,12 @@ small-scale Gaussian one, and in this configuration the small-scale Gaussian dra
 under the shared $L_2$ --- it dies \emph{outside} it. What the grid found instead is a variance
 effect the prediction did not mention.
 
-The capacity axis, meanwhile, says what the entropy diagnostic says. Sixteen head values,
-$64$ and $256$ give $224.2$, $222.2$ and $220.7$: sixteenfold capacity, one and a half
-perplexity, which is what a posterior that stays uniform implies --- more values to spread the
-same constant over. \TODO{the third seed at $\nglob=256$.}
+The capacity axis, meanwhile, says what the entropy diagnostic says. Sixteen head values, $64$
+and $256$ give $224.2 \pm 5.1$, $222.2 \pm 4.8$ and $222.8 \pm 4.7$, three seeds each:
+\textbf{a sixteenfold increase in the head's capacity is worth less than one seed standard
+deviation}. That is what a posterior which stays uniform implies --- more values to spread the
+same constant over --- and it is the cleanest evidence in the grid that the entropy reading is
+not an artefact of how we measure it.
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
