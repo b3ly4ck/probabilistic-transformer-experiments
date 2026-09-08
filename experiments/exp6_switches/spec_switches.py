@@ -62,7 +62,8 @@ no width reduction confounded into it. Width is exp2's axis, not a switch.
   the label variables" clause that the paper's Discussion attributes the gap to, and this
   ladder is the first measurement of that attribution.
 
-**Every rung runs at three learning rates (1e-3, 3e-3, 1e-2) and is scored at its best.** A
+**Every rung runs at four learning rates (1e-3, 3e-3, 1e-2, 3e-2) and is scored at its
+best.** A
 ladder run at one rate measures the rate's mismatch with the rung, not the rung: the PT end
 of this ladder wants ~2e-2 and the transformer end wants ~1e-3, and the 2026-08 report's
 whole diagnosis turned on that being a *joint* region in `(d, lr)`.
@@ -97,7 +98,11 @@ LADDER_ORDER = [
     "readout",
 ]
 
-LRS = [1e-3, 3e-3, 1e-2]
+# The PT end of this ladder wants a rate the transformer end would diverge at: the all-PT
+# anchor sits on the unigram (687.2) at 1e-3, and exp4c puts the causal PT's argmin at 2e-2 to
+# 4e-2. 3e-2 is appended rather than inserted so that the cell ordering -- and therefore the
+# shard assignment `k % n` -- of the 96 cells already run is unchanged and they resume-skip.
+LRS = [1e-3, 3e-3, 1e-2, 3e-2]
 STEPS = 15000
 
 
