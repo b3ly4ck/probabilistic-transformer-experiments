@@ -138,14 +138,45 @@ def test_weight_sharing_rung_reproduces_the_looped_baseline():
 # ------------------------------------------------------------- 2. every rung is causal --
 
 
+@pytest.fixture
+def single_threaded():
+    """Pin the intra-op thread count for the duration of one test, then restore it.
+
+    The causality check below asserts *bitwise* equality, which is the right assertion --
+    masked positions carry softmax weight exactly zero, so a correct model returns exactly
+    the same prefix -- but bitwise equality also picks up the one thing that is not a
+    property of the model: the order in which a multi-threaded reduction accumulates. On
+    2026-09-08 this test failed twice on the 56-core login node with ``all_pt: slot <= 6
+    moved`` and could not be reproduced afterwards -- not in 40 consecutive runs of this
+    file, not in 3000 repeats of the same forward pass (bit-identical every time), not in
+    4400 base-versus-altered comparisons in a standalone process. A real causality leak is
+    deterministic and would fail every run; a reduction-order difference is exactly this
+    rare and this load-dependent. Pinning one thread removes the only candidate mechanism
+    without weakening the assertion by a single bit, and matches what ``tests/conftest.py``
+    already asks for: "the causality check in particular must run where the hardware is
+    reproducible".
+    """
+    n = torch.get_num_threads()
+    torch.set_num_threads(1)
+    try:
+        yield
+    finally:
+        torch.set_num_threads(n)
+
+
 @pytest.mark.parametrize("rung", sorted(RUNGS))
-def test_slot_t_never_sees_token_t_or_later_on_any_rung(rung):
+def test_slot_t_never_sees_token_t_or_later_on_any_rung(rung, single_threaded):
     """Changing token ``t`` must leave every logit at slot <= t bit-identical.
 
     Masked positions get softmax weight exactly zero, so the check is exact equality, not a
     tolerance; a tolerance would hide a leak of the right magnitude. The companion assertion
     -- that the *future* does move -- is what stops a rung from passing by ignoring its
     input altogether.
+
+    The failure message carries the size of the movement, because that number is what
+    separates the two ways this assertion can fire: a wiring or masking bug moves a logit by
+    order 1e-3 or more at this scale, while float reduction noise moves it by order 1e-8.
+    Without it a future failure is unreadable.
     """
     m = sw(**RUNGS[rung]).eval()
     idx = sample()
@@ -155,7 +186,11 @@ def test_slot_t_never_sees_token_t_or_later_on_any_rung(rung):
         alt = idx.clone()
         alt[:, t] = (idx[:, t] + 7) % BASE["vocab_size"]
         other = m(alt)
-        assert torch.equal(base[:, : t + 1], other[:, : t + 1]), f"{rung}: slot <= {t} moved"
+        assert torch.isfinite(other).all(), f"{rung}: non-finite logits after flipping {t}"
+        moved = float((base[:, : t + 1] - other[:, : t + 1]).abs().max().detach())
+        assert torch.equal(base[:, : t + 1], other[:, : t + 1]), (
+            f"{rung}: slot <= {t} moved by {moved:.3e}"
+        )
         if t + 1 < BLOCK:
             assert not torch.equal(
                 base[:, t + 1 :], other[:, t + 1 :]

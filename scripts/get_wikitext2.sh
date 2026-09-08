@@ -151,9 +151,14 @@ try_zip() {  # try_zip URL WORKDIR
     return 1
   fi
   # The archive holds a wikitext-2/ directory; find the files wherever they landed.
+  # "-print -quit" rather than "| head -1": under "set -o pipefail" a pipeline whose reader
+  # exits first reports the writer's SIGPIPE (status 141), and with "set -e" that aborts the
+  # script with no message at all. It happens not to fire here only because three matching
+  # names fit in the pipe buffer, and only because try_zip is always called from an "if",
+  # which suspends errexit -- two coincidences holding up a line that has no need of a pipe.
   local f src
   for f in "${FILES[@]}"; do
-    src=$(find "${work}/unpacked" -type f -name "$f" | head -1)
+    src=$(find "${work}/unpacked" -type f -name "$f" -print -quit)
     [ -n "$src" ] || { log "  archive does not contain ${f}"; return 1; }
     mv "$src" "${work}/staged/${f}"
   done

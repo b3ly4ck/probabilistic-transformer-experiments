@@ -74,6 +74,15 @@ def _count_word(path: Path, word: str) -> int:
     return n
 
 
+def _words(path: Path) -> int:
+    """Whitespace-separated fields in a file, <eos> excluded — the loader's count minus lines."""
+    n = 0
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            n += len(line.split())
+    return n
+
+
 # ------------------------------------------------- the shared tokenisation contract --
 # These run everywhere: they need no corpus, only the code path both loaders go through.
 
@@ -251,6 +260,6 @@ def test_both_corpora_go_through_the_same_tokenisation(wiki):
         (wiki, WIKI_DIR / "wiki.train.tokens"),
     ):
         n_lines = _lines(path)
-        n_words = sum(len(line.split()) for line in open(path, encoding="utf-8"))
+        n_words = _words(path)
         assert corpus.sizes()["train"] == n_words + n_lines
         assert {EOS, "<unk>"} <= set(corpus.stoi)
