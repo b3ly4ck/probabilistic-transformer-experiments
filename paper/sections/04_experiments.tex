@@ -186,9 +186,11 @@ not measured in would be inventing the comparison. Every model is trained by the
 the same blocks, scored on the identical token set at its own best-validation checkpoint, and
 each baseline point is the better of two learning rates. The unigram reference is $688.8$ and
 the bigram $445.2$. A row reading \textit{$n/m$ collapsed} had $n$ of its $m$ seeds finish on
-the unigram baseline; it is kept, because it is where the width ceiling of
-\Cref{sec:exp-width} reappears, but it carries no perplexity and no ratio --- a mean over a
-mixture of learned and collapsed runs describes no run that happened. The table is generated
+the unigram baseline, and an italic \textit{range} in that column marks a row whose seeds are
+not samples of one distribution (largest at least $1.5\times$ smallest) even though none reached
+the unigram. Such rows are kept, because they are where the width ceiling of
+\Cref{sec:exp-width} reappears, but they carry no perplexity and no ratio --- a mean over a
+mixture of runs that learned and runs that did not describes no run that happened. The table is generated
 from the run JSONs by \texttt{experiments/make\_report.py}; no number in it is typed by hand.}
 \label{tab:main}
 \end{table*}
