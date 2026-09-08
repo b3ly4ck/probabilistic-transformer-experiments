@@ -471,25 +471,41 @@ proposed as --- including in the cells where its message is \emph{larger} than t
 posterior from an informative one, which is why \Cref{tab:globalhead} reports the entropy beside
 it. On Prof.\ Tu's question directly: Gaussian initialisation at three scales spanning
 $25\times$, with and without the head in the shared $L_2$, changes nothing that matters.
-\textbf{The distribution, which is the question as it was asked.} Having distinguished the
-treatment from the draw, we varied the draw as well. At $\nlab=64$ with $\nglob=64$ head values,
-at initialisation scale $0.02$ inside the shared $L_2$ --- the one treatment at which all three
-draws were run --- Gaussian gives $225.8$ over three seeds, a semi-orthogonal draw $219.5$ over
-two, and a matched-variance uniform draw $249.1$ over two, with one of those two seeds at
-$272.9$. \textbf{The orthogonal draw sits inside the Gaussian cell's own seed range}
-($214.1$ to $233.3$), so on this evidence the draw does not matter, with a hint that the uniform
-one is worse.
+\textbf{The distribution, which is the question as it was asked --- and it matters, through
+variance.} Having distinguished the treatment from the draw, we varied the draw. At $\nlab=64$
+with $\nglob=64$ head values, at initialisation scale $0.02$ inside the shared $L_2$, three
+seeds each:
 
-We registered a sharper prediction before running this and it is not tested by what we ran, so
-we say that rather than claiming the support: the prediction was that an orthogonal $\Bglob$
-would survive a shared $L_2$ that kills a small-scale Gaussian one, and in this configuration
-the small-scale Gaussian draw does not die under the shared $L_2$ --- it dies \emph{outside} it.
-The grid never put the prediction at risk.
+\begin{center}\footnotesize
+\begin{tabular}{@{}l@{\ \ }l@{\ \ }l@{}}
+\toprule
+draw & val ppl & seeds \\
+\midrule
+semi-orthogonal & $219.3 \pm 0.6$ & $218.8$, $219.1$, $219.9$ \\
+Gaussian & $225.8 \pm 10.2$ & $214.1$, $229.9$, $233.3$ \\
+uniform, matched var. & \textit{1/3 collapsed} & $225.2$, $272.9$, $707.1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-The capacity axis says the same thing from another direction. Quartering the head, from
-$\nglob=64$ values to $16$, costs nothing ($224.2$ against $222.2$, three seeds each), which is
-what a posterior that stays uniform implies: more values to spread the same constant over.
-\TODO{$\nglob=256$, and the third seeds of the two non-Gaussian draws.}
+\noindent
+The means are ordered as one would hope but the means are not the finding. \textbf{The
+orthogonal draw's seed standard deviation is $0.6$ against the Gaussian's $10.2$, and its worst
+seed beats the Gaussian's mean}; the uniform draw puts one seed in three on the unigram. In a
+model whose reproducibility is the subject of \Cref{sec:exp-repro}, a draw that removes almost
+all of the seed variance is worth more than six perplexity of mean, and it is the one result
+here that a practitioner should act on.
+
+We had registered a sharper prediction beforehand and it is \emph{not} what this shows, so we
+say so: the prediction was that an orthogonal $\Bglob$ would survive a shared $L_2$ that kills a
+small-scale Gaussian one, and in this configuration the small-scale Gaussian draw does not die
+under the shared $L_2$ --- it dies \emph{outside} it. What the grid found instead is a variance
+effect the prediction did not mention.
+
+The capacity axis, meanwhile, says what the entropy diagnostic says. Sixteen head values,
+$64$ and $256$ give $224.2$, $222.2$ and $220.7$: sixteenfold capacity, one and a half
+perplexity, which is what a posterior that stays uniform implies --- more values to spread the
+same constant over. \TODO{the third seed at $\nglob=256$.}
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
