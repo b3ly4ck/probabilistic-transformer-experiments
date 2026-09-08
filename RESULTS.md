@@ -484,11 +484,11 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |   d |   m | init std | in L2 | init dist |   n | val mean |     sd | H(Q_g)/max | glob/unary |
 | --: | --: | -------: | ----- | --------- | --: | -------: | -----: | ---------: | ---------: |
 |  32 |   0 |       -- | True  | normal    |   1 |  244.300 |  0.000 |      0.000 |      0.000 |
-|  32 |  64 |    0.020 | False | normal    |   2 |  248.200 |  0.400 |      0.995 |      1.456 |
+|  32 |  64 |    0.020 | False | normal    |   3 |  249.300 |  1.900 |      0.992 |      1.516 |
 |  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
 |  32 |  64 |    0.100 | False | normal    |   1 |  249.500 |  0.000 |      0.958 |      1.593 |
 |  32 |  64 |    0.100 | True  | normal    |   2 |  243.100 | 10.900 |      1.000 |      0.247 |
-|  32 |  64 |    0.500 | False | normal    |   1 |  244.600 |  0.000 |      0.884 |      0.849 |
+|  32 |  64 |    0.500 | False | normal    |   2 |  248.100 |  4.900 |      0.925 |      1.177 |
 |  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 | 12.200 |      0.978 |      0.276 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
@@ -548,12 +548,12 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | rung | switch flipped  |     val |     step | best lr | non-emb |
 | ---: | --------------- | ------: | -------: | ------: | ------: |
 |    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
-|    2 | position        | 145.900 |    1.800 |   0.003 |   50128 |
-|    3 | norm            | 139.500 |   -6.400 |   0.003 |   49744 |
+|    2 | position        | 145.000 |    0.900 |   0.010 |   50128 |
+|    3 | norm            | 139.500 |   -5.500 |   0.003 |   49744 |
 |    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
 |    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
-|    6 | attn_value      | 158.600 |   12.300 |   0.001 |   37264 |
-|    7 | ffn             | 213.300 |   54.700 |   0.001 |    4176 |
+|    6 | attn_value      | 156.900 |   10.600 |   0.010 |   37264 |
+|    7 | ffn             | 213.300 |   56.300 |   0.001 |    4176 |
 |    8 | residual        | 206.500 |   -6.800 |   0.003 |    4176 |
 |    9 | state           | 537.500 |  331.000 |   0.010 |    4176 |
 |   10 | readout         | 395.500 | -142.000 |   0.003 |    8272 |
