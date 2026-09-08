@@ -3,28 +3,67 @@
 
 % No counterpart in Wu & Tu. It exists because two of these checks test the derivation rather
 % than the code, and because a causal model that is silently non-causal produces entirely
-% plausible numbers.
+% plausible numbers. Every figure below is produced by running the checks
+% (`python -m experiments.validation_report`), not retyped from a test file: an appendix and a
+% test suite that drift apart is worse than no appendix.
 
-\TODO{the full checklist, with pass/fail and the numbers. \Cref{sec:exp-correctness} reports
-only the two that test the equations; these are the rest.}
+Two of the checks below test the derivation; the rest test the software. All of them execute the
+real code path on small tensors, in double precision wherever a precision claim is made, and
+none inspects source text. The figures are emitted by a single script so that this appendix
+cannot drift away from what the suite actually asserts.
 
-\begin{itemize}
-  \item \textbf{Causality.} Changing the token at position $t$ leaves the logits at every
-        position $<t$ bitwise unchanged (CPU, fixed seed --- on GPU, non-deterministic
-        reductions can perturb the last bit of correct code).
-  \item \textbf{Frozen prefix.} Prefix quantities are kept as attached leaves with
-        \texttt{requires\_grad=True}; after backpropagating the loss at step $t$, their gradient
-        is exactly zero for $j \ge t$ and non-zero for $j < t$. Testing this on a detached
-        tensor would pass unconditionally and is therefore no test at all.
-  \item \textbf{Tying.} Input and output embeddings are the same tensor object, not merely
-        equal.
-  \item \textbf{Normalisation.} All posteriors sum to one along their variable axis at every
-        iteration.
-  \item \textbf{Free energy.} The mean-field free energy is non-increasing across iterations on
-        a toy graph. \TODO{figure} \NOTE{this is the check that catches a typo in the update
-        equations; shapes, normalisation and causality are all blind to one.}
-  \item \textbf{Exact readout vs.\ brute force.} On one slot the graph is a tree, so
-        \Cref{eq:exact-readout} must agree with explicit enumeration over a tiny vocabulary.
-        \TODO{agreement to 1e-N} This validates the factorisation itself.
-  \item \textbf{Single-batch overfit.} Loss on one batch falls to near zero.
-\end{itemize}
+\paragraph{The exact readout against brute force.}
+On one slot the graph is a star centred on $\Zv{t}$, hence a tree, so \Cref{eq:exact-readout}
+must equal the marginal of the slot joint computed by explicit enumeration. Enumerating
+$p(\Wv{t}, \Zv{t}, \Hv{t}{1..\nchan} \mid z_{\prefix{t}})$ over every configuration --- written
+from the raw parameters with loops, calling no method of the model --- and marginalising to
+$p(\Wv{t})$ agrees with the closed form to $\mathbf{6.7\times10^{-16}}$ in log-probability
+($|\Vocab|=6$, $\nlab=4$, $\nchan=2$, $|\Dep{t}|=5$, float64). This is the strongest correctness
+statement available here: it validates the factorisation, not an implementation detail of it.
+The factored-label variant is checked the same way at $K=2$, against an enumeration over
+$(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$, and agrees to $10^{-10}$; a second
+reference rebuilds the contracted arc scores by hand, which is what pins the assignment of
+channels to components --- the enumeration alone cannot see it.
+
+\paragraph{The free energy, with a mutation test.}
+The per-slot free energy $\Free_t$ of \Cref{eq:slot-free-energy} must not increase along the
+inner loop, since each update is its centred gradient step. Over eleven block updates it
+decreases monotonically: $\mathbf{0}$ increases, total decrease $5.68\times10^{-3}$. This is the
+one check that tests the update \emph{equations} --- a sign error in the head update leaves every
+shape, normalisation and causality check passing --- so we exercise it against exactly that
+mutation. With the head message negated, the same eleven updates produce $\mathbf{11}$
+increases, the largest $6.5\times10^{-2}$, and the functional rises overall. The check has teeth.
+
+\paragraph{Causality.}
+Changing the token at position $t{+}1$ must leave the logits at every slot $\le t$
+\emph{bitwise} unchanged. It does, under both readouts and all three attention temperatures ---
+six combinations, maximum absolute difference exactly $0$, verified with an equality test rather
+than a tolerance. The check runs on CPU with a fixed seed, because on a GPU non-deterministic
+reduction order can perturb the last bit of entirely correct code and a tolerance would then be
+hiding the very thing being tested.
+
+\paragraph{Frozen prefix, in the gradient.}
+The prefix is frozen forward and \emph{not} detached backward (\Cref{sec:chain}). Testing this
+on a detached tensor would pass unconditionally and is therefore no test at all, so the prefix
+beliefs are kept as attached leaves and the assertion is on the gradient: after
+backpropagating the loss at slot $t$, $\partial \mathcal{L}_t / \partial \qbar{j}$ is exactly
+zero for $j \ge t$ and non-zero for $j < t$.
+
+\paragraph{Tying.}
+$\Sfac$ appears once in the parameter list and the same tensor \emph{object} serves as the unary
+and as the output factor --- identity, not equality, since two tensors initialised alike and
+updated by the same gradient would pass an equality test while being a different model
+(\Cref{sec:output}).
+
+\paragraph{Factored labels reduce to the flat model.}
+$K=1$ must be the model of \Cref{sec:chain} exactly. A flat state dict loads into the factored
+decoder without a missing or unexpected key, and the logits agree to
+$\mathbf{6.9\times10^{-18}}$ across both readouts and both arc-score parameterisations in
+float64. The residual is floating-point reassociation from the extra component axis, not a
+difference of layout.
+
+\paragraph{Normalisation, and the worked example.}
+Every posterior sums to one along its variable axis at every iteration (maximum deviation
+$1.2\times10^{-7}$ in float32), the logits are finite, and a single batch can be overfitted to
+near-zero loss. The numeric worked example of \Cref{app:worked-example} reproduces an
+independently derived reference digit for digit.
