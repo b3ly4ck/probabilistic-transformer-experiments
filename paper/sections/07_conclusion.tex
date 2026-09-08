@@ -15,6 +15,11 @@ causal transformer's perplexity at its own parameter count --- the gap smallest 
 budgets, and shallower in slope than either baseline on every range where the two can be
 compared --- and learns label variables that carry recognisable syntactic categories
 without supervision --- though whether its head variables learn attachment or collapse onto the
-previous word turns out to depend on the same temperature the scaling does. We hope this extends the probabilistic account of contextual representation
+previous word turns out to depend on the same temperature the scaling does. Two things we did
+not expect are the ones we would most want a successor to know: the readout the construction
+itself distinguishes trains a hundred perplexity worse than the mean-field approximation to it,
+and additional mean-field iterations only cost, so the best version of the model here runs one.
+Both say that what limits it is not what the family can express but what this objective reaches
+inside it. We hope this extends the probabilistic account of contextual representation
 from analysis to generation, and that saying where it fails is as useful as saying where it
 holds.
