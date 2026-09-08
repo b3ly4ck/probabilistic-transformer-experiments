@@ -160,8 +160,10 @@ from the run JSONs by \texttt{experiments/make\_report.py}; no number in it is t
 \includegraphics[width=\columnwidth]{figures/fig_scaling_total.png}
 \caption{Scaling on PTB: validation perplexity against non-embedding parameters (top) and total
 parameters (bottom), log--log. Each point is the better of two learning rates at a 15{,}000-step
-budget with the checkpoint selected on validation; the legend carries the fitted power-law
-exponent. The dotted line is the add-one bigram (445.2), which is the reference that separates ``learned
+budget with the checkpoint selected on validation. The legend's slopes are each fitted over
+\emph{that curve's own} measured range, and those ranges differ by more than an order of
+magnitude, so they are not comparable with one another: the comparable exponents, fitted on
+shared windows, are in \Cref{sec:exp-scaling} and \Cref{tab:exponents-full}. The dotted line is the add-one bigram (445.2), which is the reference that separates ``learned
 something beyond the previous word'' from ``did not'' --- the unigram at 688.8 lies above every
 curve and separates nothing. The two panels are not interchangeable: with tying forced, almost all
 of the causal PT's parameters are its word--label factor.}
