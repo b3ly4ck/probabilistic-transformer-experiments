@@ -159,6 +159,32 @@ def section_scaling(md: List[str], out: Path) -> None:
             md.append("\n**Fitted power-law exponents on the "
                       + ("non-embedding" if xkey.endswith("non_embedding") else "total")
                       + " axis**\n")
+            # The comparison range is the intersection of the curves' own ranges, computed per
+            # axis rather than hard-coded: a window chosen for the non-embedding axis is empty
+            # on the total axis, where the same models occupy 1.7e5 to 5.7e6. Outside the
+            # intersection an "exponent" compares a model against a budget another model was
+            # never run at.
+            def _pts(data):
+                fr0 = scaling_frontier(data, x=xkey, y="val_ppl")
+                out = []
+                for r in fr0:
+                    if isinstance(r, (list, tuple)):
+                        out.append((float(r[0]), float(r[1])))
+                    else:
+                        xv, yv = get_path(r, xkey), r.get("val_ppl")
+                        if xv is not None and yv is not None:
+                            out.append((float(xv), float(yv)))
+                return out
+
+            # Each curve is refitted over its overlap with the *causal transformer*, which is
+            # the comparison the paper makes. A single intersection over all five curves is
+            # useless here: the control ladder collapses above d = 32 and spans three points,
+            # so the strict intersection would be 13k-16k and every exponent would come from
+            # one point. Comparing each curve against the baseline over their own shared range
+            # keeps the comparison honest and the windows wide.
+            ref = _pts(curves[0][1]) if curves else []
+            ref_lo = min((a for a, _ in ref), default=0.0)
+            ref_hi = max((a for a, _ in ref), default=0.0)
             rowsx = []
             for label, data in curves:
                 fr = scaling_frontier(data, x=xkey, y="val_ppl")
@@ -175,16 +201,29 @@ def section_scaling(md: List[str], out: Path) -> None:
                 if not P:
                     continue
                 full = fit_power_law([a for a, _ in P], [b for _, b in P])
-                lo, hi = 4e3, 1.5e5
+                lo = max(ref_lo, min((a for a, _ in P), default=0.0))
+                hi = min(ref_hi, max((a for a, _ in P), default=0.0))
                 Q = [q for q in P if lo <= q[0] <= hi]
                 comm = fit_power_law([a for a, _ in Q], [b for _, b in Q])
+                # and the baseline refitted over the SAME window, so the two exponents in a
+                # row are comparable; without it the transformer's row is fitted over its full
+                # range and every other row over a narrower one.
+                R = [q for q in ref if lo <= q[0] <= hi]
+                refc = fit_power_law([a for a, _ in R], [b for _, b in R])
                 rowsx.append({
                     "curve": label, "n": len(P),
-                    "own range": f"{full.exponent:+.3f} (r2 {full.r2:.2f})" if full else "--",
-                    "n (common)": len(Q),
-                    "4k-150k": f"{comm.exponent:+.3f} (r2 {comm.r2:.2f})" if comm else "--"})
-            md.append(markdown_table(rowsx, ["curve", "n", "own range", "n (common)",
-                                             "4k-150k"]))
+                    "overlap": f"{lo:,.0f}-{hi:,.0f}",
+                    "own range": f"{full.exponent:+.3f}" if full else "--",
+                    "n": len(Q),
+                    "this curve": f"{comm.exponent:+.3f}" if comm else "--",
+                    "transformer, same window": f"{refc.exponent:+.3f}" if refc else "--"})
+            md.append(markdown_table(rowsx, ["curve", "overlap", "n", "own range",
+                                             "this curve", "transformer, same window"]))
+            md.append("\n`overlap` is each curve's shared parameter range with the causal "
+                      "transformer, and `common range` the exponent refitted there. Fitting "
+                      "each curve over its own full range flatters the causal PT, because the "
+                      "baselines extend into the regime where this corpus and not the "
+                      "parameter count binds and their flat points drag the slope down.\n")
             p = plot_scaling(
                 curves, out / fname, x=xkey, x_label=xlabel,
                 hline=(BIGRAM_PTB, "bigram baseline 445.2"),
