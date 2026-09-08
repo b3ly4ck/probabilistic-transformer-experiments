@@ -9,9 +9,13 @@
 \paragraph{The width ceiling moves but does not lift.}
 Correcting the head temperature roughly doubles the label-set size at which the model trains
 stably, and at $\nlab \in \{96, 128\}$ it becomes unstable again, with one collapsed seed in
-three at each. We report the widths where it fails alongside those where it works, but we do not
-have a mechanism for the second ceiling, and a reader should not extrapolate the corrected curve
-past where we measured it.
+three at each. Dropping the Kruskal rank moves the ceiling again, to
+$\nlab = \LadderTopLab$ at $\krank = \LadderTopRank$, and the same failure is waiting directly
+above it: at $\nlab = 256$, $\krank = 64$ one seed in three still lands on the unigram. Two
+repairs have each bought roughly a doubling of usable width, and neither has removed the
+failure. We report the widths where it fails alongside those where it works, but we do not have
+a mechanism for the ceiling that survives both repairs, and a reader should not extrapolate
+either corrected curve past where we measured it.
 
 \paragraph{The repair that works leaves the graph.}
 Standardising the head logits is a normalisation applied outside the update equations. It

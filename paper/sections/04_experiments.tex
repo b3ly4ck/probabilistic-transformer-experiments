@@ -321,7 +321,7 @@ $\Tfac{c} = \Ufac{c}\Vfac{c}{}^{\!\top}$ with $\Ufac{c},\Vfac{c} \in \R^{\nlab\t
 every configuration in this literature sets $\krank = \nlab$, which is the most expensive setting
 of the decomposition. It is also not the best one: at $\nlab = 96$, $\krank = 48$ gives
 $242.6 \pm 3.3$ against $\krank = 96$'s $275.6 \pm 27.1$ --- better perplexity at half the arc
-parameters and a fifth of the seed variance --- and $\krank = 12$ gives $257.8 \pm 4.5$ at
+parameters and an eighth of the seed spread --- and $\krank = 12$ gives $257.8 \pm 4.5$ at
 18{,}624 non-embedding parameters, eight times smaller and still ahead of the best $\nlab = 32$
 configuration at a comparable budget. The reason is structural: the arc score reaches inference
 only contracted against a belief, $\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, so what
@@ -331,9 +331,14 @@ concentrated.
 Run as a full ladder at the baselines' budget, low rank does two things at once. The curve sits
 uniformly \emph{below} the $\krank = \nlab$ one --- $223.1 \pm 5.6$ at 18{,}624 non-embedding
 parameters against $372 \pm 277$ for $\krank = 96$ at 147{,}648 --- and \textbf{the width ceiling
-disappears}: where both earlier ladders became unstable at $\nlab \geq 96$, this one trains
-stably to $\nlab = 192$ and turns over only at $256$, on capacity rather than on collapse. Seed
-spreads across the ladder are $1.5$ to $5.6$. Nothing in the source prescribes $\krank = \nlab$;
+moves}: where both earlier ladders became unstable at $\nlab \geq 96$, this one trains stably
+through $\nlab = \LadderTopLab$ at $\krank = \LadderTopRank$
+($\LadderTopVal \pm \LadderTopSd$), with seed spreads of $\LadderSdLo$ to $\LadderSdHi$ across
+all \LadderNok{} configurations that trained. It does not disappear: at
+$\nlab = 256$, $\krank = 64$ --- the widest and highest-rank cell we ran --- one seed in three
+still lands on the unigram, which is why that row of \Cref{tab:main} carries a collapse count
+and no perplexity. The rank is what buys the extra width, and the same ceiling is waiting above
+it. Nothing in the source prescribes $\krank = \nlab$;
 it is what Wu \& Tu's Table 2 rule $\min(64,\nlab)$ produces at every width used here, and it
 was carried along unexamined --- by us as much as by anyone.
 
