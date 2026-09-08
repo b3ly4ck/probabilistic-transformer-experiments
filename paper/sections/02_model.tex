@@ -14,27 +14,23 @@ We first recall the model of \citet{wu2023probabilistic} only as far as we need 
 \label{sec:recap}
 
 A probabilistic transformer is a conditional random field over two families of discrete latent
-variables. Each position $i$ of a sentence $w_{1:\seqlen}$ carries a \emph{label} variable
-$\Zv{i}$ ranging over $\nlab$ values, read as a syntactic category, and $\nchan$ \emph{head}
-variables $\Hv{i}{1},\dots,\Hv{i}{\nchan}$, one per \emph{channel}, each ranging over the
-candidate heads of position $i$. Two kinds of factor act on them. A unary factor
-$\phi_u(\Zv{i}) = \exp(\Sfac_{w_i, \Zv{i}})$ ties the label at $i$ to the word observed there,
-through a single matrix $\Sfac \in \R^{|\Vocab| \times \nlab}$. A ternary factor
-$\phi_t(\Hv{i}{c}, \Zv{i}, \Zv{j}) = \exp\big(\ind{\Hv{i}{c}{=}j}\, \Tfac{c}_{\Zv{i},\Zv{j}}\big)$
-scores the compatibility of the labels at $i$ and at its head $j$ in channel $c$, through an arc
-score matrix $\Tfac{c}$.
+variables. Each position $i$ of a sentence carries a \emph{label} variable $\Zv{i}$ over $\nlab$
+values, read as a syntactic category, and $\nchan$ \emph{head} variables $\Hv{i}{1..\nchan}$, one
+per \emph{channel}, each over the candidate heads of $i$. A unary factor
+$\exp(\Sfac_{w_i, \Zv{i}})$ ties the label at $i$ to the word observed there through a single
+matrix $\Sfac \in \R^{|\Vocab| \times \nlab}$, and a ternary factor
+$\exp\big(\ind{\Hv{i}{c}{=}j}\, \Tfac{c}_{\Zv{i},\Zv{j}}\big)$ scores the compatibility of the
+labels at $i$ and at its head $j$ in channel $c$.
 
-Posterior inference is mean-field variational inference. Running its coordinate updates for
-$\niter$ iterations produces a computation graph in which the head posteriors $\QH{i}{c}$ are
-softmaxes of bilinear forms in the label beliefs, and the label beliefs are softmaxes of sums of
-messages weighted by those posteriors. That is scaled dot-product attention followed by a
-re-injected unary, with the same parameters at every iteration: a $\niter$-layer transformer
+Running mean-field inference for $\niter$ iterations produces a computation graph in which the
+head posteriors are softmaxes of bilinear forms in the label beliefs and the label beliefs are
+softmaxes of the messages those posteriors weight: scaled dot-product attention followed by a
+re-injected unary, with the same parameters at every iteration --- a $\niter$-layer transformer
 encoder with shared weights and no feed-forward block. Self-attention is not a component that
 was chosen; it is the posterior over syntactic heads.
 
-The fact that \Cref{sec:output} turns on is this: \textbf{the word $w_i$ enters the model in
-exactly one place}, the unary factor $\Sfac_{w_i,\cdot}$. Nothing else in the energy mentions
-the words.
+The fact \Cref{sec:output} turns on is this: \textbf{the word $w_i$ enters the model in exactly
+one place}, the unary factor $\Sfac_{w_i,\cdot}$. Nothing else in the energy mentions the words.
 
 \subsection{Why a causal mask is not enough}
 \label{sec:obstruction}
