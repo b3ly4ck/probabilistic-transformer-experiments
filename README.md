@@ -79,6 +79,18 @@ python -m experiments.make_report      # every figure and table, from the commit
 python -m experiments.validation_report # the checks behind the paper's validation appendix
 ```
 
+`make_report` also writes `paper/figures/numbers.tex`, a set of LaTeX macros for every headline
+number the preprint quotes. **The prose carries macros, not digits**, so a sentence cannot drift
+from the table beside it when a shard lands — which had happened to nine numbers before the
+macros existed. Adding a number to the paper means adding it to `emit_numbers` first; macro
+names must be letters only, and the emitter refuses anything else because LaTeX reports a digit
+in a command name as an error naming neither the macro nor this file.
+
+Two conventions in the generated tables. A cell reading *n/m collapsed* had `n` seeds finish on
+the corpus unigram. An italic *range* means no seed reached the unigram but the largest is at
+least 1.5× the smallest, so the seeds are not samples of one distribution and a mean over them
+would describe no run that happened.
+
 ## Tests
 
 ```bash
