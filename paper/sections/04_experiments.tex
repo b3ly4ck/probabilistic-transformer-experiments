@@ -98,11 +98,25 @@ A configuration recorded at validation perplexity 430.04 in our own earlier work
 here on the same code, the same seed and the same data order, and landed at 644.98. Three arms
 separate the possible causes and they agree to every printed digit --- the pre-refactor source
 through its original driver, the current source through that driver, and the current source
-through the sweep runner --- so neither the implementation nor the harness is at fault. What is
-at fault is the number. Over three seeds on one device the undamped configuration gives
-$610.9 / 408.8 / 367.5$, that is $462.4 \pm 130.2$: \textbf{a seed standard deviation of 28\% of
-its own mean}. The earlier figure sits comfortably inside that range. It was never wrong; it
-was one draw from a broad distribution, quoted to two decimal places.
+through the sweep runner --- so neither the implementation nor the harness is at fault. Two
+further facts complete the picture, and together they are more useful than either alone.
+
+The first is hardware. A cell of an unrelated grid happened to run the same configuration on the
+same GPU \emph{model} as the original, and reproduced its entire validation trace to every
+printed digit: $711.7\,516.1\,693.9\,633.5\,598.1\,546.0\,491.9\,473.2\,452.6\,439.9\,434.4\,430.0$,
+against $711.6\,640.3\,686.0\,\dots\,645.0$ on the other device. The two already differ at the
+first evaluation in the third significant figure, so the split occurs within the first 500 steps
+and is then amplified to 215 perplexity. Nothing differs but the order of floating-point
+reductions.
+
+The second is the seed. Over three seeds on one device the undamped configuration gives
+$610.9 / 408.8 / 367.5$, that is $462.4 \pm 130.2$: \textbf{a standard deviation of 28\% of its
+own mean}. The earlier figure sits comfortably inside that range.
+
+These are one phenomenon seen twice. In this configuration any perturbation at the last bit ---
+a different reduction order, a different seed --- moves the outcome by hundreds of perplexity.
+The earlier number was therefore both exactly reproducible on the hardware that produced it and
+not a measurement of anything.
 
 The same three seeds with the label update damped ($\alpha_Z = 0.25$) give $322.0 \pm 0.65$ ---
 \textbf{0.2\%}, two orders of magnitude tighter. We draw two conclusions and apply them
