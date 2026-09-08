@@ -113,17 +113,18 @@ in the third significant figure ($711.70$ against $711.61$), so the split occurs
 floating-point reductions.
 
 The second is the seed. Over three seeds on one device the undamped configuration gives
-$610.9 / 408.8 / 367.5$, that is $462.4 \pm 130.2$: \textbf{a standard deviation of 28\% of its
-own mean}. The earlier figure sits comfortably inside that range.
+$610.9 / 408.8 / 367.5$, that is $\ReproUndampedMean \pm \ReproUndampedSd$: \textbf{a standard
+deviation of \ReproUndampedPct\% of its own mean}. The earlier figure sits comfortably inside that range.
 
 These are one phenomenon seen twice. In this configuration any perturbation at the last bit ---
 a different reduction order, a different seed --- moves the outcome by hundreds of perplexity.
 The earlier number was therefore both exactly reproducible on the hardware that produced it and
 not a measurement of anything.
 
-The same three seeds with the label update damped ($\alpha_Z = 0.25$) give $322.0 \pm 0.65$ ---
-\textbf{0.2\%}, two orders of magnitude tighter. We draw two conclusions and apply them
-throughout. No single-seed number from the undamped region is reported as a result here, and
+The same \ReproDampedN{} seeds with the label update damped ($\alpha_Z = 0.25$) give
+$\ReproDampedMean \pm \ReproDampedSd$ --- \textbf{\ReproDampedPct\%} of its mean against
+\ReproUndampedPct\%, a spread \ReproSdRatio{} times tighter. We draw two conclusions and apply
+them throughout. No single-seed number from the undamped region is reported as a result here, and
 comparisons in that region from the earlier work are withdrawn rather than repeated: a
 difference of 43 perplexity against a spread of 130 is not a measurement. And the interventions
 this paper is about should be judged on \emph{variance} as much as on the mean. Damping was
