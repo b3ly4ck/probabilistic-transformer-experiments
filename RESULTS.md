@@ -486,10 +486,12 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  32 |   0 |       -- | True  | normal    |   3 |  243.200 |  5.300 |      0.000 |      0.000 |
 |  32 |  64 |    0.020 | False | normal    |   3 |  249.300 |  1.900 |      0.992 |      1.516 |
 |  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
-|  32 |  64 |    0.100 | False | normal    |   1 |  249.500 |  0.000 |      0.958 |      1.593 |
-|  32 |  64 |    0.100 | True  | normal    |   2 |  243.100 | 10.900 |      1.000 |      0.247 |
-|  32 |  64 |    0.500 | False | normal    |   2 |  248.100 |  4.900 |      0.925 |      1.177 |
+|  32 |  64 |    0.100 | False | normal    |   3 |  254.100 |  4.400 |      0.976 |      1.480 |
+|  32 |  64 |    0.100 | True  | normal    |   3 |  246.600 |  9.800 |      1.000 |      0.250 |
+|  32 |  64 |    0.500 | False | normal    |   3 |  248.400 |  3.500 |      0.942 |      1.190 |
 |  32 |  64 |    0.500 | True  | normal    |   2 |  253.200 | 12.200 |      0.978 |      0.276 |
+|  64 |   0 |       -- | True  | normal    |   1 |  216.800 |  0.000 |      0.000 |      0.000 |
+|  64 |  64 |    0.100 | True  | normal    |   1 |  235.200 |  0.000 |      1.000 |      0.202 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -499,9 +501,11 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 ### Grid R -- replication over three seeds
 
-| what        | val (mean +- sd)     |   n | seeds |
-| ----------- | -------------------- | --: | ----- |
-| freeze_b_on | 315.46 +- 0.00 (n=1) |   1 | 0     |
+| what         | val (mean +- sd)      |   n | seeds |
+| ------------ | --------------------- | --: | ----- |
+| d48_anomaly  | 322.41 +- 0.00 (n=1)  |   1 | 1     |
+| freeze_b_off | 346.62 +- 13.76 (n=2) |   2 | 1,0   |
+| freeze_b_on  | 315.46 +- 0.00 (n=1)  |   1 | 0     |
 
 ### Grid S -- budget vs. schedule
 
@@ -532,9 +536,12 @@ _no rows yet_
 
 Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one extra pass.
 
-| cell.name       | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
-| --------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
-| R_freezeb_on_s0 | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
+| cell.name        | cell.readout | val_ppl | swap_readout | swap_val_ppl | test_ppl | swap_test_ppl |
+| ---------------- | ------------ | ------: | ------------ | -----------: | -------: | ------------: |
+| R_freezeb_on_s0  | mfvi         | 315.460 | exact        |     1897.981 |  285.760 |      1766.197 |
+| R_freezeb_off_s1 | mfvi         | 356.347 | exact        |     4453.348 |  326.859 |      4287.010 |
+| R_freezeb_off_s0 | mfvi         | 336.890 | exact        |    64481.450 |  307.866 |     62879.634 |
+| R_d48_s1         | mfvi         | 322.413 | exact        |     1133.924 |  296.960 |      1047.357 |
 
 ## The switch ladder (Experiment 6)
 
@@ -585,8 +592,8 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | rung | switch flipped  |     val |     step | best lr | non-emb |
 | ---: | --------------- | ------: | -------: | ------: | ------: |
 |    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
-|    2 | position        | 145.000 |    0.900 |   0.010 |   50128 |
-|    3 | norm            | 139.500 |   -5.500 |   0.003 |   49744 |
+|    2 | position        | 142.900 |   -1.200 |   0.001 |   50128 |
+|    3 | norm            | 139.500 |   -3.400 |   0.003 |   49744 |
 |    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
 |    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
 |    6 | attn_value      | 156.900 |   10.600 |   0.010 |   37264 |
@@ -689,6 +696,15 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \PTbestRank         | 48        |
 | \PTbestSd           | 4.9       |
 | \PTbestVal          | 201.9     |
+| \ReproDampedMean    | 318.4     |
+| \ReproDampedN       | 3         |
+| \ReproDampedPct     | 2.0       |
+| \ReproDampedSd      | 6.3       |
+| \ReproSdRatio       | 21        |
+| \ReproUndampedMean  | 462.4     |
+| \ReproUndampedN     | 3         |
+| \ReproUndampedPct   | 28.2      |
+| \ReproUndampedSd    | 130.2     |
 | \SpreadBest         | 197.3     |
 | \SpreadLab          | 192       |
 | \SpreadMean         | 206.9     |

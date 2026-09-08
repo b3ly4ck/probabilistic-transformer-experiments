@@ -962,6 +962,26 @@ def emit_numbers(out: Path, md: List[str], extra: Optional[Dict[str, str]] = Non
             defs["SpreadSeeds"] = str(len(g))
 
     defs.update(extra or {})
+    # The reproduction check, which is the paper's methodological centrepiece: undamped against
+    # damped, three seeds each. Reported before as 322.0 +- 0.65, which was two of the three.
+    repro = load("repro")
+    if repro:
+        by_alpha: Dict[Any, List[float]] = {}
+        for r in repro:
+            by_alpha.setdefault(r["cell"]["alpha_Z"], []).append(r["val_ppl"])
+        for tag, alpha in (("Undamped", 1.0), ("Damped", 0.25)):
+            v = by_alpha.get(alpha)
+            if not v or len(v) < 2:
+                continue
+            m, sd = _mean_sd(v)
+            defs[f"Repro{tag}Mean"] = f"{m:.1f}"
+            defs[f"Repro{tag}Sd"] = f"{sd:.1f}"
+            defs[f"Repro{tag}Pct"] = f"{100 * sd / m:.1f}"
+            defs[f"Repro{tag}N"] = str(len(v))
+        if "ReproUndampedSd" in defs and "ReproDampedSd" in defs:
+            defs["ReproSdRatio"] = "%.0f" % (
+                float(defs["ReproUndampedSd"]) / max(float(defs["ReproDampedSd"]), 1e-9))
+
     # The low-rank ladder's seed-spread range, over the configurations that did not collapse.
     if low:
         okpts = [r for r in mean_over_seeds(low, ["cell.d", "cell.rank"])
