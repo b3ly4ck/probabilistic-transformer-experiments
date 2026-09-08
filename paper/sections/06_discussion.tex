@@ -12,8 +12,8 @@ transformer exists, it is forced rather than chosen at every step where a choice
 available, and next-token prediction in it is inference over a variable the model already had.
 Weight tying, the language-model bias, the \textsc{[mask]}-style query and a
 mixture-of-softmaxes readout are consequences of that, not additions to it. What we do not
-claim is a perplexity win. At bracketing budgets the model is a factor of $\MBFirstRatioGpt$ to
-$\MBLastRatioGpt$ behind a causal transformer on this corpus, and per parameter it gains less
+claim is a perplexity win. Across the budgets we measure, the model is a factor of $\MBMinRatioGpt$ to
+$\MBMaxRatioGpt$ behind a causal transformer on this corpus, and per parameter it gains less
 than either baseline on every range where the comparison can be made. Where the exponents put
 the cause is worth being exact about: on the one range where all three are measured, sharing
 parameters across depth accounts for most of the shallow slope --- $\ExpTriTf$ against

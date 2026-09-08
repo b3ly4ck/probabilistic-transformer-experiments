@@ -67,7 +67,7 @@ and mis-calibrated by up to a factor of the label-set size away from it, which i
 takes it within a few hundred steps. Correcting that revives label-set sizes at which the
 prescribed parameterisation sits on the unigram baseline. The resulting model reaches a
 validation perplexity of $\PTbestVal$ on the Penn Treebank against $445.2$ for a bigram, and
-sits between $\MBFirstRatioGpt$ and $\MBLastRatioGpt$ times a causal transformer interpolated to
+sits between $\MBMinRatioGpt$ and $\MBMaxRatioGpt$ times a causal transformer interpolated to
 its own parameter count ---
 the gap smallest where the models are smallest; its label variables carry syntactic categories that nothing
 supervised, and its head variables attach at a mean distance of eleven positions where uniform

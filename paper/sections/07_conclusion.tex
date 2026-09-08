@@ -10,7 +10,7 @@ field by a directed chain of conditional random fields in which the prefix enter
 frozen condition and the anti-causal term is never formed; and we obtain a language-model head
 by unclamping a variable the model already had, which makes tied embeddings, the output bias
 and a mixture-of-softmaxes readout consequences of the construction rather than additions to it.
-Empirically the model trains, reaches between $\MBFirstRatioGpt$ and $\MBLastRatioGpt$ times a
+Empirically the model trains, reaches between $\MBMinRatioGpt$ and $\MBMaxRatioGpt$ times a
 causal transformer's perplexity at its own parameter count --- the gap smallest at the smallest
 budgets, and shallower in slope than either baseline on every range where the two can be
 compared --- and learns label variables that carry recognisable syntactic categories
