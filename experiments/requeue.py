@@ -39,6 +39,7 @@ SPECS: Dict[str, Tuple[int, List[str]]] = {
     "experiments.exp5_init.spec_init": (4, []),
     "experiments.exp3_readout.spec_open": (5, []),
     "experiments.exp6_switches.spec_switches": (6, []),
+    "experiments.exp7_factored.spec_factored": (6, []),
 }
 
 
@@ -98,7 +99,8 @@ def main() -> None:
         for i in range(n):
             expect = len([c for k, c in enumerate(cells) if k % n == i])
             have = done_cells(spec, i, n)
-            line = f"{spec} --shard {i}/{n}"
+            argstr = " ".join(f"'{x}'" if x == "" else x for x in extra)
+            line = f"{spec} --shard {i}/{n}" + (f" {argstr}" if argstr else "")
             state = "running" if line in live else ("queued" if line in pending else "idle")
             flag = ""
             if have < expect and state == "idle":

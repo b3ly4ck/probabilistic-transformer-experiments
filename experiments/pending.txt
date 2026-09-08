@@ -25,9 +25,9 @@ experiments.exp3_readout.spec_open --shard 1/5
 experiments.exp3_readout.spec_open --shard 2/5
 experiments.exp3_readout.spec_open --shard 3/5
 experiments.exp3_readout.spec_open --shard 4/5
-experiments.exp2_scaling.spec_pt --shard 0/6
-experiments.exp2_scaling.spec_pt --shard 1/6
-experiments.exp2_scaling.spec_pt --shard 2/6
-experiments.exp2_scaling.spec_pt --shard 3/6
-experiments.exp2_scaling.spec_pt --shard 4/6
-experiments.exp2_scaling.spec_pt --shard 5/6
+experiments.exp7_factored.spec_factored --shard 0/6
+experiments.exp7_factored.spec_factored --shard 1/6
+experiments.exp7_factored.spec_factored --shard 2/6
+experiments.exp7_factored.spec_factored --shard 3/6
+experiments.exp7_factored.spec_factored --shard 4/6
+experiments.exp7_factored.spec_factored --shard 5/6
