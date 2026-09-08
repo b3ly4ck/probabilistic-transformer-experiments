@@ -46,11 +46,20 @@ together are the only way we found to see that.
 Two of our results sharpen that into something a successor should take seriously. The exact
 readout is a strictly richer family than the mean-field one at zero parameter cost, and training
 under it is a hundred perplexity \emph{worse} (\Cref{sec:exp3}); and more mean-field iterations
-make the model monotonically worse, so at this scale the best version of it runs one
+make the model worse, so at this scale the best version of it runs one
 (\Cref{sec:exp-depth}). Both say the same thing from different directions --- that the limit
 here is not what the family can express but what this objective and this optimiser can reach
 inside it --- and both point away from expressiveness arguments and towards the optimisation of
 the inference loop as the thing to fix next.
+
+The factored-label experiment adds the one piece of evidence that cuts the other way, and it is
+worth taking seriously for that reason. The exact readout's penalty is not a constant: it falls
+from $52$ perplexity at $K=1$ to nothing at $K=4$ (\Cref{sec:exp-factored}). Read with the
+paragraph above, that suggests the readout was not being punished for being richer but for
+having nothing extra to be rich \emph{about} --- with one label variable the product of mixtures
+is a single mixture, and splitting the variable is what gives it something to express. If that
+is right, the two most promising directions in this paper are the same direction: factor the
+label variable, and use the readout the graph actually prescribes.
 
 \paragraph{Hyperparameters are the practical obstacle, and they are analysable.}
 The most useful thing we can report to anyone who wants to build on this is that the causal
