@@ -92,58 +92,29 @@ and the \texttt{logcumsumexp} scan agrees with slot-by-slot assembly for
 $\clip \in \{0,1,2,4,9\}$. The worked example of the output-mechanism note reproduces digit for
 digit. \TODO{state the factored-label brute-force agreement once exp7 lands}
 
-\paragraph{A methodological finding first: the undamped model is not reproducible.}
+\paragraph{A methodological finding first: variance.}
 \label{sec:exp-repro}
 A configuration recorded at validation perplexity 430.04 in our own earlier work was re-run
 here on the same code, the same seed and the same data order, and landed at 644.98. Three arms
-separate the causes and they agree to every printed digit: the pre-refactor source through its
-original driver, the current source through that driver, and the current source through the
-sweep runner. \emph{The mathematics and the harness are exonerated; the number is not
-reproducible.} The one thing that differs is the GPU. \TODO{report the A40-pinned control}
-That is not surprising for this configuration --- it passes through an excursion in which
-validation perplexity reverts from 516 to 694 between two evaluations before recovering --- but
-it has a consequence we apply throughout: \textbf{no single-seed number from the undamped
-region is reported as a result}, and every headline figure below is a mean over three seeds with
-its spread. It also reframes what damping buys: not only a better mean, but a variance small
-enough for a mean to mean anything.
+separate the possible causes and they agree to every printed digit --- the pre-refactor source
+through its original driver, the current source through that driver, and the current source
+through the sweep runner --- so neither the implementation nor the harness is at fault. What is
+at fault is the number. Over three seeds on one device the undamped configuration gives
+$610.9 / 408.8 / 367.5$, that is $462.4 \pm 130.2$: \textbf{a seed standard deviation of 28\% of
+its own mean}. The earlier figure sits comfortably inside that range. It was never wrong; it
+was one draw from a broad distribution, quoted to two decimal places.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_scaling_nonemb.png}
-\includegraphics[width=\columnwidth]{figures/fig_scaling_total.png}
-\caption{Scaling on PTB: validation perplexity against non-embedding parameters (top) and
-total parameters (bottom), log--log. Each point is the better of two learning rates at a
-15{,}000-step budget with the checkpoint selected on validation; the legend carries the fitted
-power-law exponent. The dotted line is the unigram baseline (688.8), which separates ``learned
-something'' from ``learned the marginal''.}
-\label{fig:scaling}
-\end{figure}
-
-\begin{table*}[t]
-\centering
-\small
-\begin{tabular}{llrrccc}
-\toprule
-Dataset & Model & \multicolumn{2}{c}{Params (emb.\ / non-emb.)} & Val ppl & Test ppl & Seeds \\
-\midrule
-\multirow{4}{*}{PTB}
- & Unigram            & ---       & ---      & 688.8 & --- & exact \\
- & Causal transformer & \TODO{}   & \TODO{}  & \TODO{} & \TODO{} & \TODO{} \\
- & Looped transformer & \TODO{}   & \TODO{}  & \TODO{} & \TODO{} & \TODO{} \\
- & Causal PT (ours)   & \TODO{}   & \TODO{}  & \TODO{} & \TODO{} & \TODO{} \\
-\midrule
-\multirow{4}{*}{WikiText-2}
- & Unigram            & ---       & ---      & \TODO{} & --- & exact \\
- & Causal transformer & \TODO{}   & \TODO{}  & \TODO{} & \TODO{} & \TODO{} \\
- & Looped transformer & \TODO{}   & \TODO{}  & \TODO{} & \TODO{} & \TODO{} \\
- & Causal PT (ours)   & \TODO{}   & \TODO{}  & \TODO{} & \TODO{} & \TODO{} \\
-\bottomrule
-\end{tabular}
-\caption{Main results at matched budget, mean $\pm$ standard deviation over three seeds. Every
-model is trained by the same loop on the same blocks and scored on the identical token set.
-WikiText-2 uses the hyperparameters selected on PTB, unchanged.}
-\label{tab:main}
-\end{table*}
+The same three seeds with the label update damped ($\alpha_Z = 0.25$) give $322.0 \pm 0.65$ ---
+\textbf{0.2\%}, two orders of magnitude tighter. We draw two conclusions and apply them
+throughout. No single-seed number from the undamped region is reported as a result here, and
+comparisons in that region from the earlier work are withdrawn rather than repeated: a
+difference of 43 perplexity against a spread of 130 is not a measurement. And the interventions
+this paper is about should be judged on \emph{variance} as much as on the mean. Damping was
+previously reported as an improvement from 641.5 to 248.3; it is at least as much an
+improvement in reproducibility, and reproducibility is what lets any later comparison mean
+anything at all. Every headline number below is a three-seed mean with its spread, and every
+grid cell carries a count of seeds that failed to learn, because a mean taken over a mixture of
+learned and collapsed runs measures neither.
 
 \paragraph{Scaling curves.}
 \label{sec:exp-scaling}
