@@ -48,6 +48,7 @@ GRIDS = {
     "width": "experiments/exp4_width_transfer/spec_width*.json",
     "gain": "experiments/exp4_width_transfer/spec_gain*.json",
     "lr_transfer": "experiments/exp4_width_transfer/spec_lr_transfer*.json",
+    "rank": "experiments/exp4_width_transfer/spec_rank*.json",
     "init": "experiments/exp5_init/spec_init*.json",
     "open": "experiments/exp3_readout/spec_open*.json",
     "repro": "experiments/exp3_readout/repro_check*.json",
@@ -242,6 +243,28 @@ def section_gain(md: List[str], out: Path) -> None:
                          v_label="validation perplexity")
 
 
+def section_rank(md: List[str], out: Path) -> None:
+    md.append("\n## The Kruskal rank (Experiment 4d)\n")
+    rows = load("rank")
+    if not rows:
+        md.append("_grid empty_\n")
+        return
+    agg = []
+    for d in sorted({r["cell"]["d"] for r in rows}):
+        for rk in sorted({r["cell"]["rank"] for r in rows if r["cell"]["d"] == d}):
+            cells = [r for r in rows if r["cell"]["d"] == d and r["cell"]["rank"] == rk]
+            v = [r["val_ppl"] for r in cells]
+            mean = sum(v) / len(v)
+            sd = (sum((x - mean) ** 2 for x in v) / (len(v) - 1)) ** 0.5 if len(v) > 1 else 0.0
+            agg.append({"d": d, "rank": rk, "non-emb": cells[0]["params"]["non_embedding"],
+                        "total": cells[0]["params"]["total"], "n": len(v),
+                        "val mean": round(mean, 1), "sd": round(sd, 1)})
+    md.append(markdown_table(agg, ["d", "rank", "non-emb", "total", "n", "val mean", "sd"]))
+    md.append("\nThe arc factors cost `2 K h d r`; every experiment before this one ran at "
+              "`r = d`, the most expensive setting of the decomposition. A rank that costs no "
+              "perplexity moves the whole PT curve left on the parameter axis.\n")
+
+
 def section_init(md: List[str], out: Path) -> None:
     md.append("\n## Initialisation and the global head (Experiment 5)\n")
     rows = load("init")
@@ -403,7 +426,7 @@ def main() -> None:
         "new shard lands.\n",
     ]
 
-    for fn in (section_repro, section_scaling, section_width, section_gain, section_init, section_open,
+    for fn in (section_repro, section_scaling, section_width, section_gain, section_rank, section_init, section_open,
                section_switches, section_factored, section_transfer):
         try:
             fn(md, out)

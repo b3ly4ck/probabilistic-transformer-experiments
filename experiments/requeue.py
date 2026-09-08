@@ -35,6 +35,7 @@ SPECS: Dict[str, Tuple[int, List[str]]] = {
     "experiments.exp4_width_transfer.spec_width": (6, []),
     "experiments.exp4_width_transfer.spec_gain": (4, []),
     "experiments.exp4_width_transfer.spec_lr_transfer": (3, []),
+    "experiments.exp4_width_transfer.spec_rank": (2, []),
     "experiments.exp5_init.spec_init": (4, []),
     "experiments.exp3_readout.spec_open": (5, []),
     "experiments.exp6_switches.spec_switches": (6, []),
