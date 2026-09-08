@@ -81,3 +81,44 @@ dominating is a finding that points at a specific repair.
 | date | commit | job | shard | notes |
 |---|---|---|---|---|
 | 2026-09-08 | 2afa95d | queued | 0-5 of 6 | 96 cells |
+
+## Partial reading (2026-09-08, learning rates 1e-3 and 3e-3 of four)
+
+S1 — the transformer with exactly one causal-PT property, best of the rates run so far:
+
+| switch | val | Δ vs transformer anchor (129.2) |
+|---|---|---|
+| `norm` removed | 128.6 | **−0.7** |
+| `attn_value` tied to the key | 128.7 | **−0.6** |
+| `position` → clipped relative | 128.9 | **−0.4** |
+| `attn_query_proj` removed | 131.1 | +1.9 |
+| `residual` → unary re-injection | 136.7 | +7.5 |
+| `weight_sharing` | 141.8 | +12.5 |
+| `ffn` removed | 144.4 | +15.1 |
+| `state` → simplex | 693.5 | **+564.3** |
+
+**Three of the ten differences are free**, and two of those three are the ones the construction
+is most often criticised for: tying the value to the key (which the factor graph forces, because
+both roles are the same message through the same arc factor) and dropping the query projection.
+Relative positions are free too. Layer normalisation turns out to be *unnecessary* at this
+scale once the learning rate is tuned per rung — the +18.5 it appeared to cost at a single rate
+was the rate, not the switch, which is the whole reason each rung is swept.
+
+**The simplex state is the cliff, and its failure signature is this paper's own mechanism.**
+A transformer whose hidden state is passed through a softmax after every block has a state whose
+Euclidean norm has collapsed to the `[1/sqrt(d), 1]` range, while its attention still divides by
+`sqrt(d_head)` — a temperature calibrated for unit-variance activations. That is exactly the
+mis-calibration of §3.2, arrived at from the transformer side: the switch model has no
+temperature switch, so flipping `state` alone flips the state geometry without flipping the
+temperature that geometry requires. The +564 should therefore **not** be read as "the simplex
+constraint costs 564 perplexity"; it should be read as "the simplex constraint and the attention
+temperature are not independent, and a ladder that treats them as independent switches finds
+their interaction sitting on one of them."
+
+That is a limitation of the ladder design and it is stated rather than worked around. The
+independent evidence is that the real causal PT, which *is* simplex-constrained and *does* have
+a temperature suited to it, reaches 208.8 — so the constraint plainly does not cost 564 there.
+
+Still to come: learning rates 1e-2 and 3e-2 (the PT end of the ladder is dead at both rates run
+so far, which is why the range was extended), the `readout` and `attn_out_proj` rungs, and the
+whole cumulative family.
