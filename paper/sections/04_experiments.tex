@@ -518,6 +518,21 @@ flip one at a time. Values are in \Cref{tab:switches}.}
 \label{fig:ladder}
 \end{figure}
 
+\paragraph{Two knobs with no gentle regime.}
+\label{sec:exp-knobs}
+Two of the source's constants had never been varied inside a configuration that trains, and both
+behave the same way. The $L_2$ coefficient on the arc scores, which Wu \& Tu's Table 2 sets at
+$5\times10^{-4}$, is indistinguishable at $5\times10^{-3}$ ($249.8$ against $248.3$) and destroys
+the model at $5\times10^{-2}$ ($697.0$, with the arc message at $2\,\%$ of the word unary and a
+prefix-ablation KL of exactly zero --- the arc factors have been regularised out of the model).
+The relative-position clip $\clip$ does the same in the opposite direction: $\clip = 1$ and
+$\clip = 3$ are indistinguishable ($249.7$, $248.3$) and $\clip = 7$ costs $357$ perplexity
+($605.1$, with the message at eight times the unary). \textbf{Flat, then catastrophic, with
+nothing in between}, and in both cases the failure is the message-to-unary balance leaving the
+range where the label update is stable --- the same quantity, and the same mechanism, as
+\Cref{sec:exp-width}. One seed per cell. \TODO{$\clip=0$, the distance-blind control, and the
+remaining $L_2$ settings.}
+
 \paragraph{Inference depth buys nothing, and costs.}
 \label{sec:exp-depth}
 The number of mean-field iterations $\niter$ is the causal PT's depth: it is what makes the
