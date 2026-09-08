@@ -193,6 +193,50 @@ def section_width(md: List[str], out: Path) -> None:
 # ---------------------------------------------------------------------- the rest --
 
 
+def section_mechanism(md: List[str], out: Path) -> None:
+    """The mechanism figure: what a collapse looks like while it happens.
+
+    Section 3.2 of the paper claims the head temperature is calibrated for the uniform-belief
+    limit and mis-calibrated by up to a factor d away from it, and predicts a feedback loop
+    whose gain rises with width. The evidence for that is not a final perplexity, it is the
+    *joint trajectory* of the message scale and the belief sharpness within a run -- so the
+    figure has to put both on one time axis, and pair a run that learns with one that does not
+    at the same width.
+    """
+    md.append("\n## The collapse mechanism, within a run\n")
+    rows = load("width") + load("gain")
+    pick = []
+    for want in (dict(d=32, temp_mode="fixed", alpha_Z=1.0),
+                 dict(d=32, temp_mode="qknorm", qk_gain=1.0, alpha_Z=1.0),
+                 dict(d=96, temp_mode="fixed", alpha_Z=1.0),
+                 dict(d=96, temp_mode="qknorm", qk_gain=2.0, alpha_Z=1.0)):
+        hits = [r for r in rows
+                if all(get_path(r, f"cell.{k}") == v for k, v in want.items())
+                and r.get("diag_trace")]
+        if hits:
+            pick.append(min(hits, key=lambda r: r["val_ppl"]))
+    if not pick:
+        md.append("_no traces yet_\n")
+        return
+
+    def lbl(r):
+        c = r["cell"]
+        t = "1/d" if c["temp_mode"] == "fixed" else f"standardised g={c['qk_gain']:g}"
+        return f"d={c['d']}, {t}"
+
+    plot_traces(pick, out / "fig_mechanism_msg.png", diag="msg_over_unary", label=lbl,
+                diag_label="head message / word unary")
+    plot_traces(pick, out / "fig_mechanism_sharp.png", diag="q_sharpness", label=lbl,
+                diag_label=r"belief sharpness $\|q\|_2\sqrt{d}$")
+    md.append(markdown_table(pick, ["cell.d", "cell.temp_mode", "cell.qk_gain", "val_ppl",
+                                    "diag_final.msg_over_unary", "diag_final.q_sharpness",
+                                    "ablation_kl"]))
+    md.append("\nBelief sharpness is reported scale-free as `||q||_2 sqrt(d)`, which is 1 at the "
+              "uniform belief and sqrt(d) at a one-hot -- i.e. it is exactly the factor by which "
+              "the effective attention temperature drifts from the value `lambda_H = 1/d` was "
+              "calibrated for.\n")
+
+
 def section_gain(md: List[str], out: Path) -> None:
     md.append("\n## The standardised-attention gain, three seeds (Experiment 4b)\n")
     rows = load("gain")
@@ -426,7 +470,7 @@ def main() -> None:
         "new shard lands.\n",
     ]
 
-    for fn in (section_repro, section_scaling, section_width, section_gain, section_rank, section_init, section_open,
+    for fn in (section_repro, section_scaling, section_width, section_mechanism, section_gain, section_rank, section_init, section_open,
                section_switches, section_factored, section_transfer):
         try:
             fn(md, out)
