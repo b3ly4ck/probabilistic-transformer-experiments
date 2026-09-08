@@ -41,6 +41,11 @@ from src.analysis import (
 REPO = Path(__file__).resolve().parent.parent
 ARTICLE = Path("/public/home/belyack/work/pt-article/paper/figures")
 UNIGRAM_PTB = 688.82  # val ppl of the ML unigram on the identical token set, ignore_first=1
+BIGRAM_PTB = 445.24
+# The unigram says whether a model learned anything; the bigram says whether it learned anything
+# beyond the previous word. Once the interpretability probe found the trained model putting
+# 0.976 of its positional attention mass at distance 1, the second stopped being a formality and
+# became the line a reader should actually look at.
 
 GRIDS = {
     "baselines": "experiments/exp2_scaling/spec_baselines*.json",
@@ -180,7 +185,7 @@ def section_scaling(md: List[str], out: Path) -> None:
                                              "4k-150k"]))
             p = plot_scaling(
                 curves, out / fname, x=xkey, x_label=xlabel,
-                hline=(UNIGRAM_PTB, "unigram baseline 688.8"),
+                hline=(BIGRAM_PTB, "bigram baseline 445.2"),
                 title=None,
             )
             print(f"  wrote {p}")
