@@ -483,7 +483,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 
 |   d |   m | init std | in L2 | init dist |   n | val mean |     sd | H(Q_g)/max | glob/unary |
 | --: | --: | -------: | ----- | --------- | --: | -------: | -----: | ---------: | ---------: |
-|  32 |   0 |       -- | True  | normal    |   1 |  244.300 |  0.000 |      0.000 |      0.000 |
+|  32 |   0 |       -- | True  | normal    |   3 |  243.200 |  5.300 |      0.000 |      0.000 |
 |  32 |  64 |    0.020 | False | normal    |   3 |  249.300 |  1.900 |      0.992 |      1.516 |
 |  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 |  7.200 |      1.000 |      0.229 |
 |  32 |  64 |    0.100 | False | normal    |   1 |  249.500 |  0.000 |      0.958 |      1.593 |
@@ -651,3 +651,14 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \SpreadRank         | 24        |
 | \SpreadSd           | 9.2       |
 | \SpreadSeeds        | 3         |
+| \SwapMildestLab     | 96        |
+| \SwapMildestRank    | 12        |
+| \SwapMildestRatio   | 7         |
+| \SwapMildestSwapped | 1621      |
+| \SwapMildestTrained | 223.1     |
+| \SwapNconfigs       | 11        |
+| \SwapWorstLab       | 64        |
+| \SwapWorstRank      | 16        |
+| \SwapWorstRatio     | 18        |
+| \SwapWorstSwapped   | 4146      |
+| \SwapWorstTrained   | 225.9     |
