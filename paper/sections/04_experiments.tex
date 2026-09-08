@@ -245,7 +245,7 @@ $219.8 \pm 4.2$ at $\nlab = 64$, against $287.4 \pm 52.5$ and $470.0 \pm 160.7$ 
 
 \textbf{The gain transfers; the width limit does not disappear.} Sweeping the standardisation
 gain over $\{1, 1.5, 2, 3, 4, 6\}$ at four widths with three seeds each, the argmin is $1$ at
-every width, and the working range is the same $[1,2]$ at every width --- which is what the
+every width, and the working range is the same $[1,2]$ at every width (\Cref{tab:gain}) --- which is what the
 mechanism predicts, since after standardisation the attention entropy depends on the gain and on
 the length of the head domain and not on $\nlab$ at all. Above the range the failure is sharp and
 reproducible rather than noisy: at $\nlab=32$, gain $3$ collapses on $3/3$ seeds
@@ -259,7 +259,7 @@ update parametrisation is judged by \citep{yang2022tensor} and that \citet{kuang
 apply to the encoder: validation perplexity against learning rate at four widths, under both
 temperatures. The argmin moves by one step of a $2\times$ grid over an $8\times$ range of width
 in \emph{both} arms ($2\times10^{-2} \to 10^{-2}$ under the source temperature,
-$4\times10^{-2} \to 2\times10^{-2}$ under the standardised one). So the two results are about
+$4\times10^{-2} \to 2\times10^{-2}$ under the standardised one; \Cref{tab:lr}). So the two results are about
 different things, and we do not claim ours as a substitute for theirs: what the temperature fixes
 is not where the optimal learning rate sits, but whether the model learns at all at a given
 width.
@@ -273,7 +273,7 @@ parameters and a fifth of the seed variance --- and $\krank = 12$ gives $257.8 \
 18{,}624 non-embedding parameters, eight times smaller and still ahead of the best $\nlab = 32$
 configuration at a comparable budget. The reason is structural: the arc score reaches inference
 only contracted against a belief, $\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, so what
-is usable is its rank on the affine hull of the reachable beliefs, and those are measurably
+is usable is its rank on the affine hull of the reachable beliefs (\Cref{tab:rank}), and those are measurably
 concentrated. \TODO{the low-rank ladder at full budget}
 
 \textbf{We report what this repair costs, because it is not free.} A query-dependent temperature
