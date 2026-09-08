@@ -58,8 +58,12 @@ perplexity while halving the arc parameters and cutting the seed variance by a f
 \input{figures/table_switches}
 \caption{Each of the ten differences priced twice: S1 is the transformer with that one property
 replaced by the causal PT's, S2 is the all-PT rung with that one property restored to the
-transformer's. $\Delta$ is the distance from the anchor of the corresponding family, signed so
-that positive always means worse. Each rung is the best of four learning rates.}
+transformer's. $\Delta$ is the distance from the anchor of its own family, signed so that in
+\emph{both} families a positive value means the causal PT's version of that property is worse
+by that much: in S1 it is what adopting the PT's version costs a transformer, in S2 what
+restoring the transformer's version buys the PT. Each rung is the best of four learning rates,
+and the S2 anchor moves as the sweep fills in, so the two columns should be read against the
+anchors printed above them rather than against each other.}
 \label{tab:switches}
 \end{table}
 
