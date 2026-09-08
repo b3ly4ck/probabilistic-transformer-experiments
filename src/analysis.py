@@ -1217,7 +1217,15 @@ def plot_traces(
         # at the last line of the function. The empty string means "no marker" in every
         # version.
         handles.append(plt.Line2D([], [], color="0.3", linestyle="--", marker=""))
-        labels.append("{} (right axis)".format(diag))
+        # Prefer the human-readable label the caller gave for the axis over the raw column
+        # name: "q_sharpness" is a dictionary key, not something a reader should have to parse.
+        labels.append("{} (dashed, right axis)".format(diag_label or diag))
     if handles:
-        ax.legend(handles, labels, fontsize=8, frameon=False)
+        # Below the axes rather than inside them. These traces fill the plotting area -- a
+        # perplexity curve falling from the top-left and a diagnostic rising from the
+        # bottom-left leave no interior corner free -- and a legend placed inside sits on the
+        # data whichever corner it is given.
+        ncol = 2 if len(labels) > 3 else 1
+        ax.legend(handles, labels, fontsize=8, frameon=False, ncol=ncol,
+                  loc="upper center", bbox_to_anchor=(0.5, -0.16))
     return _save(fig, out_path, dpi)
