@@ -1411,6 +1411,29 @@ def emit_grid_tables(out: Path) -> None:
                      ["$d$", "$m$", "init sd", "in $L_2$", "dist.", "$n$", "val ppl",
                       r"$H(Q_g)/\max$"], table, "rrllrrlr")
 
+    # Factored labels: seed means keyed the way the prediction is stated, as an interaction.
+    fac = load("factored")
+    if fac:
+        table = []
+        for r in mean_over_seeds(fac, ["cell.tags.grid", "cell.d", "cell.tags.K",
+                                       "cell.readout"]):
+            table.append([str(get_path(r, "cell.tags.grid")), str(r["cell"]["d"]),
+                          str(get_path(r, "cell.tags.K")),
+                          "exact" if r["cell"]["readout"] == "exact" else "m.\\,field",
+                          str(r["_n_seeds"]),
+                          f"{r['params']['non_embedding']:,}".replace(",", "{,}"),
+                          _summarise_seeds([x for x in fac
+                                            if (x["cell"]["d"], get_path(x, "cell.tags.K"),
+                                                x["cell"]["readout"])
+                                            == (r["cell"]["d"], get_path(r, "cell.tags.K"),
+                                                r["cell"]["readout"])])])
+        table.sort(key=lambda t: (t[0], int(t[5].replace("{,}", "")), int(t[1]), t[3]))
+        _latex_table(out / "table_factored.tex",
+                     ["fam.", "$\\nlab$", "$K$", "readout", "$n$", "non-emb.", "val ppl"],
+                     table, "@{}l@{\\ }l@{\\ }l@{\\ }l@{\\ }r@{\\ }r@{\\ }l@{}")
+    else:
+        _placeholder(out / "table_factored.tex", "factored-label grid not yet run")
+
     # The initialisation-distribution grid, in the source configuration where it was first run.
     # Section 4 cites this table precisely to say that nothing can be read from it: single seeds
     # in a region whose seed standard deviation is 130. Emitted so that the claim is checkable
