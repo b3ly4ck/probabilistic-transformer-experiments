@@ -1,5 +1,2 @@
-experiments.exp7_factored.spec_factored --shard 1/6
-experiments.exp7_factored.spec_factored --shard 2/6
-experiments.exp7_factored.spec_factored --shard 3/6
 experiments.exp7_factored.spec_factored --shard 4/6
 experiments.exp7_factored.spec_factored --shard 5/6
