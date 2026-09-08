@@ -1,4 +1,4 @@
-\section{Proof of \Cref{thm:trilemma}}
+\section{Proof of the Trilemma}
 \label{app:proof}
 
 % Part I, Sections 1-9 of the technical note behind this work carries this argument in full;
@@ -7,16 +7,16 @@
 % rather than subsections, and the interiority statement is prose rather than a numbered lemma,
 % purely for length: this paper's format allows very few formal environments.
 
-Part~I, Sections~1--9 of the technical note behind this work carries the argument; the note is
-not a publication, so we refer to its sections rather than cite it. Two formalisation decisions
+Part~I, Sections~1--9 of the technical note behind this work carry the argument; the note is not
+a publication, so we refer to its sections rather than cite it. Two formalisation decisions
 come first: both are places a reader will press, and one changes what is true.
 
 \paragraph{Where the words enter.}
 One might let each word enter only through its initialisation
-$\Q_{z_i}^{(0)} \propto \exp(\Sfac_{w_i,\cdot})$. In the encoder model it does not: $w_i$ also
-enters the unary term of $E$, so $\Sfac_{w_i,\cdot}$ reappears in every update of $\Zv{i}$. We
-therefore assume only \emph{word-locality} (A3 below), of which the initialisation-only version
-is the case $u_i \equiv 0$. That is load-bearing rather than cosmetic: allow word-nonlocal terms
+$\Q_{z_i}^{(0)} \propto \exp(\Sfac_{w_i,\cdot})$. In the encoder model it does not enter only
+there: $w_i$ also enters the unary term of $E$, so $\Sfac_{w_i,\cdot}$ reappears in every update
+of $\Zv{i}$. We therefore assume only \emph{word-locality} (A3 below), of which the
+initialisation-only version is the case $u_i \equiv 0$. That is load-bearing rather than cosmetic: allow word-nonlocal terms
 and the theorem is false, as
 %
 \begin{equation}
@@ -37,7 +37,7 @@ as a function of an arbitrary interior initialisation, does not depend on the in
 blocks of nodes at strictly later positions. \emph{The theorem is false under \textup{(C1)}}, and
 we say so rather than leave it to be found: a finite vocabulary makes (C1) a finite family of
 conditions on the states the trajectories actually visit, whereas the graph condition the proof
-needs is an identical-vanishing condition on an open set.
+needs is an identical-vanishing condition on the whole interior of the state space.
 
 \begin{proposition}[Sharpness; Part~I, Section~8]
 \label{app:prop-sharp}
@@ -79,7 +79,8 @@ attention satisfies for all parameters, activations and inputs.
 \paragraph{Setup.}
 $\Nodes$ has a node $z_i$ per label variable $\Zv{i}$ and a node $h_{ic}$ per head variable
 $\Hv{i}{c}$, with $\pi(x)$ the position of $x$; node $x$ carries a distribution $\Q_x$ on a
-finite domain of size $d_x$ ($=\nlab$ for label nodes, $=|\Dep{i}|$ for head nodes). Write
+finite domain of size $d_x$ ($=\nlab$ for label nodes; for a head node the number of candidate
+heads, which the theorem leaves arbitrary rather than causal). Write
 $\Xsp = \prod_x \Delta_x$ and $\Xint = \prod_x \Delta^\circ_x$,
 $\Tang{x} = \{u \in \R^{d_x} : \mathbf{1}^{\top}u = 0\}$, and
 $\Proj{x} = I - d_x^{-1}\mathbf{1}\mathbf{1}^{\top}$ for the orthogonal centring projector onto
@@ -185,38 +186,39 @@ on another word, which is $\neg$X. Contrapositively, a network-causal contextual
 generated, in the sense of (A2), by any single $C^2$ word-local energy. C2 $\Rightarrow$ C1
 follows as well, word initialisations being particular interior ones --- vacuously, since nothing
 depends on any other word at all. Under a single energy the only way to be causal is to be
-trivial.
+trivial. The complementary half of the statement --- that any two of the three properties do hold
+together --- is the three witnesses below.
 \end{proof}
 
-Part~I, Section~7 turns this into a dichotomy for the masked scheme itself: were some $E$ to
-reproduce its updates, every $\Tfac{c}$ would have to satisfy $\Proj{}\Tfac{c}\Proj{} = 0$, whose
-centred label message is a state-independent constant --- no energy, or no context, which is
-\Cref{rmk:never-formed}. The mechanism is visible in the encoder's own field, which passes the
-symmetry test because it is an actual gradient: the term by which $i$ attends to $j$ and the term
-by which $j$ leaks into $i$ are two faces of one Hessian entry. Masking discards one face;
-Schwarz's theorem says one cannot.
+Part~I, Section~7 sharpens this for the masked scheme itself. One tangential Hessian entry,
+computed from the update at $i$ and again from the update at $j<i$ --- whose masked message
+contains no $\Q_{z_i}$ at all --- must agree with itself, which forces
+$\Proj{}\Tfac{c}\Proj{} = 0$ on every channel; and the centred label message of such a
+$\Tfac{c}$ is a state-independent constant. Non-degenerate $\Tfac{c}$, no energy; degenerate
+$\Tfac{c}$, no context; there is no third option. That is the formal content of
+\Cref{rmk:never-formed}, and why the third witness below must give up SE rather than something
+cheaper.
 
 \paragraph{The three witnesses.}
 All three pairs are realisable (Part~I, Section~6), so \Cref{thm:trilemma} is a genuine trilemma
 and not one impossibility in disguise. \emph{SE $\wedge$ C2, $\neg$X:} take
 $E = \sum_i u_i(\Q_i;w_i) + \sum_{i,c}\psi_{ic}(\Q_{z_i},\Q_{h_{ic}})$, whose couplings are all
-within-position. \emph{SE $\wedge$ X, $\neg$C2:} the encoder model of
+within-position, so C2 holds by \Cref{app:prop-c2}. \emph{SE $\wedge$ X, $\neg$C2:} the encoder model of
 \citet{wu2023probabilistic}, whose trilinear term
 $\Q_{h_{jc}}(i)\,\Q_j(b)\,\Q_i(a)\,\Tfac{c}_{b,a}$ makes a cross-position edge that
 \Cref{app:lem-symmetry} fires in both directions. \emph{C2 $\wedge$ X, $\neg$SE:} mask the head
 domains so that $\Hv{i}{c}$ may point only to positions $j<i$ and keep only the message term
 weighted by $\Q_{h_{ic}}(j)$; every activation at position $i$ is then a function of blocks at
-positions $\leq i$, X holds for generic $\Tfac{c}$, and $\neg$SE is forced by
+positions $\leq i$ for arbitrary interior states, X holds for generic $\Tfac{c}$, and $\neg$SE is forced by
 \Cref{thm:trilemma}.
 
 \paragraph{Back to the model.}
-The directed chain of \Cref{sec:chain} gives up the single global energy --- the term the
-trilemma prices --- and keeps causality and contextuality. It is not the third witness: that
-scheme deletes a term from a symmetric field, whereas the chain never forms one
-(\Cref{rmk:never-formed}). What replaces the global energy is not nothing. Each step conditional
-is generated by its own energy $E_i$, every update is exactly $\softmax(-\nabla E_i/\lambda)$
-with nothing deleted, and the global object is the valid directed joint
-$\prod_i p(z_i, h_i \mid z_{\prefix{i}}, w_{1:i})$, inference being variational filtering: the
-belief at $i$ approximates $p(\Zv{i} \mid w_{1:i})$, not the smoothing marginal
-$p(\Zv{i} \mid w_{1:\seqlen})$. That is Check~2 of Part~II, Section~12.3 of the note, and for a
-decoder the filtering marginal is the semantically correct object.
+The directed chain of \Cref{sec:chain} gives up the single global energy and keeps causality and
+contextuality. It is not the third witness: that scheme deletes a term from a symmetric field,
+whereas the chain never forms one (\Cref{rmk:never-formed}). Nor is the energy replaced by
+nothing. Each step conditional is generated by its own energy $E_i$, every update is exactly
+$\softmax(-\nabla E_i/\lambda)$ with nothing deleted, and the global object is the valid directed
+joint $\prod_i p(z_i, h_i \mid z_{\prefix{i}}, w_{1:i})$; inference is variational filtering, so
+the belief at $i$ approximates $p(\Zv{i} \mid w_{1:i})$ and not the smoothing marginal
+$p(\Zv{i} \mid w_{1:\seqlen})$ --- Check~2 of Part~II, Section~12.3 of the note, and for a decoder
+filtering is the semantically correct object.

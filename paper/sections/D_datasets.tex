@@ -75,14 +75,14 @@ below needs no smoothing.
 
 \paragraph{WikiText-2.}
 The second corpus is the word-level release of \citet{merity2017pointer}, the
-\texttt{wikitext-2-v1} files rather than the \texttt{-raw-} release, in which rare words are
-not replaced by \texttt{<unk>} and which is therefore not interchangeable with them; in the
-word-level files \texttt{<unk>} accounts for $54{,}625$ of the training tokens. They are read by
-the same function as PTB, with the same whitespace
+\texttt{wikitext-2-v1} files rather than the \texttt{-raw-} release, which carries a different
+preprocessing and is not interchangeable with them; the word-level files are the ones already
+mapped to a closed vocabulary, and in them \texttt{<unk>} accounts for $54{,}625$ of the
+training tokens. They are read by the same function as PTB, with the same whitespace
 split, the same single \texttt{<eos>} per line and the same vocabulary construction from the
 training split. Its raw files keep the article structure of the source: of the 3{,}760
-validation lines, 1{,}299 are blank and 620 are section headings
-written as \texttt{= Heading =} or \texttt{= = Sub = =}. The standard word-level protocol scores
+validation lines, 1{,}299 are blank and 620 are headings, nested up to five levels deep and
+written as \texttt{= Heading =}, \texttt{= = Sub = =} and so on. The standard protocol scores
 both as they are, splitting on whitespace and appending one \texttt{<eos>} per line, blank lines
 included, so that a blank line contributes a bare \texttt{<eos>}; on the validation split the
 blank lines are $0.60\%$ of the tokens and the heading lines $2.37\%$. We keep that convention
@@ -156,9 +156,11 @@ training set from $0.93$M to $2.09$M tokens, so the parameter count moves even a
 because the word--label factor is $|\Vocab| \times \nlab$. That is unavoidable --- it is what
 changing corpus means for a model whose parameters are almost all $\Sfac$ --- and it is why the
 WikiText-2 comparison is always against baselines run on the same corpus through the same loop,
-never against the PTB numbers. It also sharpens the readout constraint of
-\Cref{sec:cmp-readout}: at $3.3$ times the vocabulary and unchanged $\nlab$, the rank-$\nlab$
-bottleneck binds harder on WikiText-2 than on PTB, and a weaker transfer result has that
-confound in it.
+never against the PTB numbers. The readout constraint of \Cref{sec:cmp-readout} tightens for
+the same reason: with $3.3$ times the vocabulary to place in an affine family of dimension
+$\nlab$, the bound of \Cref{prop:readout} binds harder on WikiText-2 than on PTB. It binds on a
+transformer's own output head in the same way, at $m = \nlab$, which is exactly why the
+comparison stays within the corpus --- but a weaker absolute number on WikiText-2 than on PTB
+has that confound in it.
 
 Finally, we do not use WikiText-103, for the reason already given in \Cref{sec:tasks}.

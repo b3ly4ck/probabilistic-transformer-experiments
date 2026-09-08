@@ -140,3 +140,32 @@ exists — the budget is 8 pages of *main body*, before the references.
 5. **`developer files/VERSION` is forked.** `main` carries `1.0.0` and this branch continues from
    it; the working tree of `feature/causal-pt-decoder` sets it to `0.1.0`, apparently restarting
    the numbering after the `v1.0.0 [breaking]` commit. Both lines will conflict at merge.
+
+## Verification of the appendices — 2026-09-08
+
+Appendices A, B and D were written from the technical note and then independently checked by a
+second pass that re-read the source sections and rebuilt the document. That pass found and
+removed two invented claims in Appendix A about what the main text says (a parameter-matching
+rule and a wall-clock report that Section 4.2 does not contain), which is exactly the failure
+mode an appendix written alongside an unfinished results section invites.
+
+**Appendix C was checked by hand instead**, its automated pass having died mid-run. Verified
+against Part I of the technical note, section by section:
+
+| appendix content | source | verdict |
+|---|---|---|
+| word-locality (A3) and the word-nonlocal witness energy | §1, Decision 1 | matches |
+| C1 vs C2, and that the theorem is false under C1 | §1, Decision 2 | matches |
+| the sharpness construction: Hermite $h$ with $h(\Delta(v))=c_v$, $h'(\Delta(v))=0$; the $(1,-1)$ tangent argument; $\neg$C2 off the critical set | Prop. 8.1 and Rem. 8.2(i) | matches, including the "parameter conspiracy, not an architecture" reading |
+| setup, (A1)--(A4), interiority, the $xy(x^2-y^2)/(x^2+y^2)$ counterexample | §2 | matches |
+| gauge reduction | Lem. 3.1 | matches, both directions |
+| no one-way coupling, all three equivalences | Lem. 3.3 | matches, both proof directions and the Schwarz step |
+| confinement, and the head-variable remark | Lem. 4.1, Rem. 4.2 | matches, including "necessity only, not transmission" |
+| C2 $\iff$ no cross-position edge | Prop. 5.1 | matches, including the "crux" sentence |
+| the theorem and C2 $\Rightarrow$ C1 | Thm. 5.2, Cor. 5.3 | matches |
+| $\Pi T^{(c)} \Pi = 0$, non-degenerate $T$ $\Rightarrow$ no energy | Cor. 7.1 | matches |
+| the three witnesses | §6 | matches |
+
+No claim in Appendix C is unsourced. The one liberty taken is presentational: the note's numbered
+lemmas become run-in paragraphs with two numbered environments, because this paper's format
+allows very few.
