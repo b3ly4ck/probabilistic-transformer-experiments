@@ -192,6 +192,25 @@ is still 1.8.3.1: a shell that skips `.bashrc` (some batch and `ssh <host> <cmd>
 falls back to it. If a modern subcommand fails unexpectedly, run `git --version` before
 debugging anything else.
 
+### Two cluster facts that cost real time to find
+
+**Results here are deterministic within a GPU model and different across models.** The same
+code, seed and data order reproduce a validation trace to every printed digit on an A40 and land
+215 perplexity away on a TITAN RTX, because the reduction order differs and the undamped
+configurations of this model amplify a last-bit difference. Combined with a seed spread that
+reaches 130 perplexity in that region, the rule is: **a perplexity from this model is not a
+measurement unless it is quoted with a seed count and a device.** Never compare a number against
+one from a different job without checking both. `sacct -j <id> --format=NodeList` gives the node
+and `scontrol show node <n> | grep Gres` the GPU model; the sweep runner records the host in
+every row for exactly this reason.
+
+**The `critical` QOS caps *submitted* jobs per user at 9, counting jobs from other projects.**
+A grid split into more shards than that cannot all be submitted at once, and `sbatch` refuses
+with `QOSMaxSubmitJobPerUserLimit` rather than queueing. `experiments/submit_queue.sh` drains a
+pending list against that cap and `experiments/requeue.py` puts back shards that died; run both
+under `experiments/watchdog.sh` rather than resubmitting by hand, which is how two jobs ended up
+writing the same shard file and losing each other's cells.
+
 ## Language
 
 All `.md` files in this repository are written in English.
