@@ -500,7 +500,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 |  64 |  64 |    0.100 | True  | normal     |   3 |  372.400 | 255.300 |      1.000 |      0.200 |
 |  64 |  64 |    0.500 | False | normal     |   3 |  221.400 |   5.400 |      0.929 |      1.375 |
 |  64 |  64 |    0.500 | True  | normal     |   3 |  228.000 |  11.600 |      1.000 |      0.204 |
-|  64 | 256 |    0.100 | False | normal     |   1 |  220.700 |   0.000 |      0.998 |      0.967 |
+|  64 | 256 |    0.100 | False | normal     |   3 |  222.800 |   4.700 |      0.989 |      1.257 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -537,6 +537,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | T_tau2    | 248.295 |       248.295 |  226.616 |   225.428 |                     1.313 |       2.851 |  509.200 |
 | T_iters3  | 248.295 |       248.295 |  226.616 |   225.428 |                     1.313 |       2.851 |  534.700 |
 | T_tau4    | 284.875 |       284.875 |  260.268 |   282.928 |                     2.840 |       2.293 |  688.000 |
+| T_iters5  | 297.010 |       297.025 |  270.866 |   288.551 |                     1.823 |       2.533 |  759.900 |
 
 ### Grid G -- the relative positional encoding
 
@@ -552,6 +553,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | ----------- | ------: | ------------: | -------: | --------: | ------------------------: | ----------: | ------: |
 | X_d32_exact | 348.807 |       349.380 |  319.996 |   333.393 |                     0.941 |       2.055 | 848.400 |
 | X_d32_mfvi  | 248.309 |       248.713 |  227.767 |   231.863 |                     1.400 |       2.898 | 494.900 |
+| X_d16_exact | 409.511 |       409.511 |  371.972 |   411.529 |                     2.610 |       1.391 | 541.700 |
 
 ### Grid L -- the L2 coefficient on the arc scores
 
@@ -560,6 +562,7 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 | L_l20.005 | 249.794 |       249.794 |  227.580 |   233.756 |                     0.716 |       2.922 | 555.200 |
 | L_l20.05  | 697.047 |       697.447 |  641.265 |   741.198 |                     0.020 |       0.000 | 498.300 |
 | L_l20     | 273.345 |       273.345 |  249.627 |   258.402 |                     2.110 |       2.610 | 512.800 |
+| L_l25e-05 | 255.623 |       256.055 |  234.931 |   237.236 |                     1.685 |       2.984 | 531.100 |
 
 ### Readout swap: the same trained weights scored under the other readout
 
@@ -595,9 +598,12 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | S_steps6000_floor1    | mfvi         | 275.365 | exact        |     1225.203 |  251.343 |      1131.055 |
 | T_iters3              | mfvi         | 248.295 | exact        |     1836.770 |  226.616 |      1705.541 |
 | T_tau4                | mfvi         | 284.875 | exact        |     1660.496 |  260.268 |      1561.730 |
+| X_d16_exact           | exact        | 409.511 | mfvi         |     1266.171 |  371.972 |      1135.745 |
+| L_l25e-05             | mfvi         | 255.623 | exact        |     3248.387 |  234.931 |      3085.515 |
 | R_freezeb_on_s1       | mfvi         | 334.448 | exact        |     3403.140 |  302.732 |      3221.463 |
 | R_freezeb_off_s2      | mfvi         | 357.779 | exact        |    18739.000 |  327.325 |     18363.650 |
 | S_steps15000_floor0.1 | mfvi         | 248.309 | exact        |     1726.004 |  227.767 |      1636.395 |
+| T_iters5              | mfvi         | 297.010 | exact        |     3058.428 |  270.866 |      2821.872 |
 
 ## The switch ladder (Experiment 6)
 
@@ -605,10 +611,10 @@ Only meaningful at `lambda_W = 1`; measured for every PT cell at the cost of one
 | anchor | val | test | non-emb | best lr |
 |---|---|---|---|---|
 | all-transformer | 129.2 | 118.2 | 200,064 | 0.001 |
-| all-PT | 354.5 | 322.7 | 8,272 | 0.01 |
+| all-PT | 296.7 | 267.0 | 8,272 | 0.03 |
 
 
-The ladder spans **225.3 perplexity**; every delta below is a share of that.
+The ladder spans **167.5 perplexity**; every delta below is a share of that.
 
 
 ### S1 -- cost of one PT property in an otherwise ordinary decoder
@@ -630,16 +636,16 @@ The ladder spans **225.3 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
-| weight_sharing  | 298.800 |          55.700 |   0.030 |   20800 |
-| attn_value      | 358.700 |          -4.200 |   0.010 |   12432 |
-| attn_query_proj | 369.900 |         -15.400 |   0.010 |   12432 |
-| position        | 377.600 |         -23.100 |   0.010 |    8256 |
-| attn_out_proj   | 380.000 |         -25.500 |   0.003 |   12432 |
-| norm            | 501.900 |        -147.400 |   0.010 |    8528 |
-| ffn             | 530.700 |        -176.200 |   0.003 |   41360 |
-| readout         | 537.500 |        -182.900 |   0.010 |    4176 |
-| state           | 686.800 |        -332.300 |   0.001 |    8272 |
-| residual        | 687.100 |        -332.600 |   0.001 |    8272 |
+| weight_sharing  | 298.800 |          -2.100 |   0.030 |   20800 |
+| attn_value      | 358.700 |         -61.900 |   0.010 |   12432 |
+| attn_query_proj | 369.900 |         -73.200 |   0.010 |   12432 |
+| position        | 377.600 |         -80.900 |   0.010 |    8256 |
+| attn_out_proj   | 380.000 |         -83.300 |   0.003 |   12432 |
+| norm            | 501.900 |        -205.200 |   0.010 |    8528 |
+| ffn             | 530.700 |        -234.000 |   0.003 |   41360 |
+| readout         | 537.500 |        -240.700 |   0.010 |    4176 |
+| state           | 686.800 |        -390.100 |   0.001 |    8272 |
+| residual        | 687.100 |        -390.400 |   0.001 |    8272 |
 
 ### L -- the cumulative ladder, transformer to PT
 
