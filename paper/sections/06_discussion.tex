@@ -65,14 +65,16 @@ between training and sitting on the unigram), the learning rate (twenty times th
 value, and interacting with width), the Kruskal rank of the arc scores (better perplexity at an
 eighth of the parameters), and the label-set size itself. \textbf{One is decisive in the wrong
 direction}: the iteration count, where fewer is better (\Cref{sec:exp-depth}). \textbf{The
-remaining two have no gentle regime at all.} The $L_2$ coefficient on the arc scores is flat over an
-order of magnitude and then destroys the model; the relative-position clip $\clip$ does the same
-in the opposite direction (\Cref{sec:exp-knobs}). Both fail by the same mechanism as the head
-temperature --- the message-to-unary balance leaving the range in which the label update is
-stable. That is the
-generalisation we would offer a successor: \emph{this model's hyperparameters do not degrade
-gracefully}, so a coarse sweep that finds a flat region has not found a safe one, and the
-quantity to monitor is not perplexity but that balance. These were measured at different budgets
+remaining two are unalike, and the difference is the useful part.} The $L_2$ coefficient on the
+arc scores behaves like an ordinary regulariser: a genuine interior optimum at the value the
+source already uses, gentle degradation below it, catastrophe two orders above. The
+relative-position clip does not: it is a \emph{window}, with the model dead at $\clip = 0$ and
+dead again at $\clip = 7$, and only two of the four values we ran inside it
+(\Cref{sec:exp-knobs}). Both walls of that window, and the collapse at large $L_2$, are the same
+failure as the head temperature --- the message-to-unary balance leaving the range in which the
+label update is stable. That is the generalisation we would offer a successor: the quantity to
+monitor while tuning this model is not perplexity but that balance, because perplexity is flat
+right up to the point where it is $600$. These were measured at different budgets
 and are an ordering rather than a ranking, but the ordering is the practical content of
 \citet{kuang2026scaling}'s observation restated from the decoder side: what matters are the two
 knobs that set the \emph{scale} of the messages and the one that sets their \emph{rank}, and
