@@ -306,17 +306,32 @@ first evaluation. Both undamped; $\alpha_Z = 1$ throughout.}
 
 \paragraph{Initialisation, and the global variables.}
 \label{sec:exp-ablations}
-\TODO{exp5: the B.3.3 global head across two decades of initialisation scale with and without
-the shared L2, the row-collapse mechanism, and the distribution question stated literally.}
+\Cref{tab:globalhead} is the grid. \TODO{exp5 reading: the head across two decades of
+initialisation scale with and without the shared $L_2$, the row-collapse mechanism, and the
+distribution question taken literally.}
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
-\TODO{exp6: single switch on, leave one out, and the cumulative ladder.}
+\Cref{tab:switches} prices each of the ten differences twice --- once as its cost in an
+otherwise ordinary decoder, once as the benefit of restoring it inside the all-PT rung.
+\TODO{exp6 reading}
 
 \paragraph{Exact vs.\ mean-field readout.}
 \label{sec:exp3}
-\TODO{exp3 grid X and the evaluation-time swap measured on every PT cell.}
+Two measurements are needed and they answer different questions: swapping the readout at
+evaluation on the same trained weights isolates the approximation error, while training under
+each measures the end-to-end effect. The swap is computed for every causal PT cell in this paper
+at the cost of one extra pass, and it is meaningful only at $\lamW = 1$ --- any other value makes
+it measure a temperature (\Cref{app:message-weights}). \Cref{app:worked-example} shows the two
+readouts differing concretely on one slot. \TODO{exp3 grid X and the swap, read off.}
 
 \paragraph{Factored labels.}
 \label{sec:exp-factored}
-\TODO{exp7: the (readout, K) interaction the source predicts, on iso-parameter diagonals.}
+The construction of \Cref{sec:variants} predicts an interaction rather than a main effect:
+factoring the label variable should buy nothing under the mean-field readout, because the logits
+stay affine in the concatenated beliefs, and whatever it buys should appear only through the
+exact readout. The structural half is already confirmed --- the affine dimension of the
+log-conditionals is $8/7/5$ for $K = 1/2/4$ under the mean-field readout and maximal under the
+exact one --- and \Cref{app:factored} gives the parameter accounting, which the source states
+incorrectly.
+\TODO{exp7: the measured (readout, $K$) interaction on iso-parameter diagonals.}
