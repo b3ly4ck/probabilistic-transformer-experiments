@@ -87,3 +87,70 @@ labels, so a word compatible with a label the slot considers unlikely retains mo
 behaviour is preferable is an empirical question and \Cref{sec:exp3} is where we answer it; the
 example only shows that the two are genuinely different objects rather than two computations of
 one.
+
+\section{What the Latent Variables Learn}
+\label{app:interpretability}
+
+% The analogue of Wu & Tu's Appendix F, which reports case studies of the dependency structures
+% their encoder induces -- and reports honestly that they are only partially consistent with
+% human intuition. This model is proposed because its latent variables mean something, so a
+% paper that reported only perplexity would have left its central claim untested. All three
+% probes read a trained checkpoint with no further training
+% (`python -m experiments.interpretability <ckpt>`).
+
+This model class is proposed because its latent variables mean something. Reporting only
+perplexity would leave that untested, so we probe a trained model directly.
+
+\paragraph{What each label claims.}
+The word--label factor is the only place a word touches the graph, so the words a label explains
+are those with the largest $\Sfac_{w,a}$. Ranking raw scores is dominated by words with large
+rows, so we rank by the contrastive score
+$\Sfac_{w,a} - \max_{a' \neq a}\Sfac_{w,a'}$ --- what this label claims against the competition.
+Of $\nlab = 32$ labels, several are recognisably syntactic:
+
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+label & top words by contrastive score \\
+\midrule
+$z{=}6$  & \textit{reconsider condemn leave lend hire notify restore} \\
+$z{=}30$ & \textit{prefers manages chooses earns requires bears helps} \\
+$z{=}13$ & \textit{to affects between from until thus indeed besides} \\
+$z{=}19$ & \textit{controlled punishable bolstered funded headed owned} \\
+$z{=}20$ & \textit{henderson cook jr.\ fisher sr.\ robertson generale} \\
+$z{=}26$ & \textit{pence marks miles equaling tons} \\
+$z{=}22$ & \textit{speculation deficits view sums notion evidence} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Reading them in order: bare infinitives; third-person singular present verbs; prepositions and
+subordinators; past participles; person names; units of measure; abstract nouns. Nothing
+supervised these categories --- they are what maximising the likelihood through a
+$32$-value bottleneck produced. Not every label is interpretable, and we do not claim otherwise;
+roughly a third of them resist any reading we can offer, which matches what
+\citet{wu2023probabilistic} report for the encoder.
+
+\paragraph{Where the head posterior looks --- a negative result.}
+The head variable is the model's dependency attachment, and this is where the interpretation
+does \emph{not} hold up. Averaged over validation, the posterior puts $0.976$ of its positional
+mass at distance $1$ and $0.486$ of its total mass on \textsc{root}; the mean attachment distance
+is $1.05$. \textbf{The model has learned locality, not dependency structure.} Its attention is a
+bigram attachment with a large sink, which is enough to beat a unigram baseline by a wide margin
+and is not what the construction is for. We report this because it bounds the interpretability
+claim to the label variables, and because it identifies where a reader should look for the next
+improvement: a head posterior that never leaves distance $1$ is not using the arc factors the
+model is built around.
+
+\paragraph{Prior against posterior.}
+Part~IV's contraction bound predicts that the divergence between a slot's predictive and observed
+beliefs is small on predictable tokens and grows with the surprisal of the word actually
+observed. Measured over 4{,}032 slots, the correlation is positive but weak
+($r = 0.16$), with mean divergence $1.98$ on the most predictable quartile of tokens against
+$2.58$ on the most surprising. The direction the theory predicts is there; its strength is not
+something the bound claims and we do not read one into it.
+
+\NOTE{These readings are from the 2026-08 record checkpoint ($\nlab=32$, damped, source head
+temperature), which is the trained model that existed when the probes were written. The probe
+is being re-run on the configuration \Cref{sec:exp-width} selects.}
