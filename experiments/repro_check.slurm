@@ -36,7 +36,19 @@ fi
 PY=/public/software/anaconda3/bin/python
 echo "node $(hostname)"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
-$PY -c "import torch; assert torch.cuda.is_available(); print('torch', torch.__version__, torch.cuda.get_device_name(0))"
+# Allocate and multiply, not just `is_available()`: a GPU held in exclusive-process mode by
+# another job reports as available and fails only at the first allocation. Job 998640 died
+# that way on ai_gpu28 after three other jobs of this sweep had already taken GPUs there.
+$PY -c "
+import torch, sys
+assert torch.cuda.is_available(), 'no CUDA on this node'
+try:
+    x = torch.randn(1024, 1024, device='cuda'); torch.cuda.synchronize()
+    assert torch.isfinite(x @ x).all()
+except RuntimeError as e:
+    sys.exit('FATAL: CUDA present but unusable (%s): %s' % (torch.cuda.get_device_name(0), e))
+print('torch', torch.__version__, torch.cuda.get_device_name(0), 'allocation OK')
+"
 
 # `git archive` writes a tree to a tarball without touching the index or the working tree --
 # unlike `git --work-tree=... checkout`, which would stage the old files in this repo.
@@ -44,6 +56,7 @@ OLD=/tmp/pt-old-${SLURM_JOB_ID:-$$}
 rm -rf "$OLD"; mkdir -p "$OLD/data"
 git archive cc28e96 src experiments | tar -x -C "$OLD"
 cp -r data/ptb "$OLD/data/"
+mkdir -p "$OLD/checkpoints" checkpoints  # the old driver saves one, unconditionally
 
 echo; echo "=== (A) OLD src (cc28e96), OLD driver ==========================="
 ( cd "$OLD" && $PY -m experiments.exp1_language_modeling.ptb_attack \
