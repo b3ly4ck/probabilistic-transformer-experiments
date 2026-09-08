@@ -211,7 +211,14 @@ macros, not digits. Adding a number to the prose means adding it to `emit_number
 
 ## Length — 2026-09-08
 
-Main body currently runs to **page 14**; references start on 15; total 29 with appendices. The
+Main body currently runs to **page 16**; references start on 17; total 38 with appendices.
+Word counts from `make words`, 2026-09-09: abstract 220, intro 836, §2 2403, §3 1569, **§4
+5815**, related 540, discussion 1165, conclusion 196, limitations 696 --- 13,440 in the main
+body. §4 has roughly doubled since this section was written, by additions each of which the
+paper needed: which readout the results use, the readout rung of the ladder, the ladder figure,
+the reproducibility figure, the initialisation grid that cannot be read, and the pairwise
+exponent apparatus. None of them is padding and none should be cut before the four steps below
+are taken in order. The
 format budget adopted in the 2026-08-09 decision is 8 pages of main body, matching Wu & Tu.
 
 The overrun is not padding. Their Section 4 reports one table over five tasks; ours reports a

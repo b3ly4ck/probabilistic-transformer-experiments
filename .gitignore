@@ -44,3 +44,7 @@ paper/**/*.lot
 # supervisor, a tagged draft). Everyday builds go to paper/build/, which is ignored above.
 # Builds are byte-reproducible (see paper/Makefile), so re-committing an unchanged paper
 # costs nothing -- git sees no change at all.
+
+# The built PDF. `make release` regenerates it from build/main.pdf when a milestone is worth
+# keeping in history forever; between milestones it only goes stale and misleads.
+paper/main.pdf
