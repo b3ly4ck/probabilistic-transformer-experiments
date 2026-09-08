@@ -208,8 +208,9 @@ is the first thing to do before Experiment 1.
 
 ## Tests
 
-`tests/test_01..10` — 64 tests, all passing, CPU, `float64` except the overfit check.
-Run with `python -m pytest`. Roughly 41 s.
+`tests/test_01..19` — 387 tests, CPU, `float64` except the overfit check. Run with
+`python -m pytest`. Roughly 70 s. All pass except `test_19`'s one real-data case, which
+needs `data/ptb` and so cannot run in a worktree (`data/` is gitignored).
 
 The two that carry the weight:
 
@@ -220,6 +221,15 @@ The two that carry the weight:
 * `test_08_free_energy.py` checks the free energy is non-increasing along the inner loop,
   and contains a mutation test — the same check run against a sign-flipped H-update must
   fail. Checks 1–7 survive that mutation untouched.
+
+**The shared fixture must break every factor away from its initialised value.** `b` was
+left at the zero `reset_parameters` writes, and a zero `b` is *no §16(c) factor at all* —
+`Q_W^(0) = softmax(b)` is uniform and `+ self.b` adds nothing. Deleting the word unary from
+`_logits_from_log_mu` left `test_09_exact_vs_brute.py` fully green (2026-09-08); the 22
+suite-wide failures it did cause were all `b`-receives-no-gradient assertions, none a value
+comparison. `tests/conftest.py::toy_model` now sets `b_i = cos(1.3 i) · 0.9`, matching
+`test_18_factored.py::_break_the_unary`, and check 9 catches the mutation in 3 places.
+`test_07_worked_example.py` is unaffected — it pins the note's own `b = (1, 0, 0, 0)`.
 
 ## Runs
 

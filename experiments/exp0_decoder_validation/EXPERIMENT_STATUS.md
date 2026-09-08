@@ -62,6 +62,32 @@ rather than the plumbing:
   a sign-flipped H-update and must *fail*. A check that cannot fail proves nothing, and
   checks 1–7 survive that mutation untouched.
 
+### The word unary was invisible to checks 1–14 until 2026-09-08
+
+`reset_parameters` zeroes `b`, and the shared fixture `tests/conftest.py::toy_model` left it
+there. A zero `b` is not a small `b` — it is *no factor at all*: `Q_W^(0) = softmax(b)` is
+uniform in `_word_prior`, and `+ self.b` adds nothing in `_logits_from_log_mu`,
+`mfvi_readout` or `slot_mfvi_readout`. Every check built on that fixture was therefore
+blind to §16(c) by value.
+
+Measured: deleting the `if self.b is not None: logits = logits + self.b` block from
+`CausalPTDecoder._logits_from_log_mu` left **check 9 entirely green** — the strongest
+correctness test in the repository, exact readout against brute-force enumeration at
+`1e-12`, could not see the word unary disappear. Suite-wide the mutation was caught in 22
+places, but *every one of them was a gradient-reachability assertion* (`b` receives no
+gradient once it is unused) in checks 4, 13, 14 and 18 — not one was a value mismatch, so
+a mutation that changed the logits while keeping `b` in the graph would have passed
+everywhere.
+
+`toy_model` now gives every model it builds `b_i = cos(1.3 i) · 0.9` — non-uniform, and
+non-monotone so a test that only orders the logits cannot pass by accident. Check 9 then
+catches the mutation in 3 places, all value mismatches at `1e-12`; suite-wide 25. This is
+the same treatment `tests/test_18_factored.py::_break_the_unary` already applied to its
+own models. Check 7 is unaffected: it builds from
+`experiments/exp0_decoder_validation/worked_example.py`, which pins the note's own
+`b = (1, 0, 0, 0)` — §5 of `causal_pt_output_note.pdf` does *not* assume a zero unary, it
+prints `Q_W^(0) = (.475, .175, .175, .175)`.
+
 ## Exit criterion
 
 Checks 1–9 pass and the loss on a single batch goes to ~0. Met — see the run log.
@@ -383,6 +409,9 @@ Recorded here so they are not silently omitted when it is written.
 | 2026-08-09 | (lemma pass) | same, with `root_init_std` 100× and 1000× smaller at `init_std=2.0` | 0 | `ρ` 10411 → 9481/9490, fixed points 15–22 unchanged, ROOT mass → 0.0000. The root column is not the cause | 1 min |
 | 2026-08-09 | (lemma pass) | ROOT attention mass, last slot | 0 | source row untrained 0.0232 vs uniform 0.0208 (1.10×); overfitted toy 0.0001 vs uniform 0.125 (0.15×) | <1 min |
 | 2026-08-09 | (lemma pass) | full suite after adopting Table 2 defaults and adding the lemma checks | 0/1 | 70/70 pass | 44 s |
+| 2026-09-08 | (this commit) | mutation baseline: `+ self.b` deleted from `_logits_from_log_mu`, `toy_model` still at `b = 0`, CPU float64 | 0/1/3 | **22 failed** — all gradient-reachability, in checks 4/13/14/18; **check 9 green (21 passed)** | 70 s |
+| 2026-09-08 | (this commit) | same mutation, `toy_model` at `b_i = cos(1.3 i)·0.9` | 0/1/3 | **25 failed**; the 3 new ones are check 9's value comparisons at `1e-12` | 70 s |
+| 2026-09-08 | (this commit) | full suite, unmutated, with the non-uniform `b` | 0/1/3 | 376 passed, 10 skipped, 0 failed, rc=0 (test_19's real-data case deselected: `data/` is gitignored and absent in the worktree) | 70 s |
 
 Initial loss ≈ 2.48 is `log 12`, i.e. the uniform distribution — the model starts
 uninformative, as it should with `b = 0` and small `S`.
