@@ -457,9 +457,26 @@ proposed as --- including in the cells where its message is \emph{larger} than t
 posterior from an informative one, which is why \Cref{tab:globalhead} reports the entropy beside
 it. On Prof.\ Tu's question directly: Gaussian initialisation at three scales spanning
 $25\times$, with and without the head in the shared $L_2$, changes nothing that matters.
-\TODO{the capacity axis $m \in \{16,256\}$, and the uniform and orthogonal draws --- the
-literal form of the question, with the prediction registered in the spec that an orthogonal
-$\Bglob$ should survive the shared $L_2$ that a small-scale Gaussian one does not.}
+\textbf{The distribution, which is the question as it was asked.} Every factor in this model
+has always been drawn from a Gaussian; the word ``uniform'' in our earlier account named the
+\emph{treatment}, one scale and one $L_2$ coefficient for every factor, and not the draw. Taking
+the question literally anyway, at $\nlab=64$ with $\nglob=64$ head values at the treatment where
+all three can be compared: Gaussian gives $225.8$ over three seeds, a semi-orthogonal draw
+$219.5$ over two, and a matched-variance uniform draw $249.1$ over two, with one of those two
+seeds at $272.9$. \textbf{The orthogonal draw sits inside the Gaussian cell's own seed range}
+($214.1$ to $233.3$), so on this evidence the draw does not matter, with a hint that the uniform
+one is worse.
+
+We registered a sharper prediction before running this and it is not tested by what we ran, so
+we say that rather than claiming the support: the prediction was that an orthogonal $\Bglob$
+would survive a shared $L_2$ that kills a small-scale Gaussian one, and in this configuration
+the small-scale Gaussian draw does not die under the shared $L_2$ --- it dies \emph{outside} it.
+The grid never put the prediction at risk.
+
+The capacity axis says the same thing from another direction. Quartering the head, from
+$\nglob=64$ values to $16$, costs nothing ($224.2$ against $222.2$, three seeds each), which is
+what a posterior that stays uniform implies: more values to spread the same constant over.
+\TODO{$\nglob=256$, and the third seeds of the two non-Gaussian draws.}
 
 \paragraph{What the construction costs: the switch ladder.}
 \label{sec:exp-switches}
