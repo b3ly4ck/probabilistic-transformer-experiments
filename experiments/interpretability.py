@@ -110,8 +110,16 @@ def attention_profile(model, corpus, block: int, batch: int, n_batches: int,
         n += 1
     prof = dist_hist / dist_hist.sum().clamp(min=1e-9)
     mean_dist = float((prof * torch.arange(1, block + 1).float()).sum())
+    # what uniform attention over the prefix would put at each distance, averaged over the
+    # positions that have a prefix at all -- the reference the profile has to be read against
+    uni = torch.zeros(block)
+    for i in range(1, block):
+        uni[:i] += 1.0 / (i + 1)
+    uni = uni / uni.sum().clamp(min=1e-9)
     return {
         "root_mass": round(root / max(n, 1), 4),
+        "distance_profile_full": [round(float(x), 6) for x in prof],
+        "uniform_profile_full": [round(float(x), 6) for x in uni],
         "mean_attachment_distance": round(mean_dist, 2),
         "peakedness_over_uniform": round(uni_gap / max(tot, 1), 4),
         "distance_profile_first10": [round(float(x), 4) for x in prof[:10]],
@@ -158,6 +166,38 @@ def prior_posterior(model, corpus, block: int, batch: int, n_batches: int,
     }
 
 
+def plot_attention_profile(prof: Dict[str, Any], out_path: str, n: int = 16) -> None:
+    """Draw the attachment-distance profile against what uniform attention would give.
+
+    The number that matters is not the profile's shape on its own but its distance from the
+    uniform one: a head posterior spread evenly over its prefix is a model that has learned
+    nothing about order, and the figure has to make the comparison rather than leave it to the
+    reader's memory of what uniform looks like on a log axis.
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    prof_v = prof["distance_profile_full"][:n]
+    fig, ax = plt.subplots(figsize=(6.0, 3.4))
+    x = list(range(1, len(prof_v) + 1))
+    ax.bar(x, prof_v, color="#3b6ea5", label="head posterior")
+    # uniform over the prefix, averaged over positions, is the reference
+    uni = prof.get("uniform_profile_full", [])[:n]
+    if uni:
+        ax.plot(x, uni, "o--", color="#c1512b", markersize=4, linewidth=1.4,
+                markerfacecolor="none", label="uniform over the prefix")
+    ax.set_yscale("log")
+    ax.set_xlabel("attachment distance $i - j$ (positions)")
+    ax.set_ylabel("share of positional attention mass")
+    ax.set_xticks(x[::2])
+    ax.grid(True, axis="y", which="both", linewidth=0.4, alpha=0.4)
+    ax.legend(fontsize=8, frameon=False)
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}")
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("checkpoint")
@@ -167,6 +207,7 @@ def main() -> None:
     p.add_argument("--top", type=int, default=12)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--out", default=None)
+    p.add_argument("--fig", default=None, help="write the attachment-distance figure here")
     a = p.parse_args()
 
     corpus = load_ptb()
@@ -189,6 +230,9 @@ def main() -> None:
     print("\n--- prior against posterior ---")
     for k, v in pp.items():
         print(f"  {k}: {v}")
+
+    if a.fig:
+        plot_attention_profile(prof, a.fig)
 
     if a.out:
         Path(a.out).write_text(json.dumps(
