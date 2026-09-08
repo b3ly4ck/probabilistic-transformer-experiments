@@ -959,6 +959,15 @@ def emit_numbers(out: Path, md: List[str], extra: Optional[Dict[str, str]] = Non
                     g = _loginterp(curves["gpt"], n)
                     defs[f"MB{tag}Nonemb"] = f"{n:,}".replace(",", "{,}")
                     defs[f"MB{tag}RatioGpt"] = f"{r['val_ppl'] / g:.2f}"
+            # First/Last are by parameter count and describe the trend; a sentence that says
+            # "between X and Y" needs the extremes, which are not the same rows -- the largest
+            # ratio against the transformer is at the second-to-last point, not the last.
+            ratios = [r["val_ppl"] / _loginterp(curves["gpt"], r["params"]["non_embedding"])
+                      for r in withg]
+            if ratios:
+                defs["MBMinRatioGpt"] = f"{min(ratios):.2f}"
+                defs["MBMaxRatioGpt"] = f"{max(ratios):.2f}"
+
             withl = [r for r in pts if _loginterp(curves["looped"], r["params"]["non_embedding"])]
             if withl:
                 for tag, r in (("First", withl[0]), ("Last", withl[-1])):

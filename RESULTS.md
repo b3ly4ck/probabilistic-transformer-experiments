@@ -684,6 +684,13 @@ The parameter count is independent of K at fixed total width; the prediction is 
 | -----: | ----------: | ------------ | ------: | -------: | --------: | -------------------: | -----------: | ------------ | -----------: |
 |     16 |           1 | mfvi         | 287.174 |  261.727 |   280.295 |                 8256 |       178256 | exact        |     2097.050 |
 |     32 |           2 | mfvi         | 226.122 |  206.668 |   195.575 |                 8256 |       338256 | exact        |     5314.726 |
+|     64 |           4 | mfvi         | 222.797 |  198.507 |   139.984 |                 8256 |       658256 | exact        |    18926.049 |
+|     32 |           1 | mfvi         | 375.412 |  341.179 |   379.798 |                32896 |       362896 | exact        |      861.312 |
+|     16 |           1 | mfvi         | 274.328 |  252.325 |   268.442 |                 8256 |       178256 | exact        |     3267.025 |
+|     32 |           2 | mfvi         | 230.557 |  211.149 |   196.708 |                 8256 |       338256 | exact        |     4035.565 |
+|     16 |           1 | mfvi         | 289.940 |  263.173 |   279.950 |                 8256 |       178256 | exact        |     3087.910 |
+|     32 |           2 | mfvi         | 234.998 |  211.518 |   191.581 |                 8256 |       338256 | exact        |     4979.727 |
+|     16 |           1 | exact        | 342.968 |  309.261 |   326.348 |                 8256 |       178256 | mfvi         |     1227.467 |
 
 ## WikiText-2 transfer (Experiment 8)
 
@@ -692,12 +699,13 @@ The parameter count is independent of K at fixed total width; the prediction is 
 | fixed  | d=32       |   3 | 343.100 | 24.700 | 321.500 |   16448 | 1114622 |
 | fixed  | d=64       |   3 | 334.100 | 27.600 | 312.800 |   65664 | 2228734 |
 | gpt    | n_embd=32  |   2 | 179.700 |  4.300 | 167.900 |   50880 | 1117824 |
-| gpt    | n_embd=64  |   1 | 149.700 |  0.000 | 140.800 |  200064 | 2333952 |
-| gpt    | n_embd=128 |   1 | 144.600 |  0.000 | 137.600 |  793344 | 5061120 |
-| looped | n_embd=32  |   1 | 206.400 |  0.000 | 192.400 |   12768 | 1079712 |
-| looped | n_embd=64  |   1 | 168.500 |  0.000 | 159.800 |   50112 | 2184000 |
+| gpt    | n_embd=64  |   2 | 150.900 |  1.700 | 142.300 |  200064 | 2333952 |
+| gpt    | n_embd=128 |   2 | 148.500 |  5.400 | 141.600 |  793344 | 5061120 |
+| looped | n_embd=32  |   2 | 203.000 |  4.900 | 188.600 |   12768 | 1079712 |
+| looped | n_embd=64  |   2 | 167.900 |  0.700 | 159.100 |   50112 | 2184000 |
+| looped | n_embd=128 |   1 | 156.300 |  0.000 | 149.100 |  198528 | 4466304 |
 | rule   | d=32       |   3 | 308.100 |  2.600 | 288.600 |   16448 | 1114622 |
-| rule   | d=64       |   2 | 281.200 | 11.700 | 262.600 |   65664 | 2228734 |
+| rule   | d=64       |   3 | 279.100 |  9.000 | 260.300 |   65664 | 2228734 |
 
 WikiText-2 unigram baseline: **964.8**. Every hyperparameter is the one selected on PTB; nothing was retuned, which is what makes this a transfer test rather than a second experiment.
 
@@ -774,6 +782,8 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \MBLastNonemb       | 147{,}840 |
 | \MBLastRatioGpt     | 1.53      |
 | \MBLastRatioLooped  | 1.48      |
+| \MBMaxRatioGpt      | 1.55      |
+| \MBMinRatioGpt      | 1.23      |
 | \OwnLow             | -0.058    |
 | \OwnLp              | -0.087    |
 | \OwnPt              | -0.090    |
@@ -813,10 +823,10 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \WtGptNarrowLab     | 32        |
 | \WtGptNarrowN       | 2         |
 | \WtGptNarrowSd      | 4.3       |
-| \WtGptWide          | 144.6     |
+| \WtGptWide          | 148.5     |
 | \WtGptWideLab       | 128       |
-| \WtGptWideN         | 1         |
-| \WtGptWideSd        | 0.0       |
+| \WtGptWideN         | 2         |
+| \WtGptWideSd        | 5.4       |
 | \WtSrcNarrow        | 343.1     |
 | \WtSrcNarrowLab     | 32        |
 | \WtSrcNarrowN       | 3         |
@@ -829,7 +839,7 @@ Only exponents fitted on the same window are compared. `LOO` is the range the ex
 | \WtStdNarrowLab     | 32        |
 | \WtStdNarrowN       | 3         |
 | \WtStdNarrowSd      | 2.6       |
-| \WtStdWide          | 281.2     |
+| \WtStdWide          | 279.1     |
 | \WtStdWideLab       | 64        |
-| \WtStdWideN         | 2         |
-| \WtStdWideSd        | 11.7      |
+| \WtStdWideN         | 3         |
+| \WtStdWideSd        | 9.0       |
