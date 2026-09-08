@@ -86,7 +86,14 @@ largest cost of any single difference that is not a cliff. The global variables 
 and what they buy is not capacity: at a width where the model trains without them they are worth
 nothing, and at a width where it barely does they change which parameterisations are stable
 without making the model stable. In every cell of both grids the head posterior stays within
-$7\,\%$ of uniform, including where its message exceeds the word unary.
+$7\,\%$ of uniform, including where its message exceeds the word unary. The one thing in that
+experiment worth carrying forward is not about the head at all: a semi-orthogonal draw for
+$\Bglob$ gives a seed standard deviation of $0.6$ where a Gaussian one gives $10.2$
+(\Cref{sec:exp-ablations}). Maximal update parametrisation
+\citep{yang2022tensor} assumes a Gaussian draw, so the draw is a place where the transfer
+results this model class now rests on may not be neutral; what we can add is that on this
+evidence its effect is on variance rather than on the mean, which is the axis that has cost this
+project the most.
 A variable whose posterior is uniform is sending a constant, and a constant is not a
 feed-forward block. The mechanism behind the uniformity is a symmetry --- rows that begin close
 together receive identical gradients and a shared $L_2$ keeps them there --- which is a
