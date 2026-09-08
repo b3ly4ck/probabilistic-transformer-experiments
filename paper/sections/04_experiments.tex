@@ -102,12 +102,12 @@ through the sweep runner --- so neither the implementation nor the harness is at
 further facts complete the picture, and together they are more useful than either alone.
 
 The first is hardware. A cell of an unrelated grid happened to run the same configuration on the
-same GPU \emph{model} as the original, and reproduced its entire validation trace to every
-printed digit: $711.7\,516.1\,693.9\,633.5\,598.1\,546.0\,491.9\,473.2\,452.6\,439.9\,434.4\,430.0$,
-against $711.6\,640.3\,686.0\,\dots\,645.0$ on the other device. The two already differ at the
-first evaluation in the third significant figure, so the split occurs within the first 500 steps
-and is then amplified to 215 perplexity. Nothing differs but the order of floating-point
-reductions.
+same GPU \emph{model} as the original, and reproduced its entire twelve-point validation trace
+to every printed digit, ending at $430.0$; the same configuration on the other device traces
+$711.6, 640.3, 686.0, \dots$ and ends at $645.0$. The two already differ at the first evaluation
+in the third significant figure ($711.70$ against $711.61$), so the split occurs within the first
+500 steps and is then amplified to 215 perplexity. Nothing differs but the order of
+floating-point reductions.
 
 The second is the seed. Over three seeds on one device the undamped configuration gives
 $610.9 / 408.8 / 367.5$, that is $462.4 \pm 130.2$: \textbf{a standard deviation of 28\% of its
