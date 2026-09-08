@@ -516,6 +516,29 @@ flip one at a time. Values are in \Cref{tab:switches}.}
 \label{fig:ladder}
 \end{figure}
 
+\paragraph{Inference depth buys nothing, and costs.}
+\label{sec:exp-depth}
+The number of mean-field iterations $\niter$ is the causal PT's depth: it is what makes the
+model a weight-shared stack rather than a single layer, and it is the axis it shares with a
+Looped transformer, so \Cref{tab:three-point}'s framing depends on knowing what it is worth.
+Wu \& Tu's Table 2 fixes $\niter = 3$ and neither paper varies it inside a configuration that
+trains. Varying it here, one seed per cell in the damped configuration at $\nlab = 32$ where the
+seed spread is $\ReproDampedSd$: $\niter = 1$ gives $241.3$, $2$ gives $246.5$, $3$ gives
+$248.3$ and $8$ gives $275.3$. The predictive rounds $\tau$ behave the same way, $242.1$ at
+$\tau=1$ against $248.3$ at $\tau=2$.
+
+\textbf{Perplexity increases monotonically with inference depth.} The step from $\niter=1$ to
+$\niter=3$ is about one seed standard deviation and we do not read it alone; the span to
+$\niter=8$, $34$ perplexity, is five of them and the monotonicity across four points is not an
+accident of one cell. Two readings are available and we cannot separate them here. Either the
+extra iterations are genuinely harmful --- each one re-injects the same arc factors, and
+\Cref{sec:exp-width} showed exactly that loop running away when its gain is mis-set --- or they
+are harmless but the optimisation problem they create is worse. Either way the practical
+statement is the same and it is uncomfortable for the analogy the model is built on: at this
+scale, \emph{the causal PT is best as a one-iteration model}, which is to say as a model whose
+looped character is vestigial. That is a further reason not to read the shallow scaling slope of
+\Cref{sec:exp-scaling} as evidence about depth-shared computation.
+
 \paragraph{Exact vs.\ mean-field readout.}
 \label{sec:exp3}
 Two measurements are needed and they answer different questions: swapping the readout at
@@ -542,8 +565,22 @@ what a reader would assume from a construction that presents the two as alternat
 in one model.
 
 The practical consequence is that the cheap half of this comparison does not substitute for the
-expensive half: the readouts have to be compared by \emph{training} under each.
-\TODO{exp3 grid X, trained under each readout.}
+expensive half: the readouts have to be compared by \emph{training} under each. Doing so, in the
+damped configuration at $\nlab=32$ where the seed spread is $\ReproDampedSd$, gives $348.8$
+under the exact readout against $248.3$ under the mean-field one --- the same model, the same
+loop, the same budget, differing only in which readout the loss is taken through.
+
+\textbf{The richer family is worse.} \Cref{prop:readout}(iii) says the exact readout's image
+strictly contains the mean-field readout's, and it costs no parameters, so the only way it can
+lose by a hundred perplexity is that the parameters realising the better family are not the ones
+this optimiser finds. We think the reason is visible in the form: the exact readout reaches the
+vocabulary through $\LSE_{j}$ over the head domain, which is a maximum in disguise and passes
+gradient almost entirely to the single best-scoring position, while the mean-field readout
+reaches it through $\Sfac\QZ{t}$, an average that passes gradient to every label in proportion
+to its belief. A strictly larger hypothesis class that is harder to search is a familiar
+outcome, and it is worth reporting plainly because the construction's own logic points the other
+way: the exact readout is what the graph says the answer is, and the approximation to it trains
+better. \TODO{the $\nlab=16$ pair, and whether the ordering holds undamped.}
 
 \paragraph{Factored labels.}
 \label{sec:exp-factored}
