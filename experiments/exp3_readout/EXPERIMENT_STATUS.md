@@ -67,3 +67,41 @@ region on all four axes at once, so a null result there measured nothing.
 |---|---|---|---|
 | 2026-09-08 | 14419ae | 998640 | reproduction check A/B/C |
 | 2026-09-08 | 14419ae | queued | `spec_open`, 37 cells, 5 shards |
+
+## Reproduction check — result (2026-09-08)
+
+**The refactor is exonerated and the 2026-08 number is not reproducible.**
+
+Job 998665 (TITAN RTX, node `ai_gpu29`), `d=16, h=2, lr=0.02`, frozen `b`, `alpha_Z=1`, 6,000
+steps, seed 0 — the configuration recorded as **val 430.04** in job 940848 of 2026-08-10:
+
+| arm | code | driver | val (final) | val (best) | train | test | msg/unary |
+|---|---|---|---|---|---|---|---|
+| A | `src/` at `cc28e96` | `ptb_attack.py` | **644.98** | 610.88 | 668.49 | 587.82 | 7.03 |
+| B | `src/` at `e1fdac8` | `ptb_attack.py` | **644.98** | 610.88 | 668.49 | 587.82 | 7.03 |
+| C | `src/` at `e1fdac8` | `experiments/sweep.py` | **644.98** | 610.88 | — | 555.44 | 7.03 |
+
+A, B and C agree to every digit printed. So:
+
+* **the refactor of `src/` (v0.16.0: the temperature modes, the init modes, the masking
+  reorder) did not change the mathematics** — the `temp_mode="fixed"` path is the old model;
+* **the new sweep runner is faithful to the old driver** — same weights, same data order, same
+  result;
+* and none of the three reproduces **430.04**, recorded for the same code, the same
+  configuration and the same seed on 2026-08-10.
+
+The one thing that differs between then and now is the GPU: job 940848 ran on an **A40**, all
+three arms above ran on a **TITAN RTX**. The A40-pinned control is job 998674 (`sist-a40-01`).
+Non-deterministic reduction order is the only remaining candidate, and it is a sufficient one
+for a run that the 2026-08 report itself documents passing through an excursion — validation
+perplexity reverting 516.1 → 693.9 between two evaluations and then recovering.
+
+**Consequence for the write-up, whichever way the A40 control comes out.** The undamped
+configuration is not reproducible at the precision the 2026-08 report quoted it to, and no
+single-seed number from that region can carry a claim. Damping and the belief-normalised
+temperature are then not only better on the mean; the variance they remove is itself the
+result. Every headline number in the preprint is reported over three seeds with its spread.
+
+Note that the *test* perplexity differs between arms A/B (587.82) and C (555.44) because the
+old driver scores the final weights and the new runner scores the best-validation checkpoint;
+that is a protocol difference, stated in `spec_open.py`, not a discrepancy.
