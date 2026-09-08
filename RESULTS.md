@@ -99,10 +99,11 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | pt         |         160 |            4 |     96 |   0.020 | 223.149 |  204.382 |   184.631 |                18624 |       988624 |     15000 |        12 |
 | pt         |         160 |            4 |     96 |   0.020 | 213.474 |  196.101 |   176.524 |                37056 |      1007056 |     14500 |        24 |
 | pt         |         160 |            4 |    128 |   0.020 | 214.604 |  195.763 |   171.472 |                33024 |      1323024 |     15000 |        16 |
-| pt         |         160 |            4 |    128 |   0.020 | 213.954 |  194.420 |   163.826 |                65792 |      1355792 |     14500 |        32 |
+| pt         |         160 |            4 |    128 |   0.020 | 212.425 |  193.286 |   159.798 |                65792 |      1355792 |     14500 |        32 |
 | pt         |         160 |            4 |    192 |   0.020 | 206.929 |  188.280 |   148.554 |                74112 |      2004112 |     15000 |        24 |
-| pt         |         160 |            4 |    192 |   0.020 | 207.089 |  188.310 |   165.060 |               147840 |      2077840 |     15000 |        48 |
+| pt         |         160 |            4 |    192 |   0.020 | 201.941 |  184.195 |   144.609 |               147840 |      2077840 |     15000 |        48 |
 | pt         |         160 |            4 |    256 |   0.020 | 206.095 |  187.466 |   127.215 |               131584 |      2701584 |     10500 |        32 |
+| pt         |         160 |            4 |    256 |   0.020 | 403.482 |  372.123 |   395.843 |               262656 |      2832656 |       500 |        64 |
 
 **Fitted power-law exponents on the non-embedding axis**
 
@@ -112,7 +113,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            | 13,152-790,272   |   6 | -0.087    | -0.042     | -0.115                   |
 | causal PT, source constants   | 13,152-16,448    |   1 | -0.080    | --         | --                       |
 | causal PT, standardised temp. | 13,152-65,664    |   3 | -0.090    | -0.084     | -0.223                   |
-| causal PT, + low rank         | 13,152-131,584   |   6 | -0.061    | -0.045     | -0.175                   |
+| causal PT, + low rank         | 13,152-147,840   |   8 | -0.058    | -0.045     | -0.175                   |
 
 `overlap` is each curve's shared parameter range with the causal transformer, and `common range` the exponent refitted there. Fitting each curve over its own full range flatters the causal PT, because the baselines extend into the regime where this corpus and not the parameter count binds and their flat points drag the slope down.
 
@@ -125,7 +126,7 @@ Each row is the better of `lr in {1e-3, 3e-3}`; 15,000 steps; checkpoint selecte
 | looped transformer            | 174,176-2,847,680 |   7 | -0.158    | -0.145     | -0.137                   |
 | causal PT, source constants   | 174,176-346,448   |   2 | -0.160    | --         | --                       |
 | causal PT, standardised temp. | 174,176-715,664   |   4 | -0.177    | -0.174     | -0.305                   |
-| causal PT, + low rank         | 334,160-2,701,584 |   8 | -0.100    | -0.100     | -0.072                   |
+| causal PT, + low rank         | 334,160-2,077,840 |   9 | -0.117    | -0.117     | -0.088                   |
 
 `overlap` is each curve's shared parameter range with the causal transformer, and `common range` the exponent refitted there. Fitting each curve over its own full range flatters the causal PT, because the baselines extend into the regime where this corpus and not the parameter count binds and their flat points drag the slope down.
 
@@ -481,8 +482,12 @@ Prof. Tu: *"Uniform initialisation (of what? B?) does not sound like a good choi
 ## The B.3.3 global head, three seeds in the stable configuration (Exp. 5b)
 
 |   d |   m | init std | in L2 | init dist |   n | val mean |    sd | H(Q_g)/max | glob/unary |
-| --: | --: | -------- | ----- | --------- | --: | -------: | ----: | ---------: | ---------: |
-|  32 |   0 | --       | True  | normal    |   1 |  244.300 | 0.000 |      0.000 |      0.000 |
+| --: | --: | -------: | ----- | --------- | --: | -------: | ----: | ---------: | ---------: |
+|  32 |   0 |       -- | True  | normal    |   1 |  244.300 | 0.000 |      0.000 |      0.000 |
+|  32 |  64 |    0.020 | False | normal    |   1 |  248.500 | 0.000 |      0.996 |      1.589 |
+|  32 |  64 |    0.020 | True  | normal    |   2 |  243.600 | 7.200 |      1.000 |      0.229 |
+|  32 |  64 |    0.100 | False | normal    |   1 |  249.500 | 0.000 |      0.958 |      1.593 |
+|  32 |  64 |    0.500 | True  | normal    |   1 |  261.800 | 0.000 |      1.000 |      0.297 |
 
 `H(Q_g)/max` at 1.000 means the head posterior is uniform, i.e. the head is contributing a constant label bias rather than a feed-forward-like operator. That distinction is the whole question and it is not visible in perplexity.
 
@@ -511,8 +516,8 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | norm            | 128.600 |          -0.700 |   0.003 |  198912 |
 | attn_value      | 128.700 |          -0.600 |   0.001 |  183424 |
 | position        | 128.900 |          -0.400 |   0.001 |  200128 |
+| attn_out_proj   | 130.800 |           1.500 |   0.001 |  183424 |
 | attn_query_proj | 131.100 |           1.900 |   0.001 |  183424 |
-| attn_out_proj   | 131.500 |           2.300 |   0.003 |  183424 |
 | residual        | 136.700 |           7.500 |   0.001 |  200064 |
 | weight_sharing  | 141.800 |          12.500 |   0.003 |   50112 |
 | ffn             | 144.400 |          15.100 |   0.001 |   67200 |
@@ -523,9 +528,10 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 
 | switch          |     val | delta vs anchor | best lr | non-emb |
 | --------------- | ------: | --------------: | ------: | ------: |
+| attn_query_proj | 369.900 |          25.600 |   0.010 |   12432 |
 | weight_sharing  | 387.600 |           7.900 |   0.010 |   20800 |
 | position        | 430.100 |         -34.600 |   0.003 |    8256 |
-| attn_query_proj | 473.400 |         -77.900 |   0.003 |   12432 |
+| attn_value      | 468.500 |         -73.000 |   0.003 |   12432 |
 | norm            | 501.900 |        -106.400 |   0.010 |    8528 |
 | ffn             | 530.700 |        -135.300 |   0.003 |   41360 |
 | state           | 686.800 |        -291.300 |   0.001 |    8272 |
@@ -540,13 +546,15 @@ The ladder spans **266.2 perplexity**; every delta below is a share of that.
 | rung | switch flipped  |     val |     step | best lr | non-emb |
 | ---: | --------------- | ------: | -------: | ------: | ------: |
 |    1 | weight_sharing  | 144.100 |   14.800 |   0.001 |   50112 |
-|    3 | norm            | 139.500 |   -4.600 |   0.003 |   49744 |
+|    2 | position        | 145.900 |    1.800 |   0.003 |   50128 |
+|    3 | norm            | 139.500 |   -6.400 |   0.003 |   49744 |
 |    4 | attn_out_proj   | 145.200 |    5.700 |   0.003 |   45584 |
 |    5 | attn_query_proj | 146.300 |    1.100 |   0.003 |   41424 |
 |    6 | attn_value      | 158.600 |   12.300 |   0.001 |   37264 |
 |    7 | ffn             | 213.300 |   54.700 |   0.001 |    4176 |
-|    9 | state           | 608.700 |  395.400 |   0.003 |    4176 |
-|   10 | readout         | 395.500 | -213.200 |   0.003 |    8272 |
+|    8 | residual        | 206.500 |   -6.800 |   0.003 |    4176 |
+|    9 | state           | 537.500 |  331.000 |   0.010 |    4176 |
+|   10 | readout         | 395.500 | -142.000 |   0.003 |    8272 |
 
 **Endpoint residue.** The all-PT rung is an approximation of the real decoder (see this experiment's status file for the four named gaps). The difference between it and the causal PT at the same width, corpus, loop and budget is the size of everything the ladder cannot express, and it bounds how much weight the attributions above can carry.
 
@@ -563,18 +571,64 @@ _not run yet_
 
 ## Matched-budget comparison
 
-| config      | non-emb |   n |      PT |     sd | transformer | ratio |  looped | ratio  |
-| ----------- | ------: | --: | ------: | -----: | ----------: | ----: | ------: | -----: |
-| d=32, r=8   |    4160 |   3 | 256.800 |  1.500 |          -- |    -- | 204.700 |  1.250 |
-| d=64, r=8   |    8320 |   3 | 232.000 |  1.600 |          -- |    -- | 178.500 |  1.300 |
-| d=48, r=12  |    9312 |   3 | 235.500 | 10.400 |          -- |    -- | 174.800 |  1.350 |
-| d=64, r=16  |   16512 |   3 | 225.900 |  2.500 |     184.100 | 1.230 | 159.800 |  1.410 |
-| d=96, r=12  |   18624 |   3 | 223.100 |  5.600 |     178.500 | 1.250 | 157.600 |  1.420 |
-| d=128, r=16 |   33024 |   3 | 214.600 |  2.000 |     155.900 | 1.380 | 147.700 |  1.450 |
-| d=96, r=24  |   37056 |   3 | 213.500 |  3.800 |     152.800 | 1.400 | 146.100 |  1.460 |
-| d=128, r=32 |   65792 |   2 | 214.000 |  4.200 |     141.200 | 1.520 | 139.900 |  1.530 |
-| d=192, r=24 |   74112 |   3 | 206.900 |  9.200 |     139.600 | 1.480 | 139.100 |  1.490 |
-| d=256, r=32 |  131584 |   3 | 206.100 |  4.800 |     132.600 | 1.550 | 136.200 |  1.510 |
-| d=192, r=48 |  147840 |   1 | 207.100 |  0.000 |     131.700 | 1.570 | 136.000 |  1.520 |
+| config                       | non-emb |   n |      PT |      sd | transformer | ratio |  looped | ratio  |
+| ---------------------------- | ------: | --: | ------: | ------: | ----------: | ----: | ------: | -----: |
+| d=32, r=8                    |    4160 |   3 | 256.800 |   1.500 |          -- |    -- | 204.700 |  1.250 |
+| d=64, r=8                    |    8320 |   3 | 232.000 |   1.600 |          -- |    -- | 178.500 |  1.300 |
+| d=48, r=12                   |    9312 |   3 | 235.500 |  10.400 |          -- |    -- | 174.800 |  1.350 |
+| d=64, r=16                   |   16512 |   3 | 225.900 |   2.500 |     184.100 | 1.230 | 159.800 |  1.410 |
+| d=96, r=12                   |   18624 |   3 | 223.100 |   5.600 |     178.500 | 1.250 | 157.600 |  1.420 |
+| d=128, r=16                  |   33024 |   3 | 214.600 |   2.000 |     155.900 | 1.380 | 147.700 |  1.450 |
+| d=96, r=24                   |   37056 |   3 | 213.500 |   3.800 |     152.800 | 1.400 | 146.100 |  1.460 |
+| d=128, r=32                  |   65792 |   3 | 212.400 |   4.000 |     141.200 | 1.500 | 139.900 |  1.520 |
+| d=192, r=24                  |   74112 |   3 | 206.900 |   9.200 |     139.600 | 1.480 | 139.100 |  1.490 |
+| d=256, r=32                  |  131584 |   3 | 206.100 |   4.800 |     132.600 | 1.550 | 136.200 |  1.510 |
+| d=192, r=48                  |  147840 |   3 | 201.900 |   4.900 |     131.700 | 1.530 | 136.000 |  1.480 |
+| d=256, r=64  (1/3 collapsed) |  262656 |   3 | 403.500 | 264.500 |     129.100 |    -- | 134.500 |     -- |
 
 Baselines are interpolated in log-log space at the causal PT's own parameter count, and left blank outside the range where they were measured -- extrapolating a baseline into a region it was not run in would be inventing the comparison.
+
+
+## Scaling exponents, pair by pair on each pair's shared range
+
+| comparison                 | window         |  first |   n | LOO first      | second |  n  | LOO second     |
+| -------------------------- | -------------- | -----: | --: | -------------- | -----: | --: | -------------- |
+| transformer vs looped      | 13,152-790,272 | -0.115 |   6 | -0.148..-0.078 | -0.042 |   6 | -0.045..-0.034 |
+| looped vs causal PT        | 4,128-65,664   | -0.130 |   4 | -0.145..-0.110 | -0.090 |   5 | -0.093..-0.090 |
+| looped vs PT low rank      | 4,160-147,840  | -0.107 |   5 | -0.130..-0.088 | -0.058 |  10 | -0.062..-0.046 |
+| transformer vs causal PT   | 13,152-65,664  | -0.223 |   3 | n too small    | -0.084 |   3 | n too small    |
+| transformer vs PT low rank | 13,152-147,840 | -0.175 |   4 | -0.223..-0.126 | -0.045 |   8 | -0.049..-0.042 |
+Only exponents fitted on the same window are compared. `LOO` is the range the exponent takes when any single point is dropped: where the two LOO ranges in a row are disjoint, no single point decides the ordering.
+
+
+## Headline macros exported to the paper
+
+| macro               | value     |
+| ------------------- | --------- |
+| \ExpLpvLowLow       | -0.058    |
+| \ExpLpvLowLp        | -0.107    |
+| \ExpLpvPtLp         | -0.130    |
+| \ExpLpvPtPt         | -0.090    |
+| \ExpTfvLowLow       | -0.045    |
+| \ExpTfvLowTf        | -0.175    |
+| \ExpTfvLpLp         | -0.042    |
+| \ExpTfvLpTf         | -0.115    |
+| \ExpTfvPtPt         | -0.084    |
+| \ExpTfvPtTf         | -0.223    |
+| \MBFirstNonemb      | 16{,}512  |
+| \MBFirstRatioGpt    | 1.23      |
+| \MBFirstRatioLooped | 1.25      |
+| \MBLastNonemb       | 147{,}840 |
+| \MBLastRatioGpt     | 1.53      |
+| \MBLastRatioLooped  | 1.48      |
+| \PTbestLab          | 192       |
+| \PTbestNonemb       | 147{,}840 |
+| \PTbestRank         | 48        |
+| \PTbestSd           | 4.9       |
+| \PTbestVal          | 201.9     |
+| \SpreadBest         | 197.3     |
+| \SpreadLab          | 192       |
+| \SpreadMean         | 206.9     |
+| \SpreadRank         | 24        |
+| \SpreadSd           | 9.2       |
+| \SpreadSeeds        | 3         |
