@@ -3,7 +3,162 @@
 
 % Wu & Tu's Appendix D. Their main text gives one sentence per dataset and defers everything
 % else here; \Cref{sec:tasks} does the same.
+%
+% Everything in this appendix was measured on the token streams the runs were trained on, with
+% the loader and the evaluation protocol of the implementation, not copied from a paper. The
+% vocabulary size and three split sizes of each corpus are asserted in tests/test_16_wikitext.py
+% (and the PTB four again in tests/test_11_data_and_training.py), so the appendix and the code
+% cannot drift apart silently.
 
-\TODO{corpus statistics, preprocessing, tokenisation, vocabulary construction, train/dev/test
-splits, and the exact sequence length. Enough for someone to reproduce the numbers in
-\Cref{tab:main} without reading the code.}
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+ & PTB & WikiText-2 \\
+\midrule
+Vocabulary (types)          & 10{,}000  & 33{,}278 \\
+Train tokens                & 929{,}589 & 2{,}088{,}628 \\
+Validation tokens           & 73{,}760  & 217{,}646 \\
+Test tokens                 & 82{,}430  & 245{,}569 \\
+\midrule
+Validation blocks           & 1{,}152   & 3{,}400 \\
+Scored validation tokens    & 72{,}576  & 214{,}200 \\
+Test blocks                 & 1{,}287   & 3{,}837 \\
+Scored test tokens          & 81{,}081  & 241{,}731 \\
+\midrule
+Unigram val.\ ppl.          & 688.82    & 964.82 \\
+\quad slot $0$ included     & 687.45    & 965.37 \\
+\bottomrule
+\end{tabular}
+\caption{The two corpora as the loader sees them. Types include \texttt{<eos>} and are counted
+on the training split, from which the vocabulary is built; neither corpus has a validation or
+test type absent from train. Blocks are the fixed non-overlapping blocks of $\seqlen = 64$
+tokens of the evaluation protocol, and the scored tokens are what the perplexities average
+over: $63$ per block, slot $0$ dropped so that the causal PT and the transformer baseline score
+the identical set. Every value was measured through the loader and the evaluation protocol
+described here, which are the ones every run in this paper uses.}
+\label{tab:datasets}
+\end{table}
+
+Two corpora are used, both at the word level, and both reach every model through one reader and
+one evaluation protocol. Penn Treebank is where all tuning happens; WikiText-2 is only the
+transfer test of \Cref{sec:exp-scaling}. The entire tokenisation policy is one shared function,
+written once rather than once per corpus, and that is deliberate rather than tidy: two copies of
+the same few lines drift apart the first time one of them is touched, and the drift would then
+be reported as the transfer result. The counts below were measured on the exact token streams
+the runs consume; \Cref{tab:datasets} collects them.
+
+\paragraph{Penn Treebank.}
+We use the Penn Treebank \citep{marcus1993building} in the word-level preprocessing of
+Mikolov's language-modelling release: lower-cased, every number replaced by the single token
+\texttt{N}, out-of-vocabulary words already replaced by \texttt{<unk>} in the distributed files,
+punctuation removed, and one sentence per line.
+\NOTE{\texttt{refs.bib} carries no verified Mikolov entry, so this attribution and the
+``10{,}000 types'' convention below are stated without a citation; add one before the
+camera-ready or drop the two attributions.}
+We take those files as they come, restoring and filtering nothing, and the preprocessing is
+visible in the stream we measure: the only type carrying an upper-case letter is \texttt{N}
+itself, which accounts for 32{,}481 of the 929{,}589 training tokens; only 46 of the training
+types contain a digit at all, and those are compounds, decades and ordinals --- \emph{10-year},
+\emph{1920s}, \emph{19th} --- never a bare numeral; and the only types containing neither a
+letter nor a digit are \texttt{\#}, \texttt{\$},
+\texttt{\&}, the apostrophe and two escaped asterisks. The reader appends \texttt{<eos>} to
+every line, which turns the sentence boundary into a token the model has to predict rather than
+a segmentation handed to it: 42{,}068 training sentences, 3{,}370 in validation and 3{,}761 in
+test, so \texttt{<eos>} is $4.57\%$ of the validation tokens. The vocabulary is built from the
+training split alone and comes to $9{,}999$ word types plus \texttt{<eos>}, the $10{,}000$ of
+the standard setting. Because it is built from training text, no
+evaluation token can be unseen --- we measured zero validation and zero test types absent from
+train --- so the \texttt{<unk>} fallback in the reader never fires and the unigram baseline
+below needs no smoothing.
+
+\paragraph{WikiText-2.}
+The second corpus is the word-level release of \citet{merity2017pointer}, the
+\texttt{wikitext-2-v1} files rather than the \texttt{-raw-} release, in which rare words are
+not replaced by \texttt{<unk>} and which is therefore not interchangeable with them; in the
+word-level files \texttt{<unk>} accounts for $54{,}625$ of the training tokens. They are read by
+the same function as PTB, with the same whitespace
+split, the same single \texttt{<eos>} per line and the same vocabulary construction from the
+training split. Its raw files keep the article structure of the source: of the 3{,}760
+validation lines, 1{,}299 are blank and 620 are section headings
+written as \texttt{= Heading =} or \texttt{= = Sub = =}. The standard word-level protocol scores
+both as they are, splitting on whitespace and appending one \texttt{<eos>} per line, blank lines
+included, so that a blank line contributes a bare \texttt{<eos>}; on the validation split the
+blank lines are $0.60\%$ of the tokens and the heading lines $2.37\%$. We keep that convention
+unchanged. Filtering the headings would lower the token count and change the denominator of the
+perplexity, which is the one thing a transfer test cannot afford, since it would leave our
+number incomparable to every published one.
+\NOTE{the ``scores them as they are'' convention is taken from the reference word-level
+readers, not from a statement in \citet{merity2017pointer}; check before the camera-ready.}
+The vocabulary is again closed by construction, with zero validation and zero test types absent
+from train, and comes to $33{,}278$ types counting \texttt{<eos>}.
+
+\paragraph{Batching.}
+The tokens of a split are one \texttt{<eos>}-joined stream, cut into fixed-length blocks of
+$\seqlen = 64$ tokens --- the nanoGPT convention \citep{karpathy2022nanogpt} --- and every model
+sees exactly the same blocks in exactly the same order. Training draws blocks at uniformly
+random offsets into the stream; evaluation, described below, does not. A block boundary is
+therefore not a sentence boundary: a block generally starts mid-sentence, and its slot $0$ is a
+token to be predicted from no prefix at all --- the slot that the protocol below drops.
+
+\paragraph{Slot alignment.}
+The causal PT emits $\text{logits}[:,t]$ predicting $w_t$ from $w_{\prefix{t}}$
+(\Cref{sec:output}), so on a block of $\seqlen$ tokens it scores all $\seqlen$ of them,
+including $w_0$ from \textsc{root} alone --- the first word has a proper distribution, which is
+precisely why the model needs no beginning-of-sequence token. A causal transformer trained the
+usual way consumes $w_0,\dots,w_{\seqlen-2}$ and predicts $w_1,\dots,w_{\seqlen-1}$: $\seqlen-1$
+scored tokens. Averaging the two would compare different token sets, and the extra slot is a
+first-word unigram guess that the baseline never has to make. We align them on the baseline's
+side: the transformer wrapper runs the backbone on $w_{0:\seqlen-2}$ and shifts its logits right
+by one slot, filling slot $0$ with zeros, so that it too obeys the convention
+``$\text{logits}[:,t]$ predicts $w_t$''; both models then drop slot $0$ (\texttt{ignore\_first}
+$=1$) in training and in evaluation alike, so neither receives gradient from a slot the other
+cannot predict. The zero-filled slot is never scored, and the wrapper's loss asserts this rather
+than assuming it --- scoring it would grade the baseline on a slot it does not emit. What both
+models are asked for is thus $p(w_t \mid w_{\prefix{t}})$ for $t = 1,\dots,\seqlen-1$: $63$
+scored tokens per block, $72{,}576$ on PTB validation and $214{,}200$ on WikiText-2 validation.
+
+\paragraph{Evaluation determinism.}
+The loop walks fixed, non-overlapping blocks in corpus order over the whole split, in batches of
+$16$, and samples nothing: a perplexity that moved with the seed could not be compared
+across runs or against the baseline. The trailing tokens that do not fill a block are dropped
+--- $53$, $32$ and $62$ tokens on the three PTB splits and $52$, $46$ and $1$ on WikiText-2, at
+worst $0.08\%$ of a split. The reported perplexity is the
+exponential of the total negative log-likelihood over the scored tokens divided by their number,
+a corpus-level average rather than a mean of per-block perplexities. The training perplexity we
+trace alongside it is measured the same deterministic way, on a fixed $320$-block slice of the
+training split.
+
+\paragraph{Unigram baselines.}
+The reference of \Cref{sec:tasks} is the maximum-likelihood unigram of the training split, and
+it is scored through the loop above rather than in closed form, so that its denominator is the
+same $63$ tokens per block as every model's. It is
+$688.82$ on PTB validation and $964.82$ on WikiText-2 validation; including slot $0$ instead of
+dropping it gives $687.45$ and $965.37$, a difference of at most $0.2\%$ that falls on opposite
+sides on the two corpora, which is the entire effect of one token in sixty-four. We state this
+reference explicitly because it has already caught a failure in this project: an earlier
+implementation reached a validation perplexity of $664$ against a unigram baseline of $687$ and
+the gap was read as learning until the samples were inspected. A model that does not clear the
+unigram number by a wide margin has not learned to use context, whatever its loss curve looks
+like.
+\NOTE{the two WikiText-2 unigram figures were measured on 2026-09-08 on the release fetched by
+\texttt{scripts/get\_wikitext2.sh} and still need their row in the run log of
+\texttt{experiments/exp8\_transfer}; the two PTB figures already have one.}
+
+\paragraph{WikiText-2 is not a second tuning corpus.}
+Every hyperparameter --- learning rate and schedule, width, iteration count, temperature and
+damping --- is selected on PTB and carried to WikiText-2 unchanged; no grid is rerun there. That
+is what makes \Cref{sec:exp-scaling} a transfer test rather than a second experiment. Two
+things change at once and we state them
+rather than control them away: the vocabulary grows from $10{,}000$ to $33{,}278$ types and the
+training set from $0.93$M to $2.09$M tokens, so the parameter count moves even at fixed $\nlab$,
+because the word--label factor is $|\Vocab| \times \nlab$. That is unavoidable --- it is what
+changing corpus means for a model whose parameters are almost all $\Sfac$ --- and it is why the
+WikiText-2 comparison is always against baselines run on the same corpus through the same loop,
+never against the PTB numbers. It also sharpens the readout constraint of
+\Cref{sec:cmp-readout}: at $3.3$ times the vocabulary and unchanged $\nlab$, the rank-$\nlab$
+bottleneck binds harder on WikiText-2 than on PTB, and a weaker transfer result has that
+confound in it.
+
+Finally, we do not use WikiText-103, for the reason already given in \Cref{sec:tasks}.

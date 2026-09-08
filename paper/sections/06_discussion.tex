@@ -1,33 +1,62 @@
 \section{Discussion}
 \label{sec:discussion}
 
-% Wu & Tu have a Discussion section separate from their Conclusion, and it is where the honest
-% statements live: that the goal is not to compete with transformers, and that the model
-% underperforms beyond ~100k sentences. We inherit both the framing and the section. This is
-% the most useful structural thing copied from their paper -- it gives the concessions a place
-% of their own, so they read as scope rather than as apology buried in a results paragraph.
+% Wu & Tu have a Discussion separate from their Conclusion, and it is where the honest
+% statements live. We inherit both the framing and the section: it gives the concessions a
+% place of their own, so they read as scope rather than as apology buried in a results
+% paragraph.
 
-\paragraph{What this paper does and does not claim.}
-As in \citet{wu2023probabilistic}, our goal is not to propose a model that competes with
-transformers on perplexity. It is to establish that the probabilistic-dependency account of
-contextual representation extends to autoregressive generation, and to measure what its
-structure contributes. \TODO{one sentence stating what the numbers actually showed, written
-after they exist and not before.}
+\paragraph{What this paper claims.}
+The construction is the contribution we are most confident of: a causal probabilistic
+transformer exists, it is forced rather than chosen at every step where a choice looked
+available, and next-token prediction in it is inference over a variable the model already had.
+Weight tying, the language-model bias, the \textsc{[mask]}-style query and a
+mixture-of-softmaxes readout are consequences of that, not additions to it. What we do not
+claim is a perplexity win. \TODO{one sentence stating what the numbers actually showed, written
+after they exist.}
 
-\paragraph{The rank-$\nlab$ bottleneck.}
-\TODO{All predictive information reaches the vocabulary through $\Zv{t}$, whose support has size
-$\nlab$. This is an honest cost of the construction rather than a defect of the implementation,
-and it predicts a gap to a standard decoder that no amount of tuning removes. Say by how much,
-and relate to the measurement in \Cref{sec:exp3}.}
+\paragraph{The bottleneck is not where it looks.}
+It is tempting to read the model as bottlenecked by its $\nlab$ discrete labels, and to expect a
+gap that no amount of tuning removes. \Cref{prop:readout} says otherwise: the mean-field
+readout's constraint is the ordinary softmax bottleneck \citep{yang2018breaking} at
+$\nlab = d_{\text{model}}$, no worse in kind or degree than a transformer's own head at matched
+width, and the exact readout escapes even that at zero parameter cost. The per-position state
+is one point of $\Delta^{\nlab-1}$ against a transformer's $\R^{d_{\text{model}}}$ --- the same
+width, with the simplex geometry as the genuine difference. What is left is the \emph{dynamics}:
+whether attention-only iterations with tied parameters and bounded states can put as much usable
+information into those $\nlab$ numbers as a transformer stack puts into $d_{\text{model}}$. Our
+switch ladder is built to answer exactly that question rather than argue about it.
+\TODO{state where the ladder put the cost.}
 
-\paragraph{The missing feed-forward structure.}
-\TODO{inherited from the encoder model, and the leading suspect in its degradation on larger
-corpora. Report what the global-variable ablation of \Cref{sec:exp-ablations} found --- this is
-the first empirical test of the Appendix B.3 proposal of \citet{wu2023probabilistic}, and it is
-worth saying so explicitly whichever way it came out.}
+\paragraph{Hyperparameters are the practical obstacle, and they are analysable.}
+The most useful thing we can report to anyone who wants to build on this is that the causal
+model's sensitivity to width is not diffuse. It has a mechanism --- a head temperature
+calibrated for a belief distribution the model leaves in the first few hundred steps
+(\Cref{sec:temperature}) --- and correcting it revives label-set sizes at which the source
+parameterisation sits exactly on the unigram baseline. \citet{kuang2026scaling} reach a
+comparable conclusion for the encoder by a different route, transporting maximal update
+parametrisation \citep{yang2022tensor} to it and scaling to 0.4B parameters, where they report
+the probabilistic transformer \emph{ahead} of a standard one at matched budget. Read together,
+the two results say that the small-scale gaps reported for this model class have been at least
+partly artefacts of tuning, and that the interesting question is which parameterisation makes
+each variant transfer.
+
+\paragraph{A repair that leaves the graph.}
+We report one uncomfortable thing plainly. The temperature correction that works best is a
+standardisation of the head logits, and that is not a message through a factor: it is a
+normalisation applied outside the update equations, and it forfeits the property that every
+update is the centred gradient of a fixed per-slot free energy. The version that stays inside
+the construction --- a temperature that tracks the belief norm, and so equals the source's
+choice exactly at the uniform belief --- helps, but less. We take this as informative rather
+than embarrassing. It prices one specific consequence of the discipline this model class
+imposes, and it is the same price a transformer pays knowingly when it puts a layer
+normalisation in front of its attention.
 
 \paragraph{Extensions.}
-\TODO{keep short. Candidates: continuous or vector-valued $\Zv{}$; dependency-label variables
-paired with each $\Hv{}{}$; whether the exact readout suggests anything transferable back to
-ordinary decoders --- which is the direction \citet{wu2023probabilistic} name as the point of
-the whole programme.}
+Three directions follow from what we measured rather than from what we hoped: factored labels
+with the exact readout, which is the strongest graph-faithful head available and whose gain is
+predicted to exist only there (\Cref{sec:exp-factored}); continuous or vector-valued label
+variables, which dissolve the scale tension at the cost of the discrete interpretability that
+is the point; and fixed-lag smoothing, a graded in-graph repair of the one evidence term the
+frozen prefix drops. Whether any of them is worth its complexity is decided by measurement, and
+we have tried to leave the measurements rather than the conclusions.

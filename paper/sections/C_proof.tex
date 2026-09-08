@@ -1,9 +1,222 @@
 \section{Proof of \Cref{thm:trilemma}}
 \label{app:proof}
 
-\TODO{the full statement and proof, from Part~I of the main document. \Cref{sec:obstruction}
-carries only the statement and the mechanism in one paragraph, which is what the format allows;
-everything else is here.}
+% Part I, Sections 1-9 of the technical note behind this work carries this argument in full;
+% what follows is the same chain of lemmas, compressed. The note is not a citable publication,
+% so its sections are referred to by number rather than cited. Headings are run-in paragraphs
+% rather than subsections, and the interiority statement is prose rather than a numbered lemma,
+% purely for length: this paper's format allows very few formal environments.
 
-\TODO{state the three properties formally as they are compressed to bullets in the main text:
-causality, a single global energy, contextuality. Then the incompatibility argument.}
+Part~I, Sections~1--9 of the technical note behind this work carries the argument; the note is
+not a publication, so we refer to its sections rather than cite it. Two formalisation decisions
+come first: both are places a reader will press, and one changes what is true.
+
+\paragraph{Where the words enter.}
+One might let each word enter only through its initialisation
+$\Q_{z_i}^{(0)} \propto \exp(\Sfac_{w_i,\cdot})$. In the encoder model it does not: $w_i$ also
+enters the unary term of $E$, so $\Sfac_{w_i,\cdot}$ reappears in every update of $\Zv{i}$. We
+therefore assume only \emph{word-locality} (A3 below), of which the initialisation-only version
+is the case $u_i \equiv 0$. That is load-bearing rather than cosmetic: allow word-nonlocal terms
+and the theorem is false, as
+%
+\begin{equation}
+\label{eq:nonlocal-witness}
+  E(\Q; w) = -\sum_i \sum_a \Q_i(a)\Big(\Sfac_{w_i,a}
+     + \sum_{k<i} \Sfac'^{(i,k)}_{w_k,a}\Big)
+\end{equation}
+%
+shows --- a single smooth energy, causal, and contextual, because it conditions on the prefix
+directly and bypasses inference altogether. The theorem is about context \emph{mediated by
+inference} over the marginals, and (A3) is the formal expression of that scope.
+
+\paragraph{What causality means.}
+\textbf{(C1) trajectory causality:} for all $i<j$, all schedules and all $t$, the iterate
+$\Q_{z_i}^{(t)}$, as a function of the words, does not depend on $w_j$. \textbf{(C2) network
+causality:} for every schedule, every $t$ and every node $x$, head nodes included, $\Q_x^{(t)}$,
+as a function of an arbitrary interior initialisation, does not depend on the initialisation
+blocks of nodes at strictly later positions. \emph{The theorem is false under \textup{(C1)}}, and
+we say so rather than leave it to be found: a finite vocabulary makes (C1) a finite family of
+conditions on the states the trajectories actually visit, whereas the graph condition the proof
+needs is an identical-vanishing condition on an open set.
+
+\begin{proposition}[Sharpness; Part~I, Section~8]
+\label{app:prop-sharp}
+Some scheme satisfies SE, C1 and X simultaneously.
+\end{proposition}
+
+\begin{proof}
+Take $\seqlen=2$, binary labels ($\nlab=2$) and no head variables --- permitted, the factor graph
+having none, or only inert position-local ones. Let $\iota(v) = \softmax(\Sfac_{v,\cdot})$ and
+$\Delta(v) = \iota(v)_1 - \iota(v)_2$, with the $\iota(v)$ and the $\Delta(v)$ pairwise distinct
+over the finite vocabulary, which is generic in $\Sfac$. With $\lambda = 1$ put
+%
+\begin{equation}
+\label{eq:sharp-energy}
+  E(\Q;w) = \psi(\Q_1)\,\varphi(\Q_2)
+    - \textstyle\sum_{i=1}^{2}\langle \Sfac_{w_i,\cdot}, \Q_i\rangle,
+\end{equation}
+%
+where $\psi(\Q_1) = h(\Q_1(1) - \Q_1(2))$, $\varphi(\Q_2) = \Q_2(1)$, and $h$ is the univariate
+Hermite interpolation polynomial with $h(\Delta(v)) = c_v$ pairwise distinct and
+$h'(\Delta(v)) = 0$ at every $v$ in the vocabulary --- such an $h$ exists, of degree at most
+$2|\Vocab|-1$. Then $E$ is polynomial, hence $C^2$, and its pair term is word-free: SE holds.
+C1: whenever $z_1$ is updated its centred field is
+$\Proj{z_1}[-\Sfac_{w_1,\cdot} + \varphi(\Q_2)\nabla_{\Q_1}\psi]$, and along the tangent
+direction $(1,-1)$ the second term contributes $2h'(\Delta(w_1)) = 0$ at the current state, so
+the update returns $\softmax(\Sfac_{w_1,\cdot}) = \iota(w_1)$; the reachable set of $z_1$ is that
+fixed point under every schedule, and $\Q_1^{(t)}$ never sees $w_2$. X: under the schedule
+$B_1 = \{z_2\}$ the field driving $z_2$ contains
+$-\psi(\Q_1^{(0)})\Proj{z_2}(1,0)^{\top} = -c_{w_1}\Proj{z_2}(1,0)^{\top}$ with the $c_v$
+pairwise distinct, so $\Q_2^{(1)}$ varies with $w_1$ --- past to future, the useful direction.
+C2 fails, as it must: off the finite critical set of $h$ we have $h' \neq 0$ and the
+cross-position edge fires. The acausal coupling exists in $E$; it is merely never reached.
+\end{proof}
+
+C1 holds there by a parameter conspiracy rather than by an architecture --- $h$ is fitted to the
+rows of $\Sfac$, and perturbing $\Sfac$ with $h$ fixed breaks it --- whereas C2 is what masked
+attention satisfies for all parameters, activations and inputs.
+
+\paragraph{Setup.}
+$\Nodes$ has a node $z_i$ per label variable $\Zv{i}$ and a node $h_{ic}$ per head variable
+$\Hv{i}{c}$, with $\pi(x)$ the position of $x$; node $x$ carries a distribution $\Q_x$ on a
+finite domain of size $d_x$ ($=\nlab$ for label nodes, $=|\Dep{i}|$ for head nodes). Write
+$\Xsp = \prod_x \Delta_x$ and $\Xint = \prod_x \Delta^\circ_x$,
+$\Tang{x} = \{u \in \R^{d_x} : \mathbf{1}^{\top}u = 0\}$, and
+$\Proj{x} = I - d_x^{-1}\mathbf{1}\mathbf{1}^{\top}$ for the orthogonal centring projector onto
+$\Tang{x}$; a function on $\Xint$ \emph{does not depend on the $y$-block} if it is constant under
+changes of the $\Q_y$ coordinates alone. Four assumptions stand throughout.
+\textbf{(A1)}~$E \in C^2(U)$ for some open convex $U \supseteq \Xsp$. \textbf{(A2)}~A schedule is
+a sequence $(B_1, B_2, \dots)$ of non-empty subsets of $\Nodes$; at step $t$ each $x \in B_t$ is
+replaced by $\Q_x^{(t)} = \softmax\big(-\lambda_{x,t}^{-1}\nabla_x E(\Q^{(t-1)})\big)$,
+$\lambda_{x,t}>0$, and the rest carry over, which covers synchronous, asynchronous and mixed
+schedules and per-node, per-step message weights. \textbf{(A3)}~$E(\Q;w) = E_0(\Q) + \sum_i
+u_i(\Q_{z_i}; w_i)$ with $E_0$ word-free and $u_i$ a function of the block $\Q_{z_i}$ alone --- in
+the encoder $u_i = -\langle\Sfac_{w_i,\cdot},\Q_i\rangle$ --- and nothing else depends on $w$.
+\textbf{(A4)}~$\Q_{z_i}^{(0)} = \iota_i(w_i) \in \Delta^\circ$, head initialisations
+word-independent and interior. SE is (A1)--(A3) for one common $E$; X is the existence of an $i$,
+a $t$, a schedule and words differing only at some coordinate $k \neq i$ for which
+$\Q_{z_i}^{(t)}$ differs.
+
+\emph{Interiority}: every iterate lies in $\Xint$, since initialisations are interior by (A4) and
+softmax outputs are strictly positive, so every gradient below is evaluated at an interior point.
+And (A1) is needed, not a technicality: the argument runs through equality of the mixed partials
+of $E$, which mere existence does not give --- for $f(x,y) = xy(x^2-y^2)/(x^2+y^2)$ with
+$f(0,0)=0$ both exist at the origin and disagree.
+
+\paragraph{Gauge reduction.}
+
+\begin{lemma}[Part~I, Section~3]
+\label{app:lem-gauge}
+Fix a node $x$ and $\lambda>0$. For $P, P' \in \Xint$ the updates
+$\softmax(-\nabla_x E(P)/\lambda)$ and $\softmax(-\nabla_x E(P')/\lambda)$ agree if and only if
+$\Proj{x}\nabla_x E(P) = \Proj{x}\nabla_x E(P')$; so for $y \neq x$ the $x$-update depends on the
+$y$-block somewhere on $\Xint$ if and only if the centred field $\Proj{x}\nabla_x E$ does.
+\end{lemma}
+
+\begin{proof}
+$\softmax(g) = \softmax(g + c\mathbf{1})$ for every $c \in \R$, and $\softmax$ restricted to
+$\Tang{x}$ is injective: $\softmax(g) = \softmax(g')$ forces $g - g' = c\mathbf{1}$, which
+centring forces to zero. Multiplication by $-1/\lambda$ is a bijection of $\Tang{x}$.
+\end{proof}
+
+An update thus reads only the tangential content of the gradient, which disposes of the softmax
+shift-invariance loophole by definition rather than by a later patch: a coupling invisible to
+$x$'s softmax is one that, on the feasible set, does not depend on the $x$-block at all. Write
+$x \rhd y$ when $\Proj{x}\nabla_x E$ depends on the $y$-block somewhere on $\Xint$, and let
+$\Gamma$ be the graph on $\Nodes$ with an edge $\{x,y\}$ exactly when $x \rhd y$.
+
+\begin{lemma}[No one-way coupling; Part~I, Section~3]
+\label{app:lem-symmetry}
+For $x \neq y$, the conditions $x \rhd y$; $u^{\top}\nabla^2 E(Q)v \neq 0$ for some
+$u \in \Tang{x}$, $v \in \Tang{y}$ and $Q \in \Xint$; and $y \rhd x$ are equivalent. In
+particular $\rhd$ is symmetric and $\Gamma$ is a well-defined undirected graph.
+\end{lemma}
+
+\begin{proof}
+If $u^{\top}\nabla^2 E(Q)v \neq 0$ then $Q+sv \in \Xint$ for $|s|$ small, one block moving inside
+its open simplex, and $g(s) = u^{\top}\Proj{x}\nabla_x E(Q+sv) = u^{\top}\nabla_x E(Q+sv)$ has
+$g'(0) \neq 0$: non-constant along a segment whose endpoints differ only in the $y$-block, so
+$x \rhd y$. Conversely, if that tangential Hessian block vanishes throughout $\Xint$, take
+$P,P' \in \Xint$ differing only in the $y$-block; the segment between them lies in $\Xint$ by
+convexity of $\Delta^\circ_y$ and the product structure, and
+$\phi(s) = \Proj{x}\nabla_x E(P + s(P'{-}P))$ is $\Tang{x}$-valued with $\phi'(s)$ orthogonal to
+$\Tang{x}$. Since $\Tang{x}$ is closed, $\phi' \in \Tang{x} \cap \Tang{x}^{\perp} = \{0\}$, so
+$\phi$ is constant and $\neg(x \rhd y)$. The middle condition is symmetric under
+$(x,u) \leftrightarrow (y,v)$ because $\nabla^2 E(Q)$ is a symmetric matrix at every $Q$ ---
+Schwarz's theorem, and the place where (A1) does its work.
+\end{proof}
+
+\paragraph{Causality kills both directions.}
+Write $C(x)$ for the $\Gamma$-connected component of $x$. Induction over an arbitrary schedule
+(Part~I, Section~4) gives \emph{confinement}: $\Q_x^{(t)}$ is a function of the initial blocks
+$(\Q_y^{(0)})_{y \in C(x)}$ and the words $(w_k)_{z_k \in C(x)}$ alone. Indeed
+\Cref{app:lem-gauge} makes the update of $x \in B_t$ a function of $\Proj{x}\nabla_x E$ and, for
+a label node, of $w_{\pi(x)}$ and of no other word by (A3); and \Cref{app:lem-symmetry}, applied
+one block at a time inside $\Xint$, leaves that field a function of the blocks of $x$ and its
+$\Gamma$-neighbours, all in $C(x)$. Head nodes need no separate treatment, a route ``through an
+$H$'' being a sequence of $\Gamma$-edges incident to that node. This is a necessity statement ---
+no path implies no influence --- and not a transmission one: couplings can cancel or sit dead on
+the reachable set, which is what \Cref{app:prop-sharp} exploits.
+
+\begin{proposition}[Part~I, Section~5]
+\label{app:prop-c2}
+Assume SE. Then C2 holds if and only if $\Gamma$ has no edge between nodes at different
+positions.
+\end{proposition}
+
+\begin{proof}
+Let $\pi(x) < \pi(y)$ and apply C2 to the one-node schedule $B_1 = \{x\}$ at $t=1$: for every
+$\Q^{(0)} \in \Xint$ the update of $x$ ignores the $y$-block. Because C2 quantifies over all
+interior initialisations this is an identical statement on $\Xint$, so $\neg(x \rhd y)$ by
+\Cref{app:lem-gauge} and then $\neg(y \rhd x)$ by \Cref{app:lem-symmetry} --- the crux of the
+theorem, Schwarz symmetry converting ``the later node's block does not feed the earlier node's
+update'' into ``the earlier node's block does not feed the later node's update''. The
+cross-position pair was arbitrary. Conversely, position-pure components make every $\Q_x^{(t)}$ a
+function of position-$\pi(x)$ initial blocks and of $w_{\pi(x)}$ only, by confinement, which is
+C2.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{thm:trilemma}]
+Under SE and C2, \Cref{app:prop-c2} leaves $\Gamma$ without a cross-position edge, so every
+component sits inside one position's node set; word entry is confined to label nodes by
+(A3)--(A4); and confinement then makes $\Q_{z_i}^{(t)}$ a function of $w_i$ and the position-$i$
+initial blocks alone, for every schedule, every $t$ and every $i$. No label marginal ever depends
+on another word, which is $\neg$X. Contrapositively, a network-causal contextual scheme is not
+generated, in the sense of (A2), by any single $C^2$ word-local energy. C2 $\Rightarrow$ C1
+follows as well, word initialisations being particular interior ones --- vacuously, since nothing
+depends on any other word at all. Under a single energy the only way to be causal is to be
+trivial.
+\end{proof}
+
+Part~I, Section~7 turns this into a dichotomy for the masked scheme itself: were some $E$ to
+reproduce its updates, every $\Tfac{c}$ would have to satisfy $\Proj{}\Tfac{c}\Proj{} = 0$, whose
+centred label message is a state-independent constant --- no energy, or no context, which is
+\Cref{rmk:never-formed}. The mechanism is visible in the encoder's own field, which passes the
+symmetry test because it is an actual gradient: the term by which $i$ attends to $j$ and the term
+by which $j$ leaks into $i$ are two faces of one Hessian entry. Masking discards one face;
+Schwarz's theorem says one cannot.
+
+\paragraph{The three witnesses.}
+All three pairs are realisable (Part~I, Section~6), so \Cref{thm:trilemma} is a genuine trilemma
+and not one impossibility in disguise. \emph{SE $\wedge$ C2, $\neg$X:} take
+$E = \sum_i u_i(\Q_i;w_i) + \sum_{i,c}\psi_{ic}(\Q_{z_i},\Q_{h_{ic}})$, whose couplings are all
+within-position. \emph{SE $\wedge$ X, $\neg$C2:} the encoder model of
+\citet{wu2023probabilistic}, whose trilinear term
+$\Q_{h_{jc}}(i)\,\Q_j(b)\,\Q_i(a)\,\Tfac{c}_{b,a}$ makes a cross-position edge that
+\Cref{app:lem-symmetry} fires in both directions. \emph{C2 $\wedge$ X, $\neg$SE:} mask the head
+domains so that $\Hv{i}{c}$ may point only to positions $j<i$ and keep only the message term
+weighted by $\Q_{h_{ic}}(j)$; every activation at position $i$ is then a function of blocks at
+positions $\leq i$, X holds for generic $\Tfac{c}$, and $\neg$SE is forced by
+\Cref{thm:trilemma}.
+
+\paragraph{Back to the model.}
+The directed chain of \Cref{sec:chain} gives up the single global energy --- the term the
+trilemma prices --- and keeps causality and contextuality. It is not the third witness: that
+scheme deletes a term from a symmetric field, whereas the chain never forms one
+(\Cref{rmk:never-formed}). What replaces the global energy is not nothing. Each step conditional
+is generated by its own energy $E_i$, every update is exactly $\softmax(-\nabla E_i/\lambda)$
+with nothing deleted, and the global object is the valid directed joint
+$\prod_i p(z_i, h_i \mid z_{\prefix{i}}, w_{1:i})$, inference being variational filtering: the
+belief at $i$ approximates $p(\Zv{i} \mid w_{1:i})$, not the smoothing marginal
+$p(\Zv{i} \mid w_{1:\seqlen})$. That is Check~2 of Part~II, Section~12.3 of the note, and for a
+decoder the filtering marginal is the semantically correct object.

@@ -1,23 +1,45 @@
 \section{Related Work}
 \label{sec:related}
 
-% Wu & Tu's Related Work is one third of a column -- a single dense paragraph. Match that
-% length; the space belongs to Sections 2 and 3.
+% Wu & Tu's Related Work is one third of a column and a single paragraph. Match the length;
+% four short groups, no bullet list.
 
-\TODO{one paragraph, in this order:}
+\paragraph{Probabilistic transformers and their scaling.}
+Our model is the autoregressive counterpart of \citet{wu2023probabilistic}, who derive a
+transformer \emph{encoder} from mean-field inference in a dependency CRF and name a decoder as
+an open extension. \citet{kuang2026scaling} take the same encoder in the other direction,
+transporting maximal update parametrisation \citep{yang2022tensor} to it so that
+hyperparameters tuned on a small model transfer to a large one, and report that the
+probabilistic transformer then \emph{outperforms} a standard transformer at matched parameter
+budget on masked language modelling up to 0.4B parameters. Two things follow for the present
+paper. Their result removes the assumption --- inherited from the 2023 paper's own discussion
+and from our first framing --- that a probabilistic transformer must lose on perplexity; the
+gap it reports at small scale is a tuning artefact, not a property of the model class. And the
+width problem we analyse in \Cref{sec:temperature} is the decoder's version of the problem they
+solve for the encoder, with a different mechanism: theirs is a rescaling of parameters and
+learning rates, ours is a mis-calibration of the attention \emph{temperature} that arises
+specifically because the query of this attention is a probability vector. The two are
+complementary rather than alternative, and \Cref{sec:exp-width} measures them against each
+other.
 
-\begin{itemize}
-  \item \textbf{Syntax in transformers.} \TODO{the line \citet{wu2023probabilistic} cite ---
-        supervised attention to syntactic governors, constituency/dependency injection,
-        dependency-constrained attention. Position this work as the same deviation they claim:
-        we start from probabilistic modelling and arrive at a transformer, rather than adding
-        syntax to one.}
-  \item \textbf{Weight sharing and looped models.} \TODO{\citet{dehghani2019universal},
-        \citet{giannou2023looped}, \citet{yang2024looped}. This citation is load-bearing: it
-        establishes that the Looped baseline of \Cref{sec:experiments} is a recognised model and
-        not a strawman constructed for this paper.}
-  \item \textbf{Structured autoregressive models.} \TODO{what exists for causal LMs with latent
-        structure, and why none of it is a causal PT.}
-  \item \textbf{The softmax bottleneck.} \TODO{\citet{yang2018breaking}; connect to
-        \Cref{sec:vs-lm-head}.}
-\end{itemize}
+\paragraph{Weight sharing and looped models.}
+Applying one block repeatedly with shared weights is the defining property of Universal
+Transformers \citep{dehghani2019universal} and of the looped transformers studied by
+\citet{giannou2023looped} and \citet{yang2024looped}. A probabilistic transformer has that
+property by construction, because every MFVI iteration is inference in the \emph{same} model;
+untying the iterations would make each one inference in a different model. This is why the
+looped transformer, and not only a standard decoder, is a necessary baseline here
+(\Cref{tab:three-point}).
+
+\paragraph{The softmax bottleneck.}
+\citet{yang2018breaking} show that a linear--softmax output head confines the log-conditionals
+to a low-dimensional affine family, and propose a mixture of softmaxes as the repair. Our exact
+readout (\Cref{eq:exact-readout}) is a mixture of softmaxes that arrives from a different
+direction: it is what sum--product inference on the slot tree \emph{is}, with the mixture
+components fixed by the word--label factor and the weights supplied by the prefix, and it costs
+no parameters. \Cref{prop:readout} states the consequence and \Cref{sec:exp3} measures it.
+
+\paragraph{Syntax in neural models.}
+The broader line that \citet{wu2023probabilistic} situate themselves in --- structured latent
+variables, syntactic inductive bias, and analyses reading dependency structure out of attention
+--- applies here unchanged, and we do not repeat it.

@@ -66,3 +66,32 @@
 \newcommand{\ncomp}{K}                           % number of label components (factored labels)
 \newcommand{\ind}[1]{\mathbf{1}\!\left[#1\right]}  % indicator; \mathbb{1} is not in the ACL fonts
 \newcommand{\Hvar}[1]{H_{#1}}                    % the head-variable block at position #1
+
+% --- added while writing Appendix C (proof of the trilemma) ---
+% These name the objects of Part I of the technical note: the proof lives on a product of
+% simplices, one per node of the factor graph, and everything turns on the tangent spaces of
+% those simplices. \Vocab is already \mathcal{V}, so the node set cannot reuse that letter.
+\newcommand{\Nodes}{\mathcal{N}}                 % node set: one node per label / head variable
+\newcommand{\Xsp}{\mathcal{X}}                   % product of the node simplices
+\newcommand{\Xint}{\mathcal{X}^{\circ}}          % its relative interior; every iterate lives here
+\newcommand{\Tang}[1]{\mathcal{T}_{#1}}          % tangent space of node #1's simplex
+\newcommand{\Proj}[1]{\Pi_{#1}}                  % centring projector onto \Tang{#1}
+
+% --- added while writing Appendix B (additional variants) ---
+% Both name objects that already exist in the graph; neither introduces a new symbol for a
+% quantity that already had one.
+\newcommand{\QG}[1]{\Q_{\Gv{#1}}}                % posterior of the global head at position #1
+\newcommand{\nlabc}{d'}                          % width of ONE label component under factoring
+                                                 % (App. B.4): \nlab = \ncomp \nlabc, i.e. \nlab
+                                                 % stays the TOTAL label width, written D in the
+                                                 % source document.
+
+% --- added while writing Appendix A (derivations) ---
+% Three names the main text uses in words but never abbreviates. \dmodel is the transformer
+% hidden width, written d_h in the source document's cost table; it is NOT \nlab, and the whole
+% point of Section 3.3 is that the comparison unit is \nlab <-> \dmodel. \Znorm is the local
+% normaliser of a slot conditional and the per-component normaliser of the mixture readout.
+% \Ent is the entropy: \Hv is already the head variable, so H cannot be reused unqualified.
+\newcommand{\dmodel}{d_{\text{model}}}           % transformer hidden width (source: d_h)
+\newcommand{\Znorm}{\mathcal{Z}}                 % normalising constant
+\newcommand{\Ent}{\mathrm{H}}                    % entropy of a distribution

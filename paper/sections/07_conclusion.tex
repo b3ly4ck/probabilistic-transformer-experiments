@@ -1,10 +1,14 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-% Wu & Tu's Conclusion is one short paragraph that restates the model and the headline result,
-% with no new material. Match that -- roughly 0.2 of a column.
+% Wu & Tu's Conclusion is one short paragraph restating model and headline result, with no new
+% material. Match that -- roughly 0.2 of a column. Written last, to the measured result.
 
-\TODO{one paragraph, written last and written to the measured result. If the causal PT matches
-Looped, the claim is that syntactic structure carries information weight sharing does not. If it
-does not, the contribution is the construction plus a negative empirical finding, which is still
-a paper --- do not reframe the numbers to rescue the stronger claim.}
+We have derived the autoregressive counterpart of the probabilistic transformer. Causality, a
+single global energy and contextual dependence cannot hold together, so we replace the single
+field by a directed chain of conditional random fields in which the prefix enters each step as a
+frozen condition and the anti-causal term is never formed; and we obtain a language-model head
+by unclamping a variable the model already had, which makes tied embeddings, the output bias
+and a mixture-of-softmaxes readout consequences of the construction rather than additions to it.
+\TODO{one sentence of measured result, written to the numbers.} We hope this extends the
+probabilistic account of contextual representation from analysis to generation.
