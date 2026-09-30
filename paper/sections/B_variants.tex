@@ -1,40 +1,23 @@
 \section{Additional Variants}
 \label{app:variants}
 
-% Mirrors Wu & Tu Appendix B, where the variants not used in the main experiments live --
-% including the B.3 global variables that Section 2.6 promotes to a measured ablation here.
-
-\Cref{sec:variants} gives each of these variants a sentence. This appendix gives the
-construction, the checks it passes, and --- where the choice was decided by a measurement
-rather than by an argument --- the number that decided it.
-
 \subsection{Global variables}
 \label{app:globals}
 
-\citet{wu2023probabilistic} introduce global variables in their Appendix B.3 as the in-graph
-substitute for the feed-forward structure their model lacks, in three designs: \emph{all-dep},
-in which a word's head may be one of $\nglob$ observed global feature variables;
-\emph{dep-split}, in which each channel carries a separate global head; and
-\emph{single-split}, in which each position carries exactly one global head, shared by all
-channels. We take the third, which is the design their own discussion identifies as the closest
-to a transformer's computation, and the one \Cref{sec:variants} refers to.
+\citet{wu2023probabilistic} introduce global variables (their Appendix~B.3) as an in-graph
+substitute for the feed-forward block. Of their three designs we use \emph{single-split}, with
+one global variable per position shared by all channels (the others are \emph{all-dep} and
+\emph{dep-split}), which they identify as the closest to a transformer's computation.
 
-In the causal model the construction is unchanged, because it is position-local. Slot $t$ gains
-one variable $\Gv{t}$ ranging over $\nglob$ values and one binary factor
-$\phi_b(\Gv{t}{=}k, \Zv{t}{=}a) = \exp(\Bglob_{k,a})$ with a single score matrix
-$\Bglob \in \R^{\nglob \times \nlab}$. There is no channel axis --- that is what distinguishes
-single-split from dep-split --- so the message enters once per iteration rather than once per
-channel, and the per-slot energy of \Cref{eq:slot-energy} gains the one term
-$-\sum_{k,a} \QG{t}(k)\,\QZ{t}(a)\,\Bglob_{k,a}$.
-
-Three things stay true, and they are the reasons the variant is admissible here at all. The
-slot remains a tree: $\Gv{t}$ is one more leaf off $\Zv{t}$, joining $\Wv{t}$ and the
-$\nchan$ head variables, so sum--product on the slot is still exact and
-\Cref{prop:exact-readout} still applies. Causality is untouched: $\Gv{t}$ reads no prefix
-quantity and no future one, so $\qbar{j}$ remains a function of $w_{1:j}$ alone. And the cost
-is $O(\nglob\nlab)$ per position, independent of the sequence length.
-
-The mean-field updates gain exactly one pair of messages,
+The construction is position-local, so it carries over unchanged. Slot $t$ gains a variable
+$\Gv{t}$ over $\nglob$ values and one binary factor
+$\phi_b(\Gv{t}{=}k, \Zv{t}{=}a) = \exp(\Bglob_{k,a})$ with
+$\Bglob \in \R^{\nglob \times \nlab}$, so \Cref{eq:slot-energy} gains the term
+$-\sum_{k,a} \QG{t}(k)\,\QZ{t}(a)\,\Bglob_{k,a}$. There is no channel axis, so the message
+enters once per iteration. The slot is still a tree ($\Gv{t}$ is one more leaf off $\Zv{t}$), so
+\Cref{prop:exact-readout} still applies; $\Gv{t}$ reads no other position, so causality is
+untouched; and the cost is $O(\nglob\nlab)$ per position. The mean-field updates gain one pair
+of messages,
 %
 \begin{equation}
 \label{eq:global-update}
@@ -44,17 +27,16 @@ The mean-field updates gain exactly one pair of messages,
 \end{aligned}
 \end{equation}
 %
-the second line being the message that joins the arc messages inside the bracket of
-\Cref{eq:update-Z}. Composed, the two are the operator $\sigma(q\Bglob^{\!\top}\!/\lamG)\Bglob$ acting on the label belief
-$q$ --- the global feature update that \citet{wu2023probabilistic} place beside a transformer's
-feed-forward block and identify as its analogue: a map into $\nglob$ features, a softmax
-nonlinearity in place of a \textsc{relu}, and a map back through the transpose of the same
-matrix. The source writes this operator without a message weight; we carry $\lamG$ because every other variable in the model carries one, and $\lamG = 1$ recovers
-the source's form exactly.
+the second of which joins the arc messages inside the bracket of \Cref{eq:update-Z}. Together
+they form the operator $\sigma(q\Bglob^{\!\top}\!/\lamG)\Bglob$ on the label belief $q$, which
+Wu and Tu identify as the analogue of a feed-forward block: a map into $\nglob$ features, a
+softmax in place of a \textsc{relu}, and a map back through the transpose of the same matrix.
+Wu and Tu write this operator without a message weight; we carry $\lamG$, and $\lamG = 1$
+recovers their form.
 
-\paragraph{Under the exact readout the head reaches the prediction only as a prior.}
-This is the consequence \Cref{sec:variants} only gestures at. Folding $\Gv{t}$ into the sum--product of \Cref{prop:exact-readout} adds a factor
-$\sum_k e^{\Bglob_{k,a}}$ to $\readout{t}(a)$ --- the form the source itself states --- so that
+\paragraph{Under the exact readout the global variable acts only as a prior.}
+Folding $\Gv{t}$ into the sum--product of \Cref{prop:exact-readout} multiplies $\readout{t}(a)$
+by $\sum_k e^{\Bglob_{k,a}}$:
 %
 \begin{equation}
 \label{eq:global-readout}
@@ -62,129 +44,72 @@ $\sum_k e^{\Bglob_{k,a}}$ to $\readout{t}(a)$ --- the form the source itself sta
     \;+\; \LSE_{k} \Bglob_{k,a}.
 \end{equation}
 %
-The added term is a single $\nlab$-vector. It carries no index $t$ and no dependence on the
-prefix, so whatever $\nglob$ is, only $\nlab$ numbers of the $\nglob\nlab$ in $\Bglob$ reach
-the readout directly, and they reach it as a fixed per-label tilt of the mixture weights. It
-does not cancel --- the readout log-sum-exps over labels rather than combining them linearly,
-so an additive constant in $\log\readout{t}$ is not an additive constant in $\log\hat p$ ---
-but it cannot carry context.
-
-It would nevertheless be wrong to conclude from this that $\Gv{t}$ is inert, and the
-distinction is what decides how the variant is run. The head also sits in the content stream, where
-\Cref{eq:global-update} is evaluated at a position-dependent $\QZ{i}$ and reshapes every
-$\qbar{i}$, and that path is present under either readout; what the exact readout removes is
-the predictive inner loop, and with it the only place where the head acts on the slot being
-predicted. A run in that mode would therefore add a constant tilt at the readout to an
-indirect effect through the prefix and report the sum as the feed-forward analogue. Our
-implementation refuses the combination rather than reporting that ablation; the constancy of
-the direct term, and the fact that the end-to-end effect is not constant, are asserted
-separately as validation checks (\Cref{app:validation}) instead of being assumed. The
-configuration \Cref{sec:exp-ablations} measures is the mean-field one, in which the head acts
-at the predicted slot as well as along the prefix.
+The added term is one $\nlab$-vector, independent of $t$ and of the prefix: a fixed per-label
+tilt of the mixture weights. It does not cancel, since the readout takes a log-sum-exp over
+labels, but it cannot carry context. The variable still reshapes every $\qbar{i}$ through the
+observed-mode beliefs, so under the exact readout, which has no predictive inner loop, a run would mix
+a constant tilt with an indirect effect through the prefix. Our implementation refuses this
+combination, and validation checks assert that the direct term is constant and the end-to-end
+effect is not (\Cref{app:validation}). \Cref{sec:exp-ablations} measures the mean-field
+configuration, in which the variable also acts at the predicted slot.
 
 \subsection{Serial update schedule}
 \label{app:serial}
 
-Two schedules are available and both are causal. The \emph{serial} schedule processes positions
-left to right: at position $i$ it runs the two-block coordinate updates of
-\Cref{eq:update-H,eq:update-Z} over $\big(\Zv{i}, \{\Hv{i}{c}\}_c\big)$ to convergence --- in
-practice for a fixed number of inner rounds --- then freezes $\qbar{i}$ and advances. The \emph{layer-parallel} schedule computes
-all $\QZ{i}^{(t)}$ from $\{\QZ{j}^{(t-1)}\}_{j<i}$ at once, under a single strict
-lower-triangular mask, for $\niter$ iterations.
+Both schedules are causal. The \emph{serial} schedule runs \Cref{eq:update-H,eq:update-Z} at
+position $i$ for a fixed number of inner rounds, freezes $\qbar{i}$ and moves right. Each slot
+is then a well-posed mean-field problem on its own energy, with the per-step guarantees of the
+entropic Frank--Wolfe scheme, and causality follows by induction on $i$. The
+\emph{layer-parallel} schedule computes all $\QZ{i}^{(t)}$ from $\{\QZ{j}^{(t-1)}\}_{j<i}$ at
+once under a strict lower-triangular mask, for $\niter$ iterations. Its computation graph is
+that of a depth-$\niter$ causal transformer with shared weights. All reported numbers use this
+schedule, because only under it do the causal PT and the looped transformer share a computation
+graph and an effective depth, so that their difference isolates structure.
 
-Each is the natural presentation of a different reading of the model. Serial is the clean
-filtering story: every slot is a well-posed two-block mean-field problem on the per-step energy,
-inheriting the per-step guarantees of the entropic Frank--Wolfe scheme from which the message
-weights $\lamZ,\lamH$ come, and $\qbar{i}$ is frozen only after its own problem has been solved.
-Layer-parallel is the relaxation in which the freezing happens one iteration at a time, and its
-computation graph is exactly that of a depth-$\niter$, parameter-shared causal transformer.
-Causality holds in both: in the serial schedule by induction on $i$, since the constants of slot
-$i$'s problem are $\Sfac_{w_i,\cdot}$ and $\{\Bfac{c}_{j,\cdot}\}_{j<i}$ and no later quantity
-appears anywhere in it; in the layer-parallel schedule because every path still runs from a
-strictly earlier position under the mask.
-
-All reported numbers use the layer-parallel schedule, for the reason that motivates the
-baseline rather than for speed: the Looped transformer of \Cref{sec:experiments} is a shared
-block applied $\niter$ times, so only under the layer-parallel schedule are the two models
-compared at the same computation graph and the same effective depth, and only then does the
-difference between them isolate structure.
-
-The two schedules are not the same computation and we measure how far apart they land, on the
-content stream, at $\nlab=32$, $\nchan=4$, $\krank=8$, $\clip=3$, $\niter=5$ and length $24$.
-The mean total-variation distance between the label beliefs they produce is $3.4\times10^{-6}$
-at initialisation scale $0.02$, rising to $0.111$ at $0.5$ and $0.682$ at $2.0$ --- where the
-maximum reaches the largest value the metric admits, $1.000$, meaning that at some positions
-the two schedules put their label mass on disjoint labels --- and falls back below $10^{-4}$
-on an overfitted model. The reading is that the two agree in both degenerate regimes, near-uniform
-beliefs at small parameter scale and near one-hot beliefs after fitting, and can disagree
-completely in between. At the scales at which the model is initialised and at which it ends up,
-the schedule is close to a free choice; at intermediate parameter scale it is not, which is why
-we report it as a measured quantity rather than an implementation detail.
+The two schedules do not compute the same thing. We compared their observed-mode label beliefs at $\nlab=32$, $\nchan=4$, $\krank=8$, $\clip=3$, $\niter=5$ and length $24$. The mean
+total-variation distance is $3.4\times10^{-6}$ at initialisation scale $0.02$, $0.111$ at
+$0.5$ and $0.682$ at $2.0$, where the maximum reaches $1.000$ (disjoint label mass at some
+positions). On an overfitted model it falls below $10^{-4}$. The schedules agree when beliefs
+are near uniform or near one-hot, and can disagree completely in between.
 
 \subsection{Root node}
 \label{app:root}
 
 The root is not a variable in this model. The head domain is
-$\Dep{t} = \{\textsc{root},1,\dots,t-1\}$, and $\rfac{c}$ is the \textsc{root} entry of the
-contracted arc score of \Cref{eq:contract}: $\Bfac{c}_{\textsc{root},a} = \rfac{c}_a$, a learned
-column of $\nlab$ numbers per channel, seeding the log-sum-exp of \Cref{eq:exact-readout} at
-$j=\textsc{root}$. \Cref{sec:chain} says what it is for; what it stands in for is a
-beginning-of-sequence token, since $\Dep{1} = \{\textsc{root}\}$ is a singleton and position
-$1$ therefore has something to attend to without one being introduced.
+$\Dep{t} = \{\textsc{root},1,\dots,t-1\}$, and $\rfac{c} = \Bfac{c}_{\textsc{root},\cdot}$ is a
+learned column of $\nlab$ numbers per channel. Like a beginning-of-sequence token, it gives
+position $1$, whose head domain would otherwise be empty, something to attend to. The root of
+\citet{wu2023probabilistic} (their \S2.3.5) is an optional latent variable with its own label set
+and ternary potential. Ours is a constant parameter: it has no posterior, carries no information
+between positions and so cannot break causality, and costs $\nchan\nlab$ numbers instead of a
+$\nlab \times \nlab_{\textsc{root}} \times \nchan$ tensor. It is their root variable with its
+distribution held fixed and contracted into a binary factor as in \Cref{eq:contract}, the
+collapse argument Wu and Tu use for global feature variables (their Appendix~B.3.1).
 
-\citet{wu2023probabilistic} add a root differently, in their \S2.3.5, and the differences are
-worth stating because the two objects share a name and little else. Theirs is a genuine latent
-variable $Z_{\textsc{root}}$ with its own label set, of a size they allow to differ from
-$\nlab$, and its own ternary potential; its posterior is initialised uniform, updated during
-inference like any other variable, and read afterwards as a sentence representation. It is also
-optional: their model is well defined without it. Ours is a parameter, constant in the position
-and in the input. It therefore carries no posterior and yields no sentence representation; it
-cannot transmit information between positions, so it cannot threaten causality; it costs
-$\nchan\nlab$ numbers rather than a $\nlab \times \nlab_{\textsc{root}} \times \nchan$ tensor;
-and it is not optional, since without it the head domain of position $1$ would be empty.
-Equivalently, $\rfac{c}$ is what their root variable collapses to when its distribution is held
-fixed rather than inferred, by the same contraction of a fixed-distribution neighbour into a
-binary factor that turns the frozen prefix into \Cref{eq:contract}. \NOTE{that last equivalence
-is ours; \S2.3.5 does not state it, and the collapse argument it appeals to is the one Wu \& Tu
-prove in their Appendix B.3.1 for the global feature variables.}
-
-One property of the root column is measured rather than argued, and we report it because it
-looks like a defect and is not. At initialisation $\rfac{c}$ reaches the attention in raw
-$\nlab$-space, while the arc scores arrive contracted through
-$\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, which shrinks them by roughly
-$\nlab^{-1/2}$ for a near-uniform prefix belief and again through the Kruskal product. Drawing
-every parameter from the same $\mathcal{N}(0,\sigma^2)$ therefore leaves the \textsc{root} row
-of $\Bfac{c}$ with a norm $121\times$ that of the contracted prefix rows at $\nlab=384$,
-$\nchan=16$, $\krank=64$. The imbalance is nearly invisible in the attention at initialisation,
-because a near-uniform $\QZ{t}$ averages the zero-mean entries of $\rfac{c}$ away; it becomes
-visible only once the belief sharpens, at which point $\langle \QZ{t},\rfac{c}\rangle \to
-\rfac{c}_a$ while $\langle \QZ{t},\Bfac{c}_{j,\cdot}\rangle \to \Bfac{c}_{j,a}$. What that
-predicts --- an attention sink nobody chose --- does not happen. The measured \textsc{root}
-attention mass at the last slot is $1.10\times$ uniform at the configuration above, untrained,
-and $0.15\times$ uniform on an overfitted model: after training the model \emph{avoids} the
-root rather than sinking into it. We expose the initialisation scale of $\rfac{c}$ as its own
-hyperparameter, log the \textsc{root} mass at every iteration, and leave the default equal to
-the other parameters', since changing it is a modelling decision and not a repair.
-\NOTE{the run log records the trained figure both as a ratio, $0.15\times$ uniform, and as a
-raw pair ($0.0001$ against a uniform $0.125$) that reduces to $0.0008\times$ instead; the ratio
-is what the report and the project status carry, and the pair should be re-derived before this
-sentence is fixed. Both readings are far below uniform, so which one is right changes the
-figure but not the finding.}
+At initialisation $\rfac{c}$ enters the attention in raw $\nlab$-space, while the prefix rows
+arrive contracted, $\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, shrunk by roughly
+$\nlab^{-1/2}$ for a near-uniform belief and again by the low-rank factorisation
+$\Tfac{c}=\Ufac{c}\Vfac{c}{}^{\top}$. With all parameters
+drawn from one $\mathcal{N}(0,\sigma^2)$, the \textsc{root} row has $121\times$ the norm of the
+prefix rows at $\nlab=384$, $\nchan=16$, $\krank=64$. A near-uniform $\QZ{t}$ hides this at
+first, but it could draw most of the attention once beliefs sharpen. In our measurements it
+does not: untrained, in the configuration above, the root receives $1.10\times$ uniform attention
+mass at the last slot, and on an overfitted toy model it receives $0.0001$ against $0.125$ under
+uniform attention. How much mass a trained language model sends to the root still depends on the
+configuration (\Cref{app:interpretability}). The initialisation scale of $\rfac{c}$ is a separate
+hyperparameter, left equal to that of the other parameters.
 
 \subsection{Factored labels}
 \label{app:factored}
 
-The widening of \Cref{sec:variants} replaces the single label variable at each position by
-$\ncomp$ of them. Write $\nlab$ for the total label width, as everywhere else in this paper, so
-that each component ranges over $\nlabc = \nlab/\ncomp$ values; the source writes $D$ for this
-total. Position $t$ then carries $\Zv{t}^{(1)},\dots,\Zv{t}^{(\ncomp)}$ and $\ncomp$
-word--label factors sharing the one word variable,
-$\phi\big(\Wv{t},\Zv{t}^{(k)}\big) = \exp\big(\Sfac^{(k)}_{\Wv{t},\Zv{t}^{(k)}}\big)$, and each
-head channel $c$ is assigned a child component $k(c)$, whose belief queries the channel and
-receives its message, and a head component $k'(c)$, whose prefix belief is contracted into the
-channel's keys:
-$\Bfac{c}_{j,a} = \sum_b \qbar{j}^{(k'(c))}(b)\,\Tfac{c}_{a,b}$. The per-slot energy of
-\Cref{eq:slot-energy} becomes the obvious sum,
+Factored labels replace the label variable at each position by $\ncomp$ variables. As
+elsewhere, $\nlab$ is the total label width, so each component ranges over
+$\nlabc = \nlab/\ncomp$ values. Position $t$ carries $\Zv{t}^{(1)},\dots,\Zv{t}^{(\ncomp)}$ and
+$\ncomp$ word--label factors that share the word variable,
+$\phi\big(\Wv{t},\Zv{t}^{(k)}\big) = \exp\big(\Sfac^{(k)}_{\Wv{t},\Zv{t}^{(k)}}\big)$. Each
+channel $c$ has a child component $k(c)$, whose belief queries the channel and receives its
+message, and a head component $k'(c)$, whose prefix belief forms the channel's keys:
+$\Bfac{c}_{j,a} = \sum_b \qbar{j}^{(k'(c))}(b)\,\Tfac{c}_{a,b}$. The per-slot energy becomes
 %
 \begin{equation}
 \label{eq:factored-energy}
@@ -196,16 +121,12 @@ $\Bfac{c}_{j,a} = \sum_b \qbar{j}^{(k'(c))}(b)\,\Tfac{c}_{a,b}$. The per-slot en
 \end{aligned}
 \end{equation}
 %
-multilinear as before, so every variable still has an honest gradient and the updates are still
-softmaxes of it. The source states three checks and they survive reading: causality is
-untouched, since nothing introduced here sees the future; the attention correspondence holds
-per channel, with component-specific queries and keys; and the cost is linear, in the sense
-that $\ncomp$ components of width $\nlabc$ cost between them what one component of width
-$\nlab$ costs, each channel touching exactly one of them.
-
-What factoring buys is a readout. The slot graph is still a tree --- $\Wv{t}$ joined to
-$\ncomp$ stars, one per component --- so sum--product is still exact, and
-\Cref{eq:exact-readout} becomes a \emph{product} of $\ncomp$ mixtures,
+still multilinear, so the updates are still softmaxes of the gradients. Causality is untouched,
+the attention correspondence holds per channel with component-specific queries and keys, and the
+compute is linear: $\ncomp$ components of width $\nlabc$ cost what one of width $\nlab$ costs,
+since each channel touches one component. The slot
+graph is still a tree ($\Wv{t}$ joined to $\ncomp$ stars), so \Cref{eq:exact-readout} becomes a
+product of $\ncomp$ mixtures,
 %
 \begin{equation}
 \label{eq:factored-readout}
@@ -216,54 +137,31 @@ $\ncomp$ stars, one per component --- so sum--product is still exact, and
 \end{aligned}
 \end{equation}
 %
-a strictly richer family than the single mixture at the same total width, and the strongest
-graph-faithful head available in this model class. The interpretability story changes with it:
-a position carries $\ncomp$ simultaneous discrete annotations, a feature bundle rather than one
-monolithic tag, and channels are typed by which component they read.
+a strictly richer family than one mixture at the same total width.
 
-The source's own caveat is the sharp part and we state it as it states it: under the mean-field
-readout, factoring buys nothing over a flat label of width $\nlab$. The logits there are
-$\bfac + \sum_k \Sfac^{(k)}q^{(k)}$, affine in the concatenated beliefs and hence of affine
-dimension at most $\nlab$, which is exactly the bound \Cref{prop:readout}(i) gives for
-$\ncomp=1$. Any gain therefore exists only through \Cref{eq:factored-readout}. The prediction
-is about the head and not about the model as a whole: factoring also changes the inference
-dynamics, since each channel now queries and keys off single components, and it changes the
-parameter count, as the correction below shows. What \Cref{sec:exp-factored} tests is
-accordingly the interaction --- an effect of $\ncomp$ present under \Cref{eq:factored-readout}
-and absent under the mean-field readout is the one the source predicts, and an effect of the
-same size under both is not.
+Under the mean-field readout, factoring adds no expressivity over a flat label of width
+$\nlab$. The
+logits $\bfac + \sum_k \Sfac^{(k)}q^{(k)}$ are affine in the concatenated beliefs, so their
+affine dimension is at most $\nlab$, the bound of \Cref{prop:readout}(i) for $\ncomp=1$. Any gain
+in the head must come through \Cref{eq:factored-readout}. Factoring also changes the inference
+dynamics and the parameter count, so \Cref{sec:exp-factored} tests the interaction: the
+prediction is an effect of $\ncomp$ under the exact readout that is absent under the mean-field
+readout, not an effect of the same size under both.
 
-Two things the source leaves open we had to settle. It does not say how channels are
-assigned to components, noting only that per-channel labels
-are the special case $\ncomp = \nchan$, $k(c) = c$, and that there is no reason to couple
-$\ncomp$ to $\nchan$. We use $k(c) = c \bmod \ncomp$ and $k'(c) = \lfloor c/\ncomp\rfloor \bmod
-\ncomp$, so that at $\nchan = \ncomp^2$ every ordered pair of components occurs exactly once and
-no pair is privileged, and keep $k'(c) = k(c)$ --- components that never read each other --- as
-the ablation that separates ``more mixture components'' from ``components that communicate''.
-Second, the source introduces the global head of \Cref{app:globals} and the factored labels in
-the same section but never says which component $\Gv{t}$ would hang off, or whether there is one
-per component; our implementation refuses that combination rather than guessing it.
+\paragraph{Channel assignment.}
+We use $k(c) = c \bmod \ncomp$ and $k'(c) = \lfloor c/\ncomp\rfloor \bmod \ncomp$, so that at
+$\nchan = \ncomp^2$ every ordered pair of components occurs exactly once. The alternative
+$k'(c) = k(c)$, in which components never read each other, would separate the effect of having
+more mixture components from the effect of letting components communicate. We do not combine global variables with factored labels.
 
-\paragraph{A correction to the parameter count.}
-The source gives the parameter count under factoring as
-$|\Vocab|\,\ncomp\,\nlabc = |\Vocab|\,\nlab$, ``identical to a flat label of width $\nlab$''.
-That count is the word--label factors, and of them it is exactly true --- they are also the
-overwhelming majority of the budget, and $\Sfac$ remains one tensor, read as $\ncomp$
-contiguous blocks of width $\nlabc$ rather than split into $\ncomp$ separate matrices. Read as
-a statement about the model's parameters, which is how the one-line version in
-\Cref{sec:variants} takes it, it is false, because the arc factors do not follow. They become
-per-component --- $\Tfac{c}$ acts $\nlabc \times \nlabc$ rather than $\nlab \times \nlab$ ---
-so the non-embedding block, which is
-$2(\clip{+}1)\nchan\,\nlabc\,\krank$ for the arc scores under the Kruskal decomposition plus
-$\nchan\,\nlabc$ for the root column, \emph{falls} with $\ncomp$: as $1/\ncomp^2$ when the rank
-is scaled with the component width, and as $1/\ncomp$ when the rank is held fixed. Measured at
-$\nchan=4$, $\clip=3$ and $\krank=\nlabc$, the non-embedding counts are $32{,}896$ at
-$(\nlab,\ncomp) = (32,1)$, $8{,}256$ at $(32,2)$, $32{,}896$ at $(64,2)$, $8{,}256$ at $(64,4)$
-and $32{,}896$ at $(128,4)$. The consequence is the one worth carrying into the experiment:
-factoring never buys its effect with parameters, and at a fixed non-embedding budget it buys
-total label width --- the three equal counts in that list are three models of the same
-non-embedding size at $\nlab = 32$, $64$ and $128$. \NOTE{this paragraph corrects \S22.2 of the
-source document, whose count names only the word--label factors while the sentence around it
-reads as a claim about the model; \Cref{sec:variants} inherits the unrestricted form and needs
-the same restriction. The five counts are measured from the implementation, not read from the
-source.}
+\paragraph{Parameter count.}
+The word--label factors keep $|\Vocab|\,\ncomp\,\nlabc = |\Vocab|\,\nlab$ parameters, as for a
+flat label of width $\nlab$; $\Sfac$ stays one tensor, read as $\ncomp$ blocks of width
+$\nlabc$. The arc factors, however, act on $\nlabc\times\nlabc$. The non-embedding block,
+$2(\clip{+}1)\nchan\,\nlabc\,\krank$ for the arc scores plus $\nchan\,\nlabc$ for the root
+column, therefore falls as $1/\ncomp^2$ when the rank scales with $\nlabc$ and as $1/\ncomp$
+when it is fixed. At $\nchan=4$, $\clip=3$ and $\krank=\nlabc$ the measured non-embedding counts
+are $32{,}896$ at $(\nlab,\ncomp) = (32,1)$, $8{,}256$ at $(32,2)$, $32{,}896$ at $(64,2)$,
+$8{,}256$ at $(64,4)$ and $32{,}896$ at $(128,4)$. Factoring therefore never gains through extra
+parameters; at a fixed non-embedding budget it gains total label width: the three equal counts
+are models of one size at $\nlab = 32$, $64$ and $128$.

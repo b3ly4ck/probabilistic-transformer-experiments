@@ -1,33 +1,24 @@
 % Notation macros.
-%
-% The names follow the reference documents, NOT transformer convention. In particular
-% `d` is the size of the label set of a word variable, not a hidden dimension, and `h`
-% counts channels (head variables per word), not attention heads in the usual sense.
-% Keep this file in sync with src/config.py, which uses the same names.
-%
-% Every macro below must correspond to something that exists in the factor graph — the
-% modelling constraint of the project is that no parameter names a non-factor, and the
-% notation should not be able to express one.
 
 % --- index sets and sizes ---
 \newcommand{\Vocab}{\mathcal{V}}                 % vocabulary
 \newcommand{\nlab}{d}                            % number of labels of a word variable
 \newcommand{\nchan}{h}                           % number of channels (head variables per word)
-\newcommand{\krank}{r}                           % Kruskal rank of the arc-score decomposition
-\newcommand{\nglob}{m}                           % number of global variables (Appendix B.3)
+\newcommand{\krank}{r}                           % rank of the arc-score decomposition
+\newcommand{\nglob}{m}                           % number of global variables
 \newcommand{\clip}{\gamma}                       % distance clip threshold
 \newcommand{\niter}{T}                           % MFVI iterations / loop depth
 \newcommand{\seqlen}{n}                          % sequence length
 \newcommand{\Dep}[1]{\mathcal{D}_{#1}}           % dependency candidate set at position #1
 
 % --- random variables ---
-\newcommand{\Wv}[1]{W_{#1}}                      % word variable (LATENT, not observed)
+\newcommand{\Wv}[1]{W_{#1}}                      % word variable (latent)
 \newcommand{\Zv}[1]{Z_{#1}}                      % label variable
 \newcommand{\Hv}[2]{H_{#1}^{(#2)}}               % head variable at position #1, channel #2
 \newcommand{\Gv}[1]{G_{#1}}                      % global variable
 
-% --- factors and parameters (each names a factor; see CLAUDE.md constraint 1) ---
-\newcommand{\Sfac}{S}                            % word--label factor, |V| x d; mediates BOTH directions
+% --- factors and parameters ---
+\newcommand{\Sfac}{S}                            % word--label factor, |V| x d
 \newcommand{\Tfac}[1]{T^{(#1)}}                  % arc score of channel #1, T = U V^\top
 \newcommand{\Ufac}[1]{U^{(#1)}}
 \newcommand{\Vfac}[1]{V^{(#1)}}
@@ -60,38 +51,22 @@
 \newcommand{\prefix}[1]{{<}#1}                   % "the prefix before position #1"
 \newcommand{\stopgrad}[1]{\left\lfloor #1 \right\rfloor}  % frozen condition: no gradient path
 
-% --- added while writing Section 2 ---
+% --- further symbols ---
 \newcommand{\qbar}[1]{\bar{q}_{#1}}              % frozen filtering marginal of position #1
-\newcommand{\Bglob}{B'}                          % global-variable factor matrix (App. B.3.3)
+\newcommand{\Bglob}{B'}                          % global-variable factor matrix
 \newcommand{\ncomp}{K}                           % number of label components (factored labels)
-\newcommand{\ind}[1]{\mathbf{1}\!\left[#1\right]}  % indicator; \mathbb{1} is not in the ACL fonts
+\newcommand{\ind}[1]{\mathbf{1}\!\left[#1\right]}  % indicator
 \newcommand{\Hvar}[1]{H_{#1}}                    % the head-variable block at position #1
 
-% --- added while writing Appendix C (proof of the trilemma) ---
-% These name the objects of Part I of the technical note: the proof lives on a product of
-% simplices, one per node of the factor graph, and everything turns on the tangent spaces of
-% those simplices. \Vocab is already \mathcal{V}, so the node set cannot reuse that letter.
 \newcommand{\Nodes}{\mathcal{N}}                 % node set: one node per label / head variable
 \newcommand{\Xsp}{\mathcal{X}}                   % product of the node simplices
-\newcommand{\Xint}{\mathcal{X}^{\circ}}          % its relative interior; every iterate lives here
+\newcommand{\Xint}{\mathcal{X}^{\circ}}          % its relative interior
 \newcommand{\Tang}[1]{\mathcal{T}_{#1}}          % tangent space of node #1's simplex
 \newcommand{\Proj}[1]{\Pi_{#1}}                  % centring projector onto \Tang{#1}
 
-% --- added while writing Appendix B (additional variants) ---
-% Both name objects that already exist in the graph; neither introduces a new symbol for a
-% quantity that already had one.
 \newcommand{\QG}[1]{\Q_{\Gv{#1}}}                % posterior of the global head at position #1
-\newcommand{\nlabc}{d'}                          % width of ONE label component under factoring
-                                                 % (App. B.4): \nlab = \ncomp \nlabc, i.e. \nlab
-                                                 % stays the TOTAL label width, written D in the
-                                                 % source document.
+\newcommand{\nlabc}{d'}                          % width of one label component (d = K d')
 
-% --- added while writing Appendix A (derivations) ---
-% Three names the main text uses in words but never abbreviates. \dmodel is the transformer
-% hidden width, written d_h in the source document's cost table; it is NOT \nlab, and the whole
-% point of Section 3.3 is that the comparison unit is \nlab <-> \dmodel. \Znorm is the local
-% normaliser of a slot conditional and the per-component normaliser of the mixture readout.
-% \Ent is the entropy: \Hv is already the head variable, so H cannot be reused unqualified.
-\newcommand{\dmodel}{d_{\text{model}}}           % transformer hidden width (source: d_h)
+\newcommand{\dmodel}{d_{\text{model}}}           % transformer hidden width
 \newcommand{\Znorm}{\mathcal{Z}}                 % normalising constant
 \newcommand{\Ent}{\mathrm{H}}                    % entropy of a distribution

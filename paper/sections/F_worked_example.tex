@@ -1,25 +1,13 @@
-% NOTE: this file holds TWO appendices -- "Worked Example" (F) and, from the \section at the
-% line marked below, "What the Latent Variables Learn" (G). So `G_grids.tex` is Appendix H, not
-% G. Kept together because the second grew out of the first; the mismatch between file names and
-% appendix letters is the reason \Cref is used everywhere and no letter is ever typed by hand.
 \section{Worked Example}
 \label{app:worked-example}
 
-% Wu & Tu's Appendix F holds case studies of the dependency structures their model infers. Ours
-% holds the numeric example, which serves the same purpose: showing the reader what the model
-% actually computes rather than asserting that it computes it. Every number below is asserted in
-% `tests/test_07_worked_example.py` against an independently derived reference, so the appendix
-% and the test suite cannot drift apart -- change one and the other fails.
-
-The example is small enough to check by hand and is worked through by an independent reference
-document, which is what makes reproducing it worth anything: these are not numbers this
-implementation produced and then enshrined.
+The example is small enough to check by hand.
 
 \paragraph{Setting.}
 $\Vocab = \{\textit{the}, \textit{cat}, \textit{sat}, \textit{mat}\}$, two labels which we read
 as $\{\textsc{n}, \textsc{v}\}$, one channel, $\lamZ = \lamH = \lamW = 1$, a
-distance-insensitive arc score ($\clip = 0$), one inner round per observed slot and $\tau = 2$
-in predictive mode. The factors are
+distance-insensitive arc score ($\clip = 0$), one inner round per observed slot and $\rho = 2$
+rounds in predictive mode. The factors are
 %
 \[
   \Sfac = \begin{pmatrix} 1.5 & -1.5 \\ 2 & -2 \\ -2 & 2 \\ 2 & -2 \end{pmatrix}\!,\;\;
@@ -29,11 +17,11 @@ in predictive mode. The factors are
   \bfac = (1,0,0,0), \qquad \rfac{} = (0, 1.5).
 \]
 %
-The prefix is \emph{the cat sat} and the model is asked for the word at slot 4.
+The prefix is \textit{the cat sat}, and the model is asked for the word at slot 4.
 
-\paragraph{Observed pass.}
+\paragraph{Observed mode.}
 Each slot initialises from its own unary, $\QZ{}^{(0)} = \sigma(\Sfac_{w,\cdot})$, giving
-$(.953,.047)$, $(.982,.018)$ and $(.018,.982)$; one round of the head and label updates against
+$(.953,.047)$, $(.982,.018)$ and $(.018,.982)$. One round of the head and label updates against
 the frozen prefix then gives the filtering marginals
 %
 \[
@@ -44,19 +32,17 @@ the frozen prefix then gives the filtering marginals
   \qbar{3} = (.006,.994).
 \]
 %
-The third is the verb, and the model has found it. Contracting these into arc scores by
-\Cref{eq:contract} gives the cache the next slot reads,
-$\Bfac{}_{1,\cdot} = (.365,.818)$, $\Bfac{}_{2,\cdot} = (.085,.957)$,
-$\Bfac{}_{3,\cdot} = (1.987,.006)$ --- three numbers per position, and nothing else of the
-prefix survives.
+The third word is labelled as the verb. Contracting these beliefs into arc scores by
+\Cref{eq:contract} gives the cache that the next slot reads,
+$\Bfac{}_{1,\cdot} = (.365,.818)$, $\Bfac{}_{2,\cdot} = (.085,.957)$ and
+$\Bfac{}_{3,\cdot} = (1.987,.006)$. Nothing else of the prefix survives.
 
-\paragraph{Predictive slot.}
-The word variable is unclamped, so it initialises from its own unary factor:
-$\QW{}^{(0)} = \sigma(\bfac) = (.475,.175,.175,.175)$, whence the query
-$\tilde{s} = (1.063,-1.063)$ and $\QZ{}^{(0)} = (.893,.107)$. This is the \textsc{[mask]}
-embedding, and it was not designed --- it is what the initialisation rule of every other
-variable produces for this one. Two rounds of the inner loop over the head domain
-$\{\textsc{root}, 1, 2, 3\}$:
+\paragraph{Predictive mode.}
+The word variable is unclamped, so it initialises from its own unary factor,
+$\QW{}^{(0)} = \sigma(\bfac) = (.475,.175,.175,.175)$, which gives the query
+$\tilde{s} = (1.063,-1.063)$ and $\QZ{}^{(0)} = (.893,.107)$. The query is the
+\textsc{[mask]} embedding, produced by the same initialisation rule as every other variable. Two
+rounds of the inner loop over the head domain $\{\textsc{root}, 1, 2, 3\}$ give
 %
 \begin{align*}
   F^{(1)} &= (.160,.413,.178,1.776) \\
@@ -68,52 +54,39 @@ $\{\textsc{root}, 1, 2, 3\}$:
 \end{align*}
 %
 The slot attends mostly to position 3, the verb, which is the head a noun object should choose.
-The word update then \emph{is} the output layer: logits
-$(2.368, 1.824, -1.824, 1.824)$ and
+The word update is the output layer. It gives the logits $(2.368, 1.824, -1.824, 1.824)$ and
 %
 \[
   \hat{p}(\Wv{4}) = (.460,\, .267,\, .007,\, .267)
 \]
 %
-over $(\textit{the},\textit{cat},\textit{sat},\textit{mat})$ --- the verb correctly almost
-excluded, and \emph{mat} and \emph{cat} tied because nothing in this two-label toy
-distinguishes two nouns.
+over $(\textit{the},\textit{cat},\textit{sat},\textit{mat})$. The verb is almost excluded, and
+\textit{mat} and \textit{cat} tie because nothing in this two-label toy separates two nouns.
 
-\paragraph{Prior against posterior, on one slot.}
-Clamping $\Wv{4} = \textit{mat}$ and running the observed step of the same slot sharpens the
-label belief --- entropy $0.180 \to 0.040$ nats --- and moves the attention on the verb from
-$.642$ to $.663$. That is the prior-to-posterior behaviour the construction predicts: observing
-the word makes the slot both more certain of its label and more sure of its head.
+\paragraph{Observing the word.}
+Clamping $\Wv{4} = \textit{mat}$ and running the same slot in observed mode sharpens the
+label belief (entropy $0.180 \to 0.040$ nats) and raises the attention on the verb from $.642$
+to $.663$. As the construction predicts, observing the word makes the slot more certain of both
+its label and its head.
 
 \paragraph{The exact readout on the same slot.}
-Replacing the mean-field readout by \Cref{eq:exact-readout} on the identical parameters gives
-$\hat{p}(\Wv{4}) = (.365,.215,.206,.215)$. It is visibly flatter, and in particular it does not
-almost exclude the verb. This is the Jensen gap made concrete: the mean-field readout commits to
-a single soft label and then reads the vocabulary off it, while the exact readout mixes over
-labels, so a word compatible with a label the slot considers unlikely retains more mass. Which
-behaviour is preferable is an empirical question and \Cref{sec:exp3} is where we answer it; the
-example only shows that the two are genuinely different objects rather than two computations of
-one.
+With the same parameters, \Cref{eq:exact-readout} gives
+$\hat{p}(\Wv{4}) = (.365,.215,.206,.215)$. This is flatter, and it no longer almost excludes the
+verb. The mean-field readout commits to one soft label and reads the vocabulary off it, while
+the exact readout mixes over labels, so a word compatible with an unlikely label keeps more mass.
+\Cref{sec:exp3} compares the two readouts after training.
 
 \section{What the Latent Variables Learn}
 \label{app:interpretability}
 
-% The analogue of Wu & Tu's Appendix F, which reports case studies of the dependency structures
-% their encoder induces -- and reports honestly that they are only partially consistent with
-% human intuition. This model is proposed because its latent variables mean something, so a
-% paper that reported only perplexity would have left its central claim untested. All three
-% probes read a trained checkpoint with no further training
-% (`python -m experiments.interpretability <ckpt>`).
+The label and head variables are meant to carry syntactic categories and dependency
+attachments. We probe trained models to see what they carry.
 
-This model class is proposed because its latent variables mean something. Reporting only
-perplexity would leave that untested, so we probe a trained model directly.
-
-\paragraph{What each label claims.}
-The word--label factor is the only place a word touches the graph, so the words a label explains
-are those with the largest $\Sfac_{w,a}$. Ranking raw scores is dominated by words with large
-rows, so we rank by the contrastive score
-$\Sfac_{w,a} - \max_{a' \neq a}\Sfac_{w,a'}$ --- what this label claims against the competition.
-Of $\nlab = 32$ labels, several are recognisably syntactic:
+\paragraph{Words that each label explains.}
+The word--label factor is the only place where a word touches the graph, so the words a label
+explains are those with the largest $\Sfac_{w,a}$. Raw scores favour words with large rows, so
+we rank by the contrastive score $\Sfac_{w,a} - \max_{a' \neq a}\Sfac_{w,a'}$. Of $\nlab = 32$
+labels, several are recognisably syntactic:
 
 \begin{center}\scriptsize
 \begin{tabular}{@{}ll@{}}
@@ -132,23 +105,22 @@ $z{=}22$ & \textit{speculation deficits view sums notion evidence} \\
 \end{center}
 
 \noindent
-Reading them in order: bare infinitives; third-person singular present verbs; prepositions and
-subordinators; past participles; person names; units of measure; abstract nouns. Nothing
-supervised these categories --- they are what maximising the likelihood through a
-$32$-value bottleneck produced. Not every label is interpretable, and we do not claim otherwise;
-roughly a third of them resist any reading we can offer, which matches what
+In order, these are bare infinitives, third-person singular present verbs, prepositions and
+subordinators, past participles, person names, units of measure and abstract nouns. No
+supervision produced these categories; they come from maximising the likelihood through a
+$32$-value bottleneck. About a third of the labels resist any reading we can offer, as
 \citet{wu2023probabilistic} report for the encoder.
 
 \paragraph{Where the head posterior looks.}
-The head variable is the model's dependency attachment, and this is where the configuration
-matters more than anything else in this paper. We probed two trained models: the one this
-project's earlier work selected ($\nlab=32$, the source head temperature, damped) and the one
-\Cref{sec:exp-width} selects ($\nlab=96$, $\krank=12$, standardised temperature, undamped).
+The head variable is the model's dependency attachment, and here the configuration matters
+most. We probed two trained models: the damped configuration ($\nlab=32$, original temperature,
+damped) and the standardised configuration ($\nlab=96$, $\krank=12$, standardised temperature,
+undamped; \Cref{sec:exp-width}).
 
 \begin{center}\small
 \begin{tabular}{@{}lrr@{}}
 \toprule
- & earlier & selected \\
+ & damped & standardised \\
 \midrule
 \textsc{root} mass                & $0.486$ & $0.277$ \\
 mean attachment distance          & $1.05$  & $11.06$ \\
@@ -159,48 +131,44 @@ mass beyond distance 3            & $0.001$ & $0.497$ \\
 \end{center}
 
 \noindent
-The earlier model had \emph{not} learned attachment: it put $0.976$ of its positional mass at
-distance one and essentially nothing past three, which is a bigram attachment with a large sink.
-The selected model has. Its mean attachment distance is $11.1$ against $17.0$ for uniform
-attention over the same prefixes, it is $5.2$ times uniform at distance one, and it still places
-half its mass beyond distance three. That is what a preference for nearby heads looks like when
-it is a preference rather than a collapse.
+The damped model has not learned attachment. It puts $0.976$ of its positional mass at distance
+one and almost none beyond three: a bigram attachment with large root mass. The standardised
+model has a mean attachment distance of $11.1$, against $17.0$ for uniform attention over the
+same prefixes. It is $5.2$ times uniform at distance one, yet still places half its mass beyond
+distance three (\Cref{fig:attachment}). This is a preference for nearby heads, not a collapse
+onto the previous word.
 
-\textbf{We report both because the difference is the point.} The same probe on the same corpus
-gives opposite answers about whether this model class learns dependency structure, and what
-separates them is the head temperature and the arc-score rank --- the two things
-\Cref{sec:exp-width} is about. A reader who takes an interpretability result from a probabilistic
-transformer without knowing which parameterisation produced it is not being told very much.
-\Cref{fig:attachment} draws the selected model's profile against the uniform reference.
+The two models give opposite answers to the same probe; what separates them is the head
+temperature and the arc-score rank. An interpretability result for this model class says little
+without the parameterisation that produced it.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_attachment.png}
-\caption{Where the head posterior attaches in the configuration of \Cref{sec:exp-width}
-($\nlab=96$, $\krank=12$), against what uniform attention over the same prefixes would give.
-The posterior is $5.2$ times uniform at distance one and falls below it further out, but half
-its mass still lies beyond distance three and its mean attachment distance is $11.1$ against
-uniform's $17.0$: a preference for nearby heads rather than a collapse onto the previous word.
-The steep part covers exactly the distances the clipped table gives their own arc scores
-($\clip=3$); everything beyond shares one bucket.}
+\includegraphics[width=0.85\columnwidth]{figures/fig_attachment.png}
+\caption{Head-posterior attachment distance in the standardised configuration ($\nlab=96$,
+$\krank=12$) against uniform attention over the same prefixes. The posterior is $5.2$ times
+uniform at distance one, yet half its mass lies beyond distance three; mean distance $11.1$
+against $17.0$. Distances $1$--$3$ have their own arc scores ($\clip=3$); longer ones share
+one.}
 \label{fig:attachment}
 \end{figure}
 
-\paragraph{Prior against posterior.}
-Part~IV's contraction bound predicts that the divergence between a slot's predictive and observed
-beliefs is small on predictable tokens and grows with the surprisal of the word actually
-observed. Measured over $4{,}032$ slots in each model, the direction the theory predicts is
-present in both and its strength separates them exactly as the attachment probe does: in the
-selected configuration the correlation is $r = 0.47$, with mean divergence $4.07$ on the most
-predictable quartile of tokens against $6.56$ on the most surprising, while in the earlier one
-it is $r = 0.16$, $1.98$ against $2.58$. The bound claims a direction and not a strength, so we
-read nothing into the magnitudes beyond the same conclusion the rest of this section reaches ---
-that the parameterisation decides how much of the predicted structure is there to find.
+\paragraph{Predictive against observed beliefs.}
+We measure the KL divergence, in nats, from a slot's predictive label belief to its observed
+one. We expect it to be small on
+predictable tokens and to grow with the surprisal of the observed word. Over $4{,}032$ slots per
+model the expected direction appears in both models, and its strength separates them as the
+attachment probe does. In the standardised configuration the correlation is $r = 0.47$, with a
+mean divergence of $4.07$ on the most predictable quartile of tokens against $6.56$ on the most
+surprising. In the damped configuration it is $r = 0.16$, with $1.98$ against $2.58$. The
+expectation concerns the direction only, so we read nothing into the magnitudes beyond this:
+the parameterisation decides how much of the predicted structure is there to find.
 
-The label lexicon above is from the $\nlab=32$ model, where $32$ labels over a $10{,}000$-word
-vocabulary give each label enough words to be readable. At $\nlab=96$ the same probe finds
-fewer clean categories and more fragments --- adverbs (\textit{hastily, mildly, extremely,
-widely}), gerunds (\textit{completing, entering, joining, contemplating}), units
-(\textit{bottle, par, pound, capita, bushel}) and time nouns (\textit{century, decade, phase,
-1970s}) survive, but a majority resist reading. Interpretability and capacity pull in opposite
-directions along the width axis, and we did not find a width where both are best.
+\paragraph{Width.}
+The label lexicon above comes from a model with $\nlab=32$, where each label has enough words to
+be readable. At $\nlab=96$ the same probe finds fewer clean categories and more fragments.
+Adverbs (\textit{hastily, mildly, extremely, widely}), gerunds (\textit{completing, entering,
+joining, contemplating}), units (\textit{bottle, par, pound, capita, bushel}) and time nouns
+(\textit{century, decade, phase, 1970s}) survive, but most labels resist reading.
+Interpretability and capacity pull in opposite directions along the width axis, and we found no
+width at which both are best.

@@ -1,793 +1,195 @@
 \section{Experiments}
 \label{sec:experiments}
 
-% Mirrors Wu & Tu Section 4: three subsections (Tasks and Datasets / Settings / Results), about
-% 1.6 pages, and -- the part worth copying -- ONE results table for the whole paper.
-
-\NOTE{No number appears here without a row in the run log of the corresponding
-\texttt{experiments/*/EXPERIMENT\_STATUS.md}: date, commit, config, seed, metric, wall-clock.}
-
 \subsection{Tasks and Datasets}
 \label{sec:tasks}
 
-We train language models on the Penn Treebank \citep{marcus1993building} in the standard
-word-level preprocessing (10{,}000 types; 929{,}589 / 73{,}760 / 82{,}430 tokens) and, as a
-transfer test only, on WikiText-2 \citep{merity2017pointer} (33{,}278 types; 2{,}088{,}628 /
-217{,}646 / 245{,}569 tokens). Both are read through one code path, with an \texttt{<eos>} token
-per line and fixed 64-token blocks cut from the joined stream, so that a difference between the
-two corpora cannot be a difference between two tokenisers (\Cref{app:datasets}). The reference
-every number is read against is the maximum-likelihood unigram of the training split, scored on
-the identical token set: \textbf{688.8} on PTB and \textbf{964.8} on WikiText-2.
-
-\textbf{Every hyperparameter is selected on PTB and transferred to WikiText-2 unchanged.} This
-follows the advice of \citet{kuang2026scaling}, whose method for transferring hyperparameters
-across model sizes is explicitly not claimed to hold when the corpus changes as well; a
-WikiText-2 number produced by a fresh grid search would say nothing about transfer, which is
-the property under test.
-
-We deliberately do not use WikiText-103. \citet{wu2023probabilistic} report that the encoder
-model underperforms transformers beyond roughly $10^5$ sentences, suspected to be the absence
-of a feed-forward structure; running there would test a known failure mode of the encoder
-rather than the causal extension.
+We train language models on the Penn Treebank (PTB; \citealp{marcus1993building}) and use
+WikiText-2 \citep{merity2017pointer} as a transfer test only (\Cref{app:datasets}). Two
+references are computed on the same scored tokens: the unigram of the training split ($688.8$ on
+PTB, $964.8$ on WikiText-2) and an add-one bigram ($445.2$ and $692.5$).
 
 \subsection{Settings}
 \label{sec:settings}
 
-One training loop is shared by every model in this paper, and model-specific behaviour is
-reached only through a three-method interface (the loss on a scored token set, an $L_2$
-regulariser on the ternary scores which a transformer returns as zero, and a parameter count).
-A change that helped one model and not the others would void the comparison, so there is
-nothing in the loop that can branch on model type. AdamW, $\beta=(0.9,0.999)$, weight decay
-$1.4\times10^{-6}$, gradient clipping at 1.0, 100 warmup steps then cosine decay to $0.1\times$,
-$L_2$ on the arc scores $5\times10^{-4}$ (all from \citealp{wu2023probabilistic}, Table 2),
-batches of 16 blocks of 64 tokens, 15{,}000 steps. Dropout is 0 for every model: its placement
-inside the update equations of a probabilistic transformer is unspecified by the source and any
-choice would cross the ``no maps'' constraint of \Cref{sec:variants}, so the baselines run
-without it too.
+One training loop is shared by all models (\Cref{app:datasets}). As in Wu and Tu's Table~2, we
+use AdamW with $\beta=(0.9,0.999)$, weight decay $1.4\times10^{-6}$, gradient clipping at $1.0$,
+$100$ warm-up steps, cosine decay to $0.1\times$, and an $L_2$ penalty of $5\times10^{-4}$ on the
+arc scores. Unless stated otherwise, every model trains for $15{,}000$ steps on batches of $16$
+blocks of $64$ tokens, without dropout; the width, gain, learning-rate, rank and initialisation
+grids use $6{,}000$ steps. All models are scored on the same tokens at their best-validation checkpoint. Test perplexity at that checkpoint is $5$ to $9\,\%$ below
+validation for every model in \Cref{tab:fullrank,tab:wt2} and orders the models the same way.
 
-\paragraph{Scored tokens.}
-The causal PT emits $\text{logits}[t]$ predicting $w_t$ from $w_{<t}$, including $w_0$ from
-\textsc{root} alone; a conventionally trained decoder emits $n-1$ predictions. We wrap the
-baseline so that both answer $p(w_t \mid w_{<t})$ and drop slot 0 from every average, which
-makes the two token sets identical rather than merely comparable; the baseline's loss asserts
-that slot 0 is never scored. Evaluation is deterministic: fixed non-overlapping blocks in
-corpus order over the whole split.
-
-\paragraph{Checkpoint selection.}
-Every model is scored at its best-validation checkpoint, chosen inside the shared loop, and
-test perplexity is measured on that same checkpoint. This matters at this scale: PTB has under
-a million training tokens, so 15{,}000 steps is 16.5 epochs and the larger baselines reach
-their validation optimum long before the end --- a 1.2M-parameter transformer at step 5{,}000
-against 15{,}000 for the causal PT. Scoring every model at the last step would grade some of
-them past their optimum, and scoring each at its own best step is the standard protocol.
-
-\paragraph{Learning rate.}
-Each baseline point is the better of two learning rates ($10^{-3}$ and $3\times10^{-3}$), and
-each rung of the switch ladder of \Cref{sec:exp-switches} the best of four. The causal PT
-runs at $2\times10^{-2}$, twenty times the value in the source's Table 2; that this is
-necessary, and that it interacts with the label-set size, is itself a finding
-(\Cref{sec:exp-width}). A comparison in which one model is tuned and the other is not measures
-the tuning.
-
-\paragraph{Which readout, and why not the other one.}
-\Cref{sec:inference} makes the exact readout the mainline of the \emph{construction}: it is what
-sum--product on the slot tree gives, it costs no parameters, and it is the form the derivation
-distinguishes. Every causal PT number in this section is nonetheless produced under the
-\emph{mean-field} readout, and saying so here rather than leaving it to be inferred matters,
-because the two are not interchangeable --- \Cref{sec:exp3} is the measurement of how far from
-interchangeable. The reason is the order the work happened in: the scaling, width, rank and
-switch grids were run before that measurement existed, and re-running them under the exact
-readout is a comparison of trained models, not a re-scoring, so it is a second full sweep rather
-than an evaluation pass. It is the one experiment in this paper whose absence is a matter of
-GPU-hours rather than of design, and \Cref{sec:exp3} reports what has finished of it.
-
-\paragraph{Two parameter axes, both reported.}
-Tying is forced (\Cref{sec:output}), so almost all of the causal PT's parameters sit in
-$\Sfac \in \R^{|\Vocab|\times\nlab}$: at $\nlab = 32$ that is 330{,}000 embedding parameters
-against 16{,}448 for everything else. A transformer at $d_{\text{model}} = 32$ carries 322{,}048
-and 50{,}880. Reporting only the non-embedding count flatters the causal PT by a large factor;
-reporting only the total hides that its computational parameters are few. We plot both, and
-state which axis any given claim is made on.
+The baselines are nanoGPT decoders \citep{karpathy2022nanogpt} with four layers and four heads;
+the looped transformer applies one such block four times. Each baseline point is the better of
+learning rates $10^{-3}$ and $3\times10^{-3}$. The causal PT uses $\nchan=2$, $\niter=3$,
+$\clip=3$ and a learning rate of $2\times10^{-2}$, twenty times Wu and Tu's
+(\Cref{app:datasets}). Its label update can be damped with a step $\alpha_Z\le1$ (Wu and Tu's
+Appendix~B.1). The scaling ladders run undamped under the standardised temperature at gain $1$.
+The \emph{damped configuration} (original temperature, $\alpha_Z=0.25$, $\nlab=\krank=32$) is
+the base of the constants, depth and readout sweeps. All causal PT numbers use the mean-field readout except in \Cref{sec:exp3}; we did
+not retrain the scaling, width, rank and switch grids under the exact readout. With tying,
+almost all of the causal PT's parameters are in $\Sfac$ (at $\nlab=32$, $330{,}000$ embedding
+against $16{,}448$ other parameters), so we report non-embedding and total counts separately. A
+seed \emph{collapses} if it finishes above $95\,\%$ of the unigram perplexity. Collapsed seeds
+are counted and left out of the mean, except in \Cref{tab:fullrank}, whose means include them.
 
 \subsection{Results}
 \label{sec:results}
 
-The order below is the order the questions have to be answered in. First, whether the
-implementation is the model (\Cref{sec:exp-correctness}) and whether its numbers are
-measurements at all (\Cref{sec:exp-repro}) --- the second of those changes how everything after
-it may be read. Then the comparison the model exists to support: how it scales against a causal
-transformer and a looped one (\Cref{sec:exp-scaling}), and what it costs at matched budget.
-Then four questions about the model's own parameterisation --- its width
-(\Cref{sec:exp-width}), its initialisation and the global variables
-(\Cref{sec:exp-ablations}), the two constants nobody had varied (\Cref{sec:exp-knobs}), and
-its inference depth (\Cref{sec:exp-depth}). Last, two questions internal to the construction:
-which readout to use (\Cref{sec:exp3}) and whether factoring the label variable buys anything
-(\Cref{sec:exp-factored}), and whether any of it transfers to a second corpus
-(\Cref{sec:exp-wt2}). The switch ladder (\Cref{sec:exp-switches}) sits between the two groups
-because it is what turns ``worse than a transformer'' into a statement about named components.
-
-\subsubsection{Correctness of the implementation.}
+\subsubsection{Correctness and reproducibility}
 \label{sec:exp-correctness}
-Two checks test the derivation rather than the code and belong here; the rest are in
-\Cref{app:validation}. The mean-field free energy is non-increasing along the inner loop on a
-toy graph, and the check carries a mutation test --- a sign-flipped head update fails it while
-every shape, normalisation and causality check passes unchanged. And on a single slot the graph
-is a tree, so \Cref{eq:exact-readout} must agree with brute-force enumeration of the slot joint:
-it does, to $6.7\times10^{-16}$ in float64 (\Cref{app:validation}). The same enumeration agrees
-with a global variable folded in as an extra leaf, and the \texttt{logcumsumexp} scan agrees
-with slot-by-slot assembly for $\clip \in \{0,1,2,4,9\}$; both are asserted at $10^{-12}$. The worked example of the output-mechanism note reproduces digit for
-digit. The factored-label variant is checked the same way: at $K=2$, an enumeration over
-$(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$ written from the raw parameters agrees with
-its closed form to $10^{-10}$, and setting $K=1$ reproduces the flat decoder to $6.9\times
-10^{-18}$.
-
-\subsubsection{A methodological finding first: variance.}
 \label{sec:exp-repro}
-A configuration recorded at validation perplexity 430.04 in our own earlier work was re-run
-here on the same code, the same seed and the same data order, and landed at 644.98. Three arms
-separate the possible causes and they agree to every printed digit --- the pre-refactor source
-through its original driver, the current source through that driver, and the current source
-through the sweep runner --- so neither the implementation nor the harness is at fault. Two
-further facts complete the picture, and together they are more useful than either alone.
+On a single slot the exact readout matches brute-force enumeration to $6.7\times10^{-16}$; the
+free energy never increases along the inner loop, a test that catches a sign-flipped head update
+missed by every other check; and changing token $t+1$ leaves the logits at step $t$ bitwise
+unchanged (\Cref{app:validation}).
 
-The first is hardware. A cell of an unrelated grid happened to run the same configuration on the
-same GPU \emph{model} as the original, and reproduced its entire twelve-point validation trace
-to every printed digit, ending at $430.0$; the same configuration on the other device traces
-$711.6, 640.3, 686.0, \dots$ and ends at $645.0$. The two already differ at the first evaluation
-in the third significant figure ($711.70$ against $711.61$), so the split occurs within the first
-500 steps and is then amplified to 215 perplexity. Nothing differs but the order of
-floating-point reductions.
-
-The second is the seed. Over three seeds on one device the undamped configuration gives
-$610.9 / 408.8 / 367.5$, that is $\ReproUndampedMean \pm \ReproUndampedSd$: \textbf{a standard
-deviation of \ReproUndampedPct\% of its own mean}. The earlier figure sits comfortably inside that range.
-
-These are one phenomenon seen twice, and \Cref{fig:repro} shows it happening. In this configuration any perturbation at the last bit ---
-a different reduction order, a different seed --- moves the outcome by hundreds of perplexity.
-The earlier number was therefore both exactly reproducible on the hardware that produced it and
-not a measurement of anything.
-
-The same \ReproDampedN{} seeds with the label update damped ($\alpha_Z = 0.25$) give
-$\ReproDampedMean \pm \ReproDampedSd$ --- \textbf{\ReproDampedPct\%} of its mean against
-\ReproUndampedPct\%, a spread \ReproSdRatio{} times tighter. We draw two conclusions and apply
-them throughout. No single-seed number from the undamped region is reported as a result here, and
-comparisons in that region from the earlier work are withdrawn rather than repeated. The
-largest of them read a global variable as improving an undamped $\nlab = 24$ model from
-$321.4$ to $297.7$; that is $23.7$ perplexity on one seed each, against a spread of
-$\ReproUndampedSd$ in the same region, and it is not a measurement. And the interventions
-this paper is about should be judged on \emph{variance} as much as on the mean. Damping was
-previously reported as an improvement from 641.5 to 248.3; it is at least as much an
-improvement in reproducibility, and reproducibility is what lets any later comparison mean
-anything at all. The damped record itself does replicate, and we say so as readily as we
-withdraw the rest: re-run here from scratch it gives $253.0 \pm 6.0$ over three seeds against
-the $250.7 \pm 2.3$ originally reported, well inside both spreads. Every headline number below
-is a three-seed mean with its spread, and every grid cell carries a count of seeds that failed
-to learn, because a mean taken over a mixture of learned and collapsed runs measures neither.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_repro_seeds.png}
-\caption{Why no single-seed number from the undamped region is reported here. Six runs of one
-configuration differing only in seed: the three undamped ones separate by more than $200$
-perplexity and do not reconverge, while the three damped ones are indistinguishable after
-$3{,}000$ steps. Curves are the validation trace; the numbers in the text are each run's
-best-validation checkpoint, which is why a curve may end above the figure quoted for it.}
-\label{fig:repro}
-\end{figure}
+The undamped configuration at the original temperature ($\nlab=16$, $6{,}000$ steps) is highly
+sensitive to last-bit perturbations: with the same code, seed and data order it ends at $430.0$
+on one GPU model and at $645.0$ on another. Across three seeds on one device it gives
+$\ReproUndampedMean \pm \ReproUndampedSd$ (\ReproUndampedPct\,\% of the mean); damping the label
+update ($\alpha_Z = 0.25$) reduces this to $\ReproDampedMean \pm \ReproDampedSd$,
+\ReproSdRatio{} times tighter (\Cref{app:res-repro}). We therefore report three-seed means with
+their spread and a count of collapsed seeds.
 
 \begin{table*}[t]
-\centering
-\footnotesize
+\begin{minipage}[c]{0.65\textwidth}
+\centering\footnotesize\setlength{\tabcolsep}{3.5pt}
 \input{figures/table_matched}
-\caption{Matched-budget comparison on PTB, at every point of the causal PT's own scaling ladder.
-The baselines are interpolated in log--log space at the causal PT's parameter count and left
-blank outside the range where they were run, since extrapolating a baseline into a region it was
-not measured in would be inventing the comparison. Every model is trained by the same loop on
-the same blocks, scored on the identical token set at its own best-validation checkpoint, and
-each baseline point is the better of two learning rates. The unigram reference is $688.8$ and
-the bigram $445.2$. A row reading \textit{$n/m$ collapsed} had $n$ of its $m$ seeds finish on
-the unigram baseline, and an italic \textit{range} in that column marks a row whose seeds are
-not samples of one distribution --- largest at least $1.5\times$ smallest, or a standard
-deviation above $15\,\%$ of the mean --- even though none reached the unigram. Such rows are kept, because they are where the width ceiling of
-\Cref{sec:exp-width} reappears, but they carry no perplexity and no ratio --- a mean over a
-mixture of runs that learned and runs that did not describes no run that happened. The table is generated
-from the run JSONs by \texttt{experiments/make\_report.py}; no number in it is typed by hand.}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.32\textwidth}
+\caption{Matched-budget comparison on PTB along the causal PT's low-rank scaling ladder
+(standardised temperature at gain $1$, undamped, $\nchan=2$, $\niter=3$, mean-field readout).
+Causal PT: mean $\pm$ sd over three seeds. Baselines are interpolated in log--log space to the
+causal PT's non-embedding count and left blank outside their measured range; ratios are causal
+PT over baseline. \textit{n/m collapsed}: $n$ of $m$ seeds ended on the unigram.}
 \label{tab:main}
+\end{minipage}
 \end{table*}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/fig_scaling_nonemb.png}\\[2pt]
-\includegraphics[width=\columnwidth]{figures/fig_scaling_total.png}
-\caption{Scaling on PTB: validation perplexity against non-embedding parameters (top) and total
-parameters (bottom), log--log. Each point is the better of two learning rates at a 15{,}000-step
-budget with the checkpoint selected on validation. The legend's slopes are each fitted over
-\emph{that curve's own} measured range, and those ranges differ by more than an order of
-magnitude, so they are not comparable with one another: the comparable exponents, fitted on
-shared windows, are in \Cref{sec:exp-scaling} and \Cref{tab:exponents-full}. The dotted line is the add-one bigram (445.2), which is the reference that separates ``learned
-something beyond the previous word'' from ``did not'' --- the unigram at 688.8 lies above every
-curve and separates nothing. The two panels are not interchangeable: with tying forced, almost all
-of the causal PT's parameters are its word--label factor.}
+\includegraphics[width=0.72\columnwidth]{figures/fig_scaling_nonemb.png}
+\caption{Validation perplexity on PTB against non-embedding parameters (log--log). Baseline
+points: better of two learning rates; causal PT points: three-seed means. `source constants':
+original temperature, damped; `standardised temp.': \Cref{tab:fullrank}; `+ low rank':
+\Cref{tab:main}. Legend slopes use each curve's own range and are not comparable.}
 \label{fig:scaling}
 \end{figure}
 
-\subsubsection{Scaling curves.}
+\subsubsection{Scaling and matched budget}
 \label{sec:exp-scaling}
-\Cref{fig:scaling} draws validation perplexity against parameter count for all three models,
-each point the best of its learning-rate search at a 15{,}000-step budget with
-validation-selected checkpoints. Two features of the \emph{baselines} shape everything after.
-First, the transformer's own curve is flat above roughly $2\times10^5$ non-embedding
-parameters: 129.2 at $d_{\text{model}}=64$ against 124.7 at 160 and 125.3 at 256, with training
-perplexity falling from 68.5 to 10.2 over the same range. On a corpus of 929{,}589 tokens the
-baseline stops being parameter-limited and starts being data-limited, so a comparison run only
-at the top of that range compares two models in a regime where one of them has stopped
-improving. Second, at matched \emph{non-embedding} budget the looped transformer is
-\emph{better} than the standard one below about $5\times10^4$ parameters (164.7 at 12{,}768
-against 195.2 at 13{,}152) and worse above it (135.7 at 198{,}528 against 129.2 at 200{,}064).
-At matched \emph{total} parameters the standard transformer wins everywhere. This was written
-into the experiment's falsification criterion before it ran, and it revises the framing of
-\Cref{tab:three-point}: at this scale weight sharing is not a handicap that the causal PT pays
-for structure, it is a saving --- which makes the causal-PT-versus-looped comparison the
-sharper one rather than the more forgiving one.
+The transformer stops improving above about $2\times10^5$ non-embedding parameters, where it is
+limited by the size of PTB (\Cref{fig:scaling}). The looped transformer beats it at matched
+non-embedding budget below about $5\times10^4$ parameters (\Cref{app:grid-exponents}). On
+the range where all three models are
+measured (\ExpTriLo--\ExpTriHi{} non-embedding parameters), the exponents are $\ExpTriTf$ for the
+transformer, $\ExpTriLp$ for the looped transformer and $\ExpTriLow$ for the low-rank causal PT
+(\Cref{tab:exponents-trio}). The looped model lies between the other two, closer to the causal
+PT, so most of the slope difference already appears with weight sharing alone; the rest comes
+from the other nine differences of \Cref{sec:full-comparison}. The fits rest on four, three and
+eight points, so only this ordering is robust; pairwise fits, including the full-rank causal PT,
+give the same ordering in all five pairs (\Cref{tab:exponents-full}).
 
-Against those curves the causal PT sits above, and the interesting question is how its
-\emph{slope} compares. Fitting a power law to each Pareto envelope over its own measured range
-gives $\OwnTf$ for the causal transformer, $\OwnLp$ for the looped one and $\OwnPt$ for the
-causal PT with its head temperature corrected, which invites the reading that the correction has
-restored the model's scaling exponent to a transformer's. \textbf{That reading is an artefact of
-fitting each curve over a different range}, and the way it is wrong is worth stating: the
-baselines extend to $1.2\times10^{6}$ non-embedding parameters, well into the regime where this
-corpus and not the parameter count is binding, and those flat points drag their fitted slopes
-down. Two exponents may only be compared if they were fitted
-on the same window, and on this corpus that constraint bites hard: the looped transformer comes
-out at $\ExpTfvLpLp$ over the transformer's range and $\ExpLpvPtLp$ over the causal PT's, from
-the same runs. Three of the four curves --- transformer, looped, and the causal PT at low rank
---- are measured over one common range, \ExpTriLo{} to \ExpTriHi{} non-embedding parameters, and
-that is where the comparison is made:
+At matched non-embedding budget (\Cref{tab:main}) the gap widens with budget. The causal PT's
+perplexity is \MBFirstRatioGpt{} times the transformer's at \MBFirstNonemb{} parameters, the
+smallest budget with a measured transformer, and \MBLastRatioGpt{} times at \MBLastNonemb{};
+against the looped transformer the ratio runs from \MBFirstRatioLooped{} to
+\MBLastRatioLooped. The best causal PT reaches $\PTbestVal \pm \PTbestSd$ at
+$\nlab=\PTbestLab$, $\krank=\PTbestRank$. These numbers use the standardised temperature, which
+is not part of the factor graph (see Limitations).
 
-\begin{center}\small
-\input{figures/table_exponents_trio}
-\end{center}
-
-\noindent
-\textbf{Both differences are in the same direction, and the first is much the larger.} Sharing
-parameters across depth costs $\ExpTriTf$ against $\ExpTriLp$ --- which is what
-\Cref{tab:three-point} predicts, since the looped model has the sharing and none of the
-structure --- and the syntactic structure costs a further $\ExpTriLp$ against $\ExpTriLow$.
-Of the gap between the transformer's exponent and the causal PT's, then, roughly four fifths
-opens with the sharing and one fifth with the structure. That split is a difference of fits over
-four, three and eight points and should be read as an order of magnitude, not a measurement; the
-ordering behind it is the robust part. In particular the causal PT does not scale \emph{like} a
-looped transformer, which is the reading the earlier fits invited: it is shallower than one, by
-a smaller but consistent margin.
-
-The corrected-PT curve cannot join that table --- on the range where it, the transformer and the
-looped model are all measured, the looped frontier has two points, and a power law through two
-points is a line through two points. It enters instead through the pairwise comparisons in
-\Cref{tab:exponents-full}, each fitted on the range its own two curves share, where the same
-ordering holds in all five pairs and the two leave-one-out ranges are disjoint in every pair
-that has enough points to compute one. What does \emph{not} appear anywhere in our conclusions
-is a fit over each curve's own full range, which is what one would report by default and which
-here reverses the reading entirely.
-
-How much of the vertical offset the structure costs, as opposed to the slope, is what the switch
-ladder below is for.
-
-\Cref{tab:main} makes the budget comparison
-directly. \textbf{The gap is smallest where the models are smallest and widens with budget},
-which is what a shallower exponent means in practice: at \MBFirstNonemb{} non-embedding
-parameters, the smallest budget at which a causal transformer was actually run, the causal PT is
-within a factor $\MBFirstRatioGpt$ of one interpolated to the same budget, and by
-\MBLastNonemb{} it is a factor $\MBLastRatioGpt$ behind. The looped transformer, which is
-measured over the whole range, runs from $\MBFirstRatioLooped$ at the smallest point to
-$\MBLastRatioLooped$ at the largest. The best absolute figure is $\PTbestVal \pm \PTbestSd$ at
-$\nlab = \PTbestLab$, $\krank = \PTbestRank$; the comparison in our earlier work, made at one
-point and at a very different budget, gave $2.17$.
-
-Every causal PT entry in this paper is a mean over seeds, never the best of them. That is worth
-saying because the two differ here by more than the differences we are discussing: at
-$\nlab = \SpreadLab$, $\krank = \SpreadRank$ the best of \SpreadSeeds{} seeds gives $\SpreadBest$
-and the mean $\SpreadMean \pm \SpreadSd$, and a paper that quoted the first while claiming
-\SpreadSeeds{} seeds would be reporting a maximum and calling it a
-measurement --- which, in a model whose seed spread reaches $130$ in the region we started
-from, is exactly the failure this project set out to stop repeating.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_width_alpha.png}\\[2pt]
-\includegraphics[width=\columnwidth]{figures/fig_width_temp.png}
-\caption{Width transfer. \textbf{(a)} Validation perplexity over label-set size $\nlab$ and the
-damping step $\alpha_Z$, at the source temperature $\lamH = 1/\nlab$: the usable step size falls
-as the model is widened, and undamped cells collapse onto the unigram. \textbf{(b)} The same
-width axis against the attention temperature rule, all undamped. Hatched cells did not learn
-(they finished at the unigram baseline); grey cells are combinations not run.}
-\label{fig:width}
-\end{figure}
-
-\subsubsection{Width transfer, and why the source temperature fails.}
+\subsubsection{Width and the head temperature}
 \label{sec:exp-width}
-\Cref{sec:temperature} predicted that Wu \& Tu's head temperature $\lamH = 1/\nlab$, being
-calibrated for the uniform-belief limit, would make the label update's feedback loop worse as
-the model is widened, so that any damping of that update must be strengthened with $\nlab$.
-\Cref{fig:width}(a) is that prediction measured, and it is worth being
-precise about how much of it the grid resolves. The undamped model is the worst cell at every
-width, and at $\nlab \in \{32, 96, 128\}$ it sits on the unigram baseline ($700.7$, $698.1$ and
-$701.4$ against $688.8$) with the collapse signature the mechanism predicts: the message
-overwhelms the unary term and the label beliefs go flat, with a prefix-ablation KL of exactly
-zero --- the model's prediction at slot $t$ stops depending on the prefix at all. But the best
-damping sits at the smallest value we swept, $\alpha_Z = 0.125$, at five of the seven widths,
-so the grid \emph{bounds} $\alpha^\star(\nlab)$ rather than locating it. What it establishes is
-that damping is necessary at the source temperature and that the necessity does not lift as
-$\nlab$ grows; the functional form of $\alpha^\star(\nlab)$ would need a sweep that goes below
-$0.125$, which we did not run.
+Under the original temperature, damping is necessary and the need for it does not lift as
+$\nlab$ grows, consistent with the prediction of \Cref{sec:temperature}
+(\Cref{fig:width-alpha}). Undamped, the model ends on the unigram at $\nlab\in\{32,96,128\}$,
+and removing the prefix changes its prediction by a KL divergence below $10^{-8}$. The best
+damping step is the smallest we swept, $\alpha_Z=0.125$, at five of seven widths, so the grid
+bounds the optimal step but does not locate it (\Cref{app:grid-gain}).
 
-The consequence is visible in the ladders of \Cref{tab:main}. Carrying the constants tuned at
-$\nlab = 32$ across the width axis --- which is what one does in the absence of a rule ---
-reproduces our earlier record at that width ($253.0 \pm 6.0$ against $250.7 \pm 2.3$) and then
-degrades, to $287.4 \pm 52.5$ at $\nlab=48$ and $470.0 \pm 160.7$ at $\nlab=64$. The means matter
-less than the standard deviations: the ladder does not gently worsen, it becomes unpredictable.
+The standardised temperature revives dead widths without damping: at gain $1$ and three seeds,
+$\nlab=32$ improves from $700.7$ to $282.2\pm6.6$ and $\nlab=64$ reaches $254.0\pm1.9$
+(\Cref{tab:gain}, and \Cref{fig:width} for the other rules). At the full budget
+it gives $219.8\pm4.2$ at $\nlab=64$, where the damped control gives $470.0\pm160.7$
+(\Cref{tab:fullrank}). The correction roughly doubles the usable width but does not remove the
+limit: at $\nlab\in\{96,128\}$ the full-rank ladder is unstable again ($372\pm277$ and
+$509\pm187$, means that include one collapsed seed each). The best learning rate moves by at
+most one grid step over an eightfold range of width under either temperature (\Cref{tab:lr};
+one seed per cell),
+so the temperature seems to decide whether the model trains at all, a separate question from the
+learning-rate transfer of \citet{kuang2026scaling}.
 
-\Cref{fig:mechanism} shows why, within a run, and it separates two failures that a
-final perplexity conflates: at $\nlab = 96$ the beliefs never leave the uniform point at all,
-while at $\nlab = 32$ they sharpen to $5.5$, hold for two thousand steps and then collapse back
-to uniform. Both end at the unigram baseline; only the second is the runaway the mechanism
-predicts, and only a within-run trace tells them apart.
+\paragraph{Rank.}
+Rank equal to width is not the best choice: at $\nlab=96$, $\krank=48$ gives $242.6\pm3.3$
+against $275.6\pm27.1$ at $\krank=96$ (\Cref{tab:rank}), although at
+$\nlab=32$ full rank is best. Wu and Tu's rule $\krank=\min(64,\nlab)$ gives $\krank=\nlab$ for
+every $\nlab\le64$ (see \Cref{app:grid-rank} for a likely reason).
+The low-rank ladder trains stably up to $\nlab=\LadderTopLab$, $\krank=\LadderTopRank$
+($\LadderTopVal\pm\LadderTopSd$), but at $\nlab=256$, $\krank=64$ one seed in three still
+collapses: the ceiling moves without disappearing.
 
-\Cref{fig:width}(b) is the repair. Standardising the head logits over the head domain before
-the softmax --- so that the attention pattern is invariant to the overall scale of the arc
-scores, and only their relative pattern selects --- revives widths that are entirely dead under
-the source temperature, \emph{with no damping at all}: at $\alpha_Z = 1$, $\nlab = 32$ goes from
-700.7 to $282.2 \pm 6.6$ over three seeds and $\nlab = 64$ from a collapse to $254.0 \pm 1.9$.
-Run as a full ladder at the baselines' budget it reaches $229.8 \pm 8.5$ at $\nlab = 48$ and
-$219.8 \pm 4.2$ at $\nlab = 64$, against $287.4 \pm 52.5$ and $470.0 \pm 160.7$ for the control.
-
-\textbf{The gain transfers; the width limit does not disappear.} Sweeping the standardisation
-gain over $\{1, 1.5, 2, 3, 4, 6\}$ at four widths with three seeds each, the argmin is $1$ at
-every width, and the working range is the same $[1,2]$ at every width (\Cref{tab:gain}) --- as the mechanism
-predicts, since after standardisation the attention entropy depends on the gain and on the
-length of the head domain, not on $\nlab$. Above the range the failure is sharp and
-reproducible rather than noisy: at $\nlab=32$, gain $3$ collapses on $3/3$ seeds
-($700.5 \pm 0.7$). But the correction does not remove the ceiling, it moves it: at
-$\nlab \in \{96, 128\}$ the rule ladder becomes unstable again ($372 \pm 277$, $509 \pm 187$,
-with one collapsed seed each). The usable width roughly doubles; it does not become unbounded,
-and we say so rather than reporting only the widths where it works.
-
-\textbf{Learning-rate transfer is not what changes.} We also ran the diagnostic that maximal
-update parametrisation is judged by \citep{yang2022tensor} and that \citet{kuang2026scaling}
-apply to the encoder: validation perplexity against learning rate at four widths, under both
-temperatures. The argmin moves by one step of a $2\times$ grid over an $8\times$ range of width
-in \emph{both} arms ($2\times10^{-2} \to 10^{-2}$ under the source temperature,
-$4\times10^{-2} \to 2\times10^{-2}$ under the standardised one; \Cref{tab:lr}). So the two results are about
-different things, and we do not claim ours as a substitute for theirs: what the temperature fixes
-is not where the optimal learning rate sits, but whether the model learns at all at a given
-width.
-
-\textbf{The Kruskal rank inverts the configuration.} The arc scores are decomposed as
-$\Tfac{c} = \Ufac{c}\Vfac{c}{}^{\!\top}$ with $\Ufac{c},\Vfac{c} \in \R^{\nlab\times\krank}$, and
-every configuration in this literature sets $\krank = \nlab$, which is the most expensive setting
-of the decomposition. It is also not the best one: at $\nlab = 96$, $\krank = 48$ gives
-$242.6 \pm 3.3$ against $\krank = 96$'s $275.6 \pm 27.1$ --- better perplexity at half the arc
-parameters and an eighth of the seed spread --- and $\krank = 12$ gives $257.8 \pm 4.5$ at
-18{,}624 non-embedding parameters, eight times smaller and still ahead of the best $\nlab = 32$
-configuration at a comparable budget. The reason is structural: the arc score reaches inference
-only contracted against a belief, $\Bfac{c}_{j,a} = \E_{\qbar{j}}[\Tfac{c}_{a,\cdot}]$, so what
-is usable is its rank on the affine hull of the reachable beliefs (\Cref{tab:rank}), and those are measurably
-concentrated.
-
-Run as a full ladder at the baselines' budget, low rank does two things at once. The curve sits
-uniformly \emph{below} the $\krank = \nlab$ one --- $223.1 \pm 5.6$ at 18{,}624 non-embedding
-parameters against $372 \pm 277$ for $\krank = 96$ at 147{,}648 --- and \textbf{the width ceiling
-moves}: where both earlier ladders became unstable at $\nlab \geq 96$, this one trains stably
-through $\nlab = \LadderTopLab$ at $\krank = \LadderTopRank$
-($\LadderTopVal \pm \LadderTopSd$), with seed spreads of $\LadderSdLo$ to $\LadderSdHi$ across
-all \LadderNok{} configurations that trained. It does not disappear: at
-$\nlab = 256$, $\krank = 64$ --- the widest and highest-rank cell we ran --- one seed in three
-still lands on the unigram, which is why that row of \Cref{tab:main} carries a collapse count
-and no perplexity. The rank is what buys the extra width, and the same ceiling is waiting above
-it. Nothing in the source prescribes $\krank = \nlab$;
-it is what Wu \& Tu's Table 2 rule $\min(64,\nlab)$ produces at every width used here, and it
-was carried along unexamined --- by us as much as by anyone.
-
-\textbf{We report what this repair costs, because it is not free.} A query-dependent temperature
-is still a temperature, and $\lamH$ is a free per-variable message weight in the source, so
-dividing by $\|\QZ{i}\|_2\sqrt{\nlab}$ --- which is $1$ exactly at the uniform belief --- stays
-inside the family of choices the construction already makes. Standardising the logits does not:
-it is a normalisation applied to the messages, outside the update equations, and it forfeits the
-property that every update is the centred gradient of a fixed per-slot free energy. It is, in
-other words, precisely the kind of operation \Cref{sec:variants} lists as a tripwire, and it is
-the one that works. We regard that as a finding rather than an embarrassment --- it prices one
-specific consequence of the factor-graph constraint, and it is the same price a transformer pays
-knowingly when it puts a layer normalisation in front of its attention. The variational reading
-survives for the content stream and the readout; it is the head-update temperature alone that
-steps outside.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_mechanism_sharp.png}
-\caption{The mechanism, within a run. Solid lines are validation perplexity (left axis), dashed
-lines the \emph{belief sharpness} $\|\QZ{}\|_2\sqrt{\nlab}$ (right axis), which is $1$ at the
-uniform belief and $\sqrt{\nlab}$ at a one-hot --- exactly the factor by which the effective
-attention temperature departs from the value $\lamH = 1/\nlab$ is calibrated for. At the source
-temperature the runs fail in two distinct ways: at $\nlab=96$ the beliefs never leave the
-uniform point, and at $\nlab=32$ they spike to $5.5$, hold, and then collapse back to it, taking
-perplexity nowhere in either case. Under the standardised temperature the sharpness rises
-smoothly to a moderate value and \emph{stays} there, and perplexity falls monotonically from the
-first evaluation. Both undamped; $\alpha_Z = 1$ throughout.}
-\label{fig:mechanism}
-\end{figure}
-
-\subsubsection{Initialisation, and the global variables.}
-\label{sec:exp-ablations}
-\citet{wu2023probabilistic} propose global variables in their Appendix B.3 as the in-graph
-substitute for a feed-forward block and never test them. We do, and the first thing to report is
-a correction to our own earlier account. That account said the head dies under ``uniform''
-initialisation; the word meant the \emph{treatment} --- one scale and one $L_2$ coefficient for
-every factor --- and not the distribution, which has always been Gaussian. The mechanism is a
-symmetry: with the rows of $\Bglob$ close together relative to their own length the head
-posterior is uniform, the message is the row mean, and every row then receives the identical
-gradient $1/m$, so nothing separates them; a shared $L_2$ shrinks the spread that would.
-
-Where the answer comes from also needs saying. We first put the distribution question directly
---- Gaussian against a matched-variance uniform and a semi-orthogonal draw --- in the source
-configuration at one seed per cell, and it cannot be read: at $\nlab=32$ the three draws give
-$700.7$, $375.0$ and $386.3$, differences of three hundred perplexity in a region whose seed
-standard deviation is $\ReproUndampedSd$. That grid is \Cref{tab:init} and no
-conclusion is drawn from it. What follows is the same question re-asked at three seeds in the
-configuration \Cref{sec:exp-width} selects, which is the only region where an initialisation
-effect of the size anyone cares about would be visible at all.
-
-Measured twice, in two configurations, the head answers two different questions --- and the
-second answer withdraws the first. Under the \emph{source} head temperature at $\nlab = 32$,
-where the model collapses, the configuration without the head sits on the unigram ($700.7$)
-while several with it land between $323$ and $380$: a second message into $\Zv{t}$ that does not
-pass through the arc factors evidently breaks the runaway loop, and on that evidence the head
-looks load-bearing. Re-run at the same width in the configuration \Cref{sec:exp-width}
-selects --- standardised temperature, undamped, three seeds --- \textbf{the effect is gone}:
-without the head, $243.2 \pm 5.3$; with it, across three initialisation scales and both $L_2$
-treatments, between $242.5$ and $254.1$, none of them distinguishable from no head at all
-against those spreads.
-
-So at $\nlab = 32$ the head was not adding capacity, it was rescuing a pathology, and the
-temperature correction removes the pathology more cheaply.
-
-At $\nlab = 64$ the answer is neither the same nor its opposite, and the shape of it is worth
-setting out because it is what a practitioner will actually meet. That width sits at the edge of
-the stable region: without the head, one of two seeds lands on the unigram ($216.8$ and
-$704.1$). With it, four of the six treatments train on every seed and reach $221$ to $234$ ---
-better than anything at $\nlab = 32$ --- while two do not, and the two that fail are not the two
-one would guess: the smallest initialisation outside the shared $L_2$ ($224.0$, $616.5$,
-$639.1$) and the middle one inside it ($215.0$, $235.2$, $667.0$). \textbf{The head does not
-make the model stable; it changes which configurations are.} The largest initialisation we ran,
-$0.5$, is stable under both $L_2$ treatments, which is the one regularity in the block and the
-opposite of what a shrink-toward-symmetry account would predict.
-
-What does hold at both widths, in every cell of the grid, is the diagnostic: $H(Q_g)$ is between
-$0.93$ and $1.000$ of its maximum everywhere, including in the cells where the head is carrying
-more message than the word unary and in the cells where it is associated with the model training
-at all. Whatever the head is doing at $\nlab = 64$, it is not doing it by discriminating between
-its own values. The diagnostic says the same thing from inside: the head
-posterior's entropy is between $0.94$ and $1.000$ of its maximum in every cell of the grid, so
-what the head sends is a near-constant label prior and not the feed-forward-like operator it is
-proposed as --- including in the cells where its message is \emph{larger} than the word unary
-($1.19$ to $1.52$ times, outside the shared $L_2$). Perplexity alone cannot tell a uniform
-posterior from an informative one, which is why \Cref{tab:globalhead} reports the entropy beside
-it. On the scale and the $L_2$ treatment, which is what our earlier
-account varied: Gaussian initialisation at three scales spanning $25\times$, with and without
-the head in the shared $L_2$, changes nothing that matters.
-\textbf{The distribution, which is the question as it was asked --- and it matters, through
-variance.} Having distinguished the treatment from the draw, we varied the draw. At $\nlab=64$
-with $\nglob=64$ head values, at initialisation scale $0.02$ inside the shared $L_2$, three
-seeds each:
-
-\begin{center}\footnotesize
-\begin{tabular}{@{}l@{\ \ }l@{\ \ }l@{}}
-\toprule
-draw & val ppl & seeds \\
-\midrule
-semi-orthogonal & $219.3 \pm 0.6$ & $218.8$, $219.1$, $219.9$ \\
-Gaussian & $225.8 \pm 10.2$ & $214.1$, $229.9$, $233.3$ \\
-uniform, matched var. & \textit{1/3 collapsed} & $225.2$, $272.9$, $707.1$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent
-The means are ordered as one would hope but the means are not the finding. \textbf{The
-orthogonal draw's seed standard deviation is $0.6$ against the Gaussian's $10.2$, and its worst
-seed beats the Gaussian's mean}; the uniform draw puts one seed in three on the unigram. In a
-model whose reproducibility is the subject of \Cref{sec:exp-repro}, a draw that removes almost
-all of the seed variance is worth more than six perplexity of mean, and it is the one result
-here that a practitioner should act on.
-
-We had registered a sharper prediction beforehand and it is \emph{not} what this shows, so we
-say so: the prediction was that an orthogonal $\Bglob$ would survive a shared $L_2$ that kills a
-small-scale Gaussian one, and in this configuration the small-scale Gaussian draw does not die
-under the shared $L_2$ --- it dies \emph{outside} it. What the grid found instead is a variance
-effect the prediction did not mention.
-
-The capacity axis, meanwhile, says what the entropy diagnostic says. Sixteen head values, $64$
-and $256$ give $224.2 \pm 5.1$, $222.2 \pm 4.8$ and $222.8 \pm 4.7$, three seeds each:
-\textbf{a sixteenfold increase in the head's capacity is worth less than one seed standard
-deviation}. That is what a posterior which stays uniform implies --- more values to spread the
-same constant over --- and it is the cleanest evidence in the grid that the entropy reading is
-not an artefact of how we measure it.
-
-\subsubsection{What the construction costs: the switch ladder.}
+\subsubsection{The switch ladder}
 \label{sec:exp-switches}
-\Cref{tab:switches} prices each of the ten differences twice --- once as its cost in an
-otherwise ordinary decoder (S1), once as the benefit of restoring it inside the all-PT rung
-(S2). The S1 column is the one to read first, and it is largely good news for the construction:
-\textbf{three of the ten differences are free}, and two of those three are the ones this model
-class is most often criticised for. Tying the value to the key, which the factor graph forces
-because both roles are the same message through the same arc factor, costs $-0.6$; relative
-positions cost $-1.0$; removing the query projection costs $1.9$. Layer normalisation costs nothing
-measurable here once each rung is tuned --- at a single learning rate it appeared to cost
-$18.5$, and that was the rate, not the switch. What does cost is the feed-forward block
-($15.1$) and weight sharing ($12.5$), neither of which is specific to this construction.
+The switch ladder measures the cost of each difference of \Cref{sec:full-comparison} in two
+directions (\Cref{tab:switches}; positive values mean the causal PT's version is worse). S1
+gives a tuned causal transformer one property of the causal PT; S2 restores one transformer
+property in a model with all ten properties of the causal PT (the all-PT model). In S1, value
+tying ($-0.6$), relative positions ($-1.0$) and dropping the query projection ($+1.9$) are nearly
+free, and so is layer normalisation once each switch has its own learning rate; the
+feed-forward block ($+15.1$) and weight sharing ($+12.5$) cost more, and with the mixture
+readout a transformer does not train at all ($686.8$). In S2, restoring nine of the ten
+transformer properties makes the all-PT model worse; only value tying is neutral ($+0.7$).
+With one seed per cell and the best of four learning rates per switch, differences of a point or
+two cannot be told from zero. Every S1 optimum is interior, but the all-PT model's best learning
+rate lies at the top of its grid, so the S2 magnitudes are lower bounds (\Cref{app:grid-switches}).
 
-Two rungs are not costs but cliffs --- the readout and the simplex state, at $+558$ and $+564$
---- and they are the two the construction is most answerable for. The second is discussed below,
-because its number does not mean what it appears to. The first does. Giving an otherwise
-ordinary decoder the mixture readout of \Cref{sec:output} in place
-of its linear head --- at matched width, with the embeddings tied as the factor graph requires
---- does not train at all: $686.8$ against a unigram of $688.8$, with a \emph{training}
-perplexity of $736.6$, and the same at every learning rate we ran it at ($10^{-3}$ to
-$10^{-2}$). That is the evaluation-time swap of \Cref{sec:exp3} arrived at from the opposite
-direction: there, weights trained for one readout are useless under the other; here, a readout
-transplanted into a model built around the other cannot be trained in the first place. The
-mixture readout is not a drop-in for a linear head, and neither experiment on its own would
-establish that.
-
-\textbf{The ladder is one seed per cell}, unlike every other result in this paper, because
-$128$ cells at three seeds was not affordable. Differences of a point or two in the S1 column
-should therefore be read as ``not distinguishable from zero'' rather than as small effects with
-a sign; the ones we draw conclusions from --- the three free switches against the $12$--$15$ of
-the feed-forward block and weight sharing, and the cliff at the simplex state --- are larger
-than the seed spread we measure elsewhere in the same regime.
-
-The exception is the simplex constraint on the state, at $+564$, and it should not be read as
-``the simplex costs 564 perplexity''. A transformer whose state is passed through a softmax
-after every block has a state norm in $[\nlab^{-1/2}, 1]$ while its attention still divides by
-$\sqrt{d_{\text{head}}}$ --- the mis-calibration of \Cref{sec:temperature}, arrived at from the
-transformer side. The ladder has no temperature switch, so flipping the state alone changes the
-geometry without changing the temperature that geometry requires, and the interaction between
-two differences lands on one of them. The real decoder, which is simplex-constrained and has a
-temperature suited to it, reaches $\LadderTopVal$. \Cref{fig:ladder} draws the cumulative
-ladder, where that interaction is visible as a spike the last flip partly undoes.
-\textbf{The S2 column says something S1 cannot.} Of the ten transformer properties, restoring
-nine of them inside the all-PT rung makes it \emph{worse}: weight sharing by $21.5$, the query
-projection by $24.7$, relative positions by $36.0$, and --- at the far end --- layer
-normalisation by $224.6$, the feed-forward block by $253.4$ and an unconstrained state by
-$392.8$, which lands on the unigram. Only one restoration is not a loss, and it is not a gain
-either: tying the value to the key, at $+0.7$, is the single reversible difference in the
-construction. The other nine are not steps towards a transformer, they are a broken model. That
-is the strongest evidence here for reading the causal PT as a package rather than as a
-transformer with substitutions, and it is invisible from S1, where six of the same properties
-are free or nearly so.
-
-\textbf{The caveat, which we tried to remove and could not.} The all-PT anchor is best at the
-top of whatever learning-rate grid it is given. Over four rates it fell $687.2$, $395.5$,
-$354.5$, $296.7$; we appended a fifth at $10^{-1}$ specifically to put the optimum inside the
-grid, and it fell again, to $277.3$. The step sizes are shrinking --- $-292$, $-41$, $-58$,
-$-19$ --- but the sweep has still not turned over, and four of the ten S2 rungs now sit at the
-new boundary too. We stop here and report it rather than chasing the rate further: the S2
-\emph{magnitudes} are lower bounds on what tuning would give, while the sign of nine of them is
-not in doubt at any rate we ran. Every S1 rung's optimum is interior, which is why that column
-and not this one carries the per-switch attributions.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_switch_ladder.png}
-\caption{The cumulative ladder: each rung flips one further difference from a causal
-transformer towards the causal PT, in the order given, and keeps every earlier one. Each point
-is the best of the learning rates run for that rung, and the two dotted references are the
-tuned endpoints. The shape is the finding --- six switches that cost nothing between them, a
-step at the feed-forward block, and a spike at the simplex state that the readout flip then
-partly recovers, which is what a two-difference interaction looks like when a ladder can only
-flip one at a time. Values are in \Cref{tab:switches}. The last rung flips all ten and
-therefore \emph{is} the all-PT model, which is why it lands on the lower reference: the ladder
-and its endpoint are the same run, and the figure closing on it is a consistency check rather
-than a result.}
-\label{fig:ladder}
-\end{figure}
-
-\subsubsection{Two constants nobody had varied.}
+\subsubsection{Constants, global variables and depth}
 \label{sec:exp-knobs}
-Two of the source's constants had never been varied inside a configuration that trains, and they
-behave very differently. The $L_2$ coefficient on the arc scores, which Wu \& Tu's Table 2 sets
-at $5\times10^{-4}$, has a genuine interior optimum there: $0$, $5\times10^{-5}$,
-$5\times10^{-4}$, $5\times10^{-3}$ and $5\times10^{-2}$ give $273.3$, $255.6$, $248.3$, $249.8$
-and $697.0$. Removing it costs $25$ perplexity, an order of magnitude above the
-source's value costs $1.5$ and an order below costs $7$, and two orders above destroys the model --- at $5\times10^{-2}$
-the arc message is $2\,\%$ of the word unary and the prefix-ablation KL is exactly zero, which
-is to say the arc factors have been regularised out and the model is a unigram with extra steps.
-The source's constant is well chosen and the paper has no quarrel with it.
-
-\textbf{The relative-position clip is a window, and both walls are cliffs.} $\clip = 1$ and
-$\clip = 3$ give $249.7$ and $248.3$; $\clip = 0$ gives $619.4$ and $\clip = 7$ gives $605.1$.
-The failures are opposite and both are visible in the diagnostics. At $\clip = 0$ the model is
-distance-blind and its prefix-ablation KL falls to $0.037$: the prediction at slot $t$ has
-almost stopped depending on which prefix it is conditioned on, and the model has nothing to
-attend with. At $\clip = 7$ the message reaches eight times the word unary and the loop runs
-away --- the failure of \Cref{sec:exp-width}, reached by giving the arc table more distinct
-distances to run away in. \textbf{One of these closes an inherited explanation.} An earlier
-implementation of this model's predecessor failed, and the failure was attributed to its having
-no relative positional encoding on the evidence of a toy fit-rate table; $\clip = 0$ measured on
-PTB inside a configuration that otherwise trains turns that attribution into a measurement.
-One seed per cell.
-
-\subsubsection{Inference depth buys nothing, and costs.}
 \label{sec:exp-depth}
-The number of mean-field iterations $\niter$ is the causal PT's depth: it is what makes the
-model a weight-shared stack rather than a single layer, and it is the axis it shares with a
-Looped transformer, so \Cref{tab:three-point}'s framing depends on knowing what it is worth.
-Wu \& Tu's Table 2 fixes $\niter = 3$ and neither paper varies it inside a configuration that
-trains. Varying it here, one seed per cell in the damped configuration at $\nlab = 32$ where the
-seed spread is $\ReproDampedSd$: $\niter = 1, 2, 3, 5, 8$ give $241.3$, $246.5$, $248.3$,
-$297.0$ and $275.3$. The predictive rounds $\tau$ behave the same way --- $242.1$, $248.3$,
-$284.9$ at $\tau = 1, 2, 4$ --- and the middle value is literally the same run, since the base
-configuration is $\niter=3, \tau=2$ and both sweeps pass through it.
+\label{sec:exp-ablations}
+Under the standardised temperature at $\nlab=32$, a global variable has no effect ($243.2\pm5.3$
+without it, $242.5$ to $254.1$ with it across three initialisation scales, with and without the
+shared $L_2$ penalty); at $\nlab=64$ it changes which configurations are stable without making
+the model stable. Its posterior stays near uniform (entropy at least $0.93$ of the maximum), so
+it sends a near-constant label prior. A semi-orthogonal initialisation of $\Bglob$ lowers the
+seed standard deviation from $10.2$ (Gaussian) to $0.6$ (\Cref{app:grid-globalhead}).
 
-\textbf{Every value of $\niter$ above $1$ is worse than $\niter = 1$, and by $\niter = 5$ the
-cost is $56$ perplexity, nine seed standard deviations.} The ordering is not clean at the top:
-$\niter = 8$ returns to $275.3$, below $\niter = 5$, and one seed per cell cannot say whether
-that is a real non-monotonicity or noise in a regime where the loop is being iterated far past
-anything the source tried. What is not in doubt is the direction over the range that matters,
-$\niter = 1$ to $5$, where every step costs. Two readings are available and we cannot separate them here. Either the
-extra iterations are genuinely harmful --- each one re-injects the same arc factors, and
-\Cref{sec:exp-width} showed exactly that loop running away when its gain is mis-set --- or they
-are harmless but the optimisation problem they create is worse. Either way the practical
-statement is the same and it is uncomfortable for the analogy the model is built on: at this
-scale, \emph{the causal PT is best as a one-iteration model}, which is to say as a model whose
-looped character is vestigial. That is a further reason not to read the shallow scaling slope of
-\Cref{sec:exp-scaling} as evidence about depth-shared computation.
+The constants and depth sweeps use the damped configuration and one seed per cell; its seed
+standard deviation is about $6$ (\Cref{app:res-knobs}). The $L_2$ coefficient has an interior optimum near Wu and
+Tu's value ($5\times10^{-4}$ and $5\times10^{-3}$ are within noise), and of the clips tried ($0$,
+$1$, $3$, $7$) only $1$ and $3$ train. More iterations do not help: $\niter=1,2,3,5$ give
+$241.3$, $246.5$, $248.3$ and $297.0$. The first three differ by about one standard deviation;
+$\niter=5$ costs $56$, about nine. $\niter=8$ ($275.3$) breaks the trend, which one seed cannot
+resolve. The other experiments keep Wu and Tu's $\niter=3$.
 
-\subsubsection{Exact vs.\ mean-field readout.}
+\subsubsection{Exact vs.\ mean-field readout, and factored labels}
 \label{sec:exp3}
-Two measurements are needed and they answer different questions: swapping the readout at
-evaluation on the same trained weights isolates the approximation error, while training under
-each measures the end-to-end effect. The swap is computed for every causal PT cell in this paper
-at the cost of one extra pass, and it is meaningful only at $\lamW = 1$ --- any other value makes
-it measure a temperature (\Cref{app:message-weights}). \Cref{app:worked-example} shows the two
-readouts differing concretely on one slot.
-
-The swap is measured for every causal PT cell in this paper, and it gives a clear negative
-result: \textbf{the two readouts are not interchangeable at evaluation.} Substituting
-\Cref{eq:exact-readout} for the mean-field readout on mean-field-trained weights costs between
-a factor of $\SwapMildestRatio$ and a factor of $\SwapWorstRatio$ in validation perplexity, at
-every one of the \SwapNconfigs{} $(\nlab, \krank)$ configurations for which we have three
-uncollapsed seeds: from $\SwapMildestTrained$ to $\SwapMildestSwapped$ at its mildest
-($\nlab = \SwapMildestLab$, $\krank = \SwapMildestRank$) and from $\SwapWorstTrained$ to
-$\SwapWorstSwapped$ at its worst ($\nlab = \SwapWorstLab$, $\krank = \SwapWorstRank$). Both
-sides of each comparison are seed means. Inspecting a trained model, the
-exact readout's logits are not degenerate; they simply discriminate less between words at a
-fixed context (standard deviation $1.63$ against the mean-field readout's $2.64$) and more
-between contexts for a fixed word ($2.73$ against $2.42$). Parameters trained so that one
-readout is accurate do not make the other accurate, which is unsurprising once stated but is not
-what a reader would assume from a construction that presents the two as alternative inferences
-in one model.
-
-The practical consequence is that the cheap half of this comparison does not substitute for the
-expensive half: the readouts have to be compared by \emph{training} under each. Doing so gives $348.8$ under the exact readout against $248.3$
-under the mean-field one at $\nlab = 32$, and $409.5$ against $315.5$ at $\nlab = 16$ --- the
-same model, loop and budget in each pair, differing only in which readout the loss is taken
-through. A factor of $1.41$ and $1.30$, in the same direction at both widths.
-
-\textbf{The richer family is worse.} \Cref{prop:readout}(iii) says the exact readout's image
-strictly contains the mean-field readout's, and it costs no parameters, so the only way it can
-lose by a hundred perplexity is that the parameters realising the better family are not the ones
-this optimiser finds. We think the reason is visible in the form: the exact readout reaches the
-vocabulary through $\LSE_{j}$ over the head domain, which is a maximum in disguise and passes
-gradient almost entirely to the single best-scoring position, while the mean-field readout
-reaches it through $\Sfac\QZ{t}$, an average that passes gradient to every label in proportion
-to its belief. A strictly larger hypothesis class that is harder to search is a familiar
-outcome, and it is worth reporting plainly because the construction's own logic points the other
-way: the exact readout is what the graph says the answer is, and the approximation to it trains
-better.
-
-\subsubsection{Factored labels.}
 \label{sec:exp-factored}
-The construction of \Cref{sec:variants} predicts an interaction rather than a main effect:
-factoring the label variable should buy nothing under the mean-field readout, because the logits
-stay affine in the concatenated beliefs, and whatever it buys should appear only through the
-exact readout. The structural half is already confirmed: at $\nlab = 8$ the affine
-dimension of the log-conditionals is $8$, $7$ and $5$ for $K = 1, 2, 4$ under the mean-field
-readout --- never above $\nlab$, whatever $K$ is, which is the prediction --- and strictly
-above $\nlab$ under the exact readout on the same contexts. \Cref{app:factored} gives the
-parameter accounting, which the source states incorrectly --- and correcting it is what makes
-the measurement possible, because it is the arc factors, not the word--label factor, whose count
-falls as $1/K^2$.
+Swapping in the exact readout at evaluation, on mean-field-trained weights, multiplies
+perplexity by \SwapMildestRatio{} to \SwapWorstRatio{} across \SwapNconfigs{} configurations
+(\Cref{app:res-readout}), so we train under each readout. With one seed each, the exact readout
+then reaches $348.8$ against $248.3$ at $\nlab=32$, and $409.5$ against $315.5$ at $\nlab=16$.
+It is the richer family (\Cref{prop:readout}), yet it trains worse. We conjecture that its
+log-sum-exp over the head domain acts like a soft maximum and sends most of the gradient to the
+best-scoring position.
 
-That correction turns into the experiment's first result. Walking an \emph{iso-parameter
-diagonal} --- $(\nlab, K)$ pairs with identical arc budgets, so that only the factorisation and
-the total label width change --- gives, at $8{,}256$ arc parameters, $283.8 \pm 8.3$ at
-$(16, 1)$, $230.6 \pm 4.4$ at $(32, 2)$ and $230.5 \pm 11.0$ at $(64, 4)$; at $32{,}896$, a
-split cell at $(32,1)$ and then $220.6 \pm 3.2$ at $(64, 2)$ (\Cref{tab:factored}). \textbf{At a
-fixed arc budget, factoring buys total label width, and the width is worth about $50$
-perplexity} --- most of it in the first halving, with $K = 4$ no better than $K = 2$. That is
-not the note's claim, which is about factoring at fixed width; it is the claim its own parameter
-accounting supports once corrected, and it is the one that matters to anyone choosing a
-configuration.
+At a fixed arc budget of $8{,}256$ parameters, going from $\ncomp=1$ to $\ncomp=2$ also doubles
+the label-set size, and the mean-field model improves from $283.8\pm8.3$ ($\nlab=16$) to
+$230.6\pm4.4$ ($\nlab=32$); $\ncomp=4$ adds nothing. As predicted in \Cref{sec:variants}, the
+exact readout's penalty falls with $\ncomp$ on both budgets we tested, from $+52.2$ at $\ncomp=1$
+to $-3.5$ at $\ncomp=4$ on the smaller one (three seeds per cell; \Cref{tab:penalty}). The sign
+change in the last cell is within a seed spread, so the claim is the trend. At a fixed
+$\nlab=32$ the exact readout keeps improving while $94\,\%$ of the arc parameters are removed,
+but it never beats the mean-field readout's best cell ($230.6$ at $\ncomp=2$;
+\Cref{app:grid-factored}).
 
-\textbf{And the readout ordering of \Cref{sec:exp3} is not fixed: it depends on $K$, in the
-direction the note predicted.} The exact readout's penalty relative to the mean-field one falls
-monotonically along \emph{both} diagonals, three seeds everywhere:
-
-\begin{center}\small
-\begin{tabular}{@{}l@{\ \ }r@{\ \ }r@{\ \ }r@{}}
-\toprule
-arc budget & $K=1$ & $K=2$ & $K=4$ \\
-\midrule
-$8{,}256$   & $+52.2$ & $+30.0$ & $-3.5$ \\
-$32{,}896$  & ---     & $+21.7$ & $-6.2$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent
-This is the interaction \Cref{app:factored} registers in advance, and it is the one prediction in
-this paper that was written down before the run and then found. The reading it suggests is that
-the exact readout was never being punished for being richer: at $K=1$ the product of $K$ mixtures
-\emph{is} a single mixture, so the richer family has nothing extra to express, and splitting the
-label variable is what gives it something. The $K=1$ cell of the second diagonal is a split seed
-group and carries no mean, which is why that entry is blank.
-
-Two further things the diagonals show. At $K=4$ the exact readout is also the \emph{stable} one
---- $\pm 0.8$ and $\pm 4.6$ against the mean-field cells' $\pm 11.0$ and $\pm 9.4$ --- so it is
-not buying its parity with variance. And the crossover is small: $3.5$ and $6.2$ perplexity, on
-the order of a seed spread each, so what we claim is the trend across three points on two
-independent budgets and not the sign of the last cell taken alone.
-\textbf{At fixed total width, where the note's prediction literally applies, the two readouts
-part company.} Holding $\nlab = 32$ and raising $K$ cuts the arc budget sixteenfold ---
-$32{,}896$, $8{,}256$, $2{,}080$ at $K = 1, 2, 4$ --- and the exact readout improves the whole
-way down, $313.0 \pm 9.5$, $260.6 \pm 1.4$, $253.0 \pm 1.7$, while the mean-field readout does
-not: $230.6 \pm 4.4$ at $K=2$ and $250.5 \pm 7.0$ at $K=4$, its best in the middle. (The
-mean-field $K=1$ cell is a split seed group and carries no mean, so we cannot state its first
-step.) A readout that keeps improving while $94\,\%$ of the arc parameters are removed is the
-note's claim in its literal form, and it is the only configuration in this paper where the
-exact readout is unambiguously the one to use.
-
-The widest cell of that family says the same thing in the crudest possible way. At
-$\nlab = 64$, $K = 1$ --- a flat label variable with a full-rank arc table, $131{,}328$ arc
-parameters --- the mean-field readout collapses on all three seeds while the exact readout
-trains, badly but consistently, at $460.1 \pm 14.1$. Neither is a model anyone would use; what
-it adds is that the two readouts do not fail together.
-
-What we would not say is that this recommends $K=4$: the mean-field model at $\nlab=32$, $K=2$
-is still the best cell in the block at $230.6$, and every number here is far from the model of
-\Cref{tab:main}. The result is about which readout benefits from factoring, which is what the
-experiment was built to isolate.
-
-\subsubsection{Transfer to a second corpus.}
+\subsubsection{Transfer to WikiText-2}
 \label{sec:exp-wt2}
-Every constant in this paper is chosen on the Penn Treebank. The one test of whether that
-choice transfers is to apply it unchanged to WikiText-2 --- twice the vocabulary, more than
-twice the tokens, and a unigram baseline of $964.8$ against PTB's $688.8$ --- and to report what
-happens without retuning anything (\Cref{tab:wt2}, \Cref{app:datasets}). The
-hyperparameters of this model may need to change with the dataset as well as with the model
-size, and a paper that tunes on one corpus and reports on one corpus cannot tell the difference.
-
-\textbf{Both halves of the width finding transfer.} With nothing retuned, on a corpus whose
-unigram baseline is $964.8$ and whose add-one bigram is $692.5$: at $\nlab = 32$ the source head
-temperature gives $\WtSrcNarrow \pm \WtSrcNarrowSd$ and the standardised one
-$\WtStdNarrow \pm \WtStdNarrowSd$, and at $\nlab = 64$, $\WtSrcWide \pm \WtSrcWideSd$ against
-$\WtStdWide \pm \WtStdWideSd$. \emph{The corrected arm is better at both widths, its seed spread at
-$\nlab = 32$ is an order of magnitude tighter, and it is the only one of the two that improves
-when the model is widened} --- $\WtSrcNarrow$ to $\WtSrcWide$ is within a spread, $\WtStdNarrow$ to
-$\WtStdWide$ is not. That is the mechanism of \Cref{sec:exp-width} reproducing on a second corpus
-with a vocabulary three times larger, which is the strongest evidence we have that it is a
-property of the model rather than of the Penn Treebank.
-
-The gap to the baselines transfers too, and is if anything wider. At a \emph{smaller}
-non-embedding budget than the causal PT's $65{,}664$, a causal transformer reaches
-$\WtGptNarrow \pm \WtGptNarrowSd$ with $50{,}880$ and a looped one $167.9 \pm 0.7$ with $50{,}112$, against the
-causal PT's $\WtStdWide \pm \WtStdWideSd$. The crossover of \Cref{sec:exp-scaling} reappears as
-well: at matched $d_{\text{model}}$ the looped transformer is worse than the standard one at
-every width here, and at matched non-embedding budget it is better --- the same inversion, on a
-different corpus.
-
-Nothing about the constants was adjusted for the larger vocabulary or the longer training split,
-which is the only sense in which this is a test of transfer rather than a second tuning
-exercise. What it establishes is narrow and worth having: \emph{the parameterisation we selected
-on one corpus is not overfitted to it}, and the ordering of every comparison in this paper
-survives a threefold change of vocabulary.
+With nothing retuned, the standardised temperature beats the original one on WikiText-2 at both
+widths: $\WtStdNarrow\pm\WtStdNarrowSd$ against $\WtSrcNarrow\pm\WtSrcNarrowSd$ at $\nlab=32$,
+and $\WtStdWide\pm\WtStdWideSd$ against $\WtSrcWide\pm\WtSrcWideSd$ at $\nlab=64$
+(\Cref{tab:wt2}). It also gains more from width, while the original temperature's change is
+within its seed spread, which suggests the correction is not tuned to PTB. The gap to the
+baselines persists (\Cref{app:grid-wt2}).

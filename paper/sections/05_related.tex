@@ -1,58 +1,19 @@
 \section{Related Work}
 \label{sec:related}
 
-% Wu & Tu's Related Work is one third of a column and a single paragraph. Match the length;
-% four short groups, no bullet list.
-
-\paragraph{Probabilistic transformers and their scaling.}
-Our model is the autoregressive counterpart of \citet{wu2023probabilistic}, who derive a
-transformer \emph{encoder} from mean-field inference in a dependency CRF and name a decoder as
-an open extension. \citet{kuang2026scaling} take the same encoder in the other direction,
-transporting maximal update parametrisation \citep{yang2022tensor} to it so that
-hyperparameters tuned on a small model transfer to a large one, and report that the
-probabilistic transformer then \emph{outperforms} a standard transformer at matched parameter
-budget on masked language modelling up to 0.4B parameters. Two things follow for the present
-paper. Their result removes the assumption --- inherited from the 2023 paper's own discussion
-and from our first framing --- that a probabilistic transformer must lose on perplexity; the
-gap it reports at small scale is a tuning artefact, not a property of the model class. And the
-width problem we analyse in \Cref{sec:temperature} is the decoder's version of the problem they
-solve for the encoder, with a different mechanism: theirs is a rescaling of parameters and
-learning rates, ours is a mis-calibration of the attention \emph{temperature} that arises
-specifically because the query of this attention is a probability vector. The two are
-complementary rather than alternative, and \Cref{sec:exp-width} measures them against each
-other.
-
-\paragraph{Weight sharing and looped models.}
-Applying one block repeatedly with shared weights is the defining property of Universal
-Transformers \citep{dehghani2019universal} and of the looped transformers studied by
-\citet{giannou2023looped} and \citet{yang2024looped}. A probabilistic transformer has that
-property by construction, because every MFVI iteration is inference in the \emph{same} model;
-untying the iterations would make each one inference in a different model. This is why the
-looped transformer, and not only a standard decoder, is a necessary baseline here
-(\Cref{tab:three-point}). We note in \Cref{sec:exp-depth} that on this corpus the causal PT is
-nonetheless best at one iteration, so the property it shares with those models is present in the
-construction and not exercised by the data.
-
-\paragraph{The softmax bottleneck.}
-\citet{yang2018breaking} show that a linear--softmax output head confines the log-conditionals
-to a low-dimensional affine family, and propose a mixture of softmaxes as the repair. Our exact
-readout (\Cref{eq:exact-readout}) is a mixture of softmaxes that arrives from a different
-direction: it is what sum--product inference on the slot tree \emph{is}, with the mixture
-components fixed by the word--label factor and the weights supplied by the prefix, and it costs
-no parameters. \Cref{prop:readout} states the consequence and \Cref{sec:exp3} measures it.
-
-\paragraph{Reading syntax out of attention, and putting it in.}
-A long line of work asks whether a trained transformer's attention encodes dependency structure,
-by probing the representations \citep{hewitt2019structural} or the attention maps themselves
-\citep{clark2019what,htut2019attention}, with the qualified conclusion that some heads track
-some relations and that how much one finds depends on the training objective and the probe
-\citep{ravishankar2021attention}. A second line builds the structure in, inducing dependency or
-constituency trees jointly with a language-modelling objective
-\citep{shen2021structformer,shen2022udgn}. The present model sits on the second side by
-construction --- its head variable \emph{is} an attachment, not a quantity read out of one ---
-which is what makes \Cref{app:interpretability} a measurement rather than an interpretation. Our
-finding there is a caution addressed to both lines: the same probe on the same corpus and the
-same model class gives opposite answers about whether attachment is learned, depending on a
-temperature and a rank. The relative attachment scores of \Cref{sec:chain} are the relative
-position representations of \citet{shaw2018self}, arrived at as the only position encoding the
-factor graph admits.
+\citet{kuang2026scaling} transfer maximal update parameterisation \citep{yang2022tensor} to Wu
+and Tu's encoder and find it ahead of a standard transformer at matched budget on masked language
+modelling up to 0.4B parameters, which suggests that small-scale gaps partly reflect tuning; our
+temperature correction is complementary to their rescaling. \citet{yang2018breaking} show that a linear--softmax head confines the log-conditionals to a
+low-dimensional affine family and propose a mixture of softmaxes; our exact readout is such a
+mixture, derived from inference on the slot tree and with no extra parameters. Tying input and
+output embeddings is a known improvement for language models \citep{press2017using}; here it
+follows from the factor graph. Syntactic language models condition generation on explicit trees
+\citep{chelba1998exploiting,dyer2016recurrent,sartran2022transformer} or on latent tree
+structure \citep{shen2019ordered}; our model keeps its syntax latent and never commits to a tree.
+Probes find some dependency structure in trained transformers
+\citep{hewitt2019structural,clark2019what,htut2019attention}, depending on the objective and the
+probe \citep{ravishankar2021attention}, and other work induces trees jointly with a language
+model \citep{shen2021structformer,shen2022udgn}. Our
+head variable is an attachment by construction, and its clipped distance-sensitive arc scores
+play the role of the relative position representations of \citet{shaw2018self}.

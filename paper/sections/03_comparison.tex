@@ -1,26 +1,18 @@
 \section{Comparison with Causal Transformers}
 \label{sec:comparison}
 
-% This section is the analogue of Wu & Tu Section 3 ("Comparison with Transformers"), which is
-% the LARGEST section of their paper -- about 2.4 pages, as long as their experiments. It had
-% no counterpart in the first outline of this paper, and that was the biggest structural gap:
-% in this format the conceptual comparison carries as much weight as the numbers, and it is
-% also where the Looped baseline of Section 4 gets motivated rather than asserted.
-
-\citet{wu2023probabilistic} show that MFVI in the encoder model reproduces the computation graph
-of a transformer encoder, with the posterior over dependency heads playing the role of
-self-attention. We ask the same question of the causal model. The correspondence turns out to be
-\emph{closer} than in the encoder --- the factor of two from symmetrisation disappears, and no
-symmetry assumption on the arc scores is needed --- and where it stops holding is where
-\Cref{sec:experiments} looks. This section identifies ten independent differences from a causal
-transformer and singles out the one that is not merely a difference but a mis-calibration:
-the temperature of an attention whose query is a probability vector.
+\citet{wu2023probabilistic} show that MFVI in their model has the computation graph of a
+transformer encoder. The match is closer for the causal model: the factor of two from
+symmetrisation disappears, $\Tfac{c}$ need not be symmetric because the arcs are directed, and
+excluding self-attachment ($j=i$) is harmless because the re-injected unary plays the residual
+role.
 
 \subsection{Tensor form}
 \label{sec:tensor-form}
 
 Collect the label beliefs of the prefix into $\bar{Q} \in \R^{\seqlen \times \nlab}$ with rows
-$\qbar{j}$, and write $Q_Z^{(t)} \in \R^{\seqlen\times\nlab}$ for the beliefs at iteration $t$.
+$\qbar{j}$, and write $Q_Z^{(t)} \in \R^{\seqlen\times\nlab}$ for the beliefs after iteration
+$t$ (here $t$ indexes iterations, not positions).
 With $\Tfac{c} = \Ufac{c}\Vfac{c}{}^{\top}$ and $\Ufac{c},\Vfac{c} \in \R^{\nlab\times\krank}$,
 \Cref{eq:update-H,eq:update-Z} become, for channel $c$,
 %
@@ -35,170 +27,92 @@ With $\Tfac{c} = \Ufac{c}\Vfac{c}{}^{\top}$ and $\Ufac{c},\Vfac{c} \in \R^{\nlab
 \end{aligned}
 \end{equation}
 %
-where $M$ is the strict lower-triangular mask with the \textsc{root} column prepended. Read
-against a transformer layer, $Q_Z^{(t-1)}\Ufac{c}$ is the query projection, $\bar{Q}\Vfac{c}$ is
-the key projection, $\lamH$ is the attention temperature, and $\mathcal{G}$ is the attention
-output. Four structural differences are visible in \Cref{eq:tensor} itself and we take them in
-turn.
+where $M$ is the strict lower-triangular mask with the \textsc{root} column prepended.
+$Q_Z^{(t-1)}\Ufac{c}$ is the query projection, $\bar{Q}\Vfac{c}$ the key projection, $\lamH$ the
+attention temperature and $\mathcal{G}$ the attention output.
 
-\subsection{The single-channel update vs.\ masked self-attention}
+\subsection{The update vs.\ masked self-attention}
 \label{sec:vs-attention}
 
-\paragraph{Keys are values.}
-$\bar{Q}\Vfac{c}$ appears twice in \Cref{eq:tensor}: once as the key against which the query is
-scored and once as the value that is mixed. A transformer has independent $W^K$ and $W^V$. This
-is not an economy measure; it is forced, because both roles are the \emph{same message} through
-the \emph{same} arc factor --- the score $\Bfac{c}_{j,a}$ that decides how much position $j$ is
-attended to is the score that position $j$ then contributes. Similarly there is no output
-projection $W^O$: channel messages are summed, because the energy sums over channels, and a
-learned mixing matrix would be a map with no factor behind it.
+\paragraph{Projections, residual and normalisation.}
+$\bar{Q}\Vfac{c}$ appears twice in \Cref{eq:tensor}, as the key and as the value: both roles are
+the same message through the same arc factor. There is no output projection $W^O$ either; the
+energy sums over channels, so their messages are summed. There is no residual stream and no
+layer normalisation. The unary $\Sfac_{w_i,\cdot}$, added
+again at every iteration, plays the residual role, and the simplex keeps activations bounded. Wu
+and Tu control the parameters with an $L_2$ penalty on the arc scores.
 
-\paragraph{The residual is the unary, and the state is a distribution.}
-There is no residual stream and no layer normalisation. What plays the residual role is the
-re-injection of $\Sfac_{w_i,\cdot}$ at every iteration, and what plays the normalisation role is
-the simplex constraint: $Q_Z^{(t)}$ is a probability vector by construction, so activations
-cannot blow up at fixed parameters. Only the \emph{parameters} can grow, and the original paper's
-control for that is an explicit $L_2$ penalty on the arc scores.
-
-\paragraph{The query is a distribution, and the temperature is calibrated for one point of its
-range.}
+\paragraph{The temperature.}
 \label{sec:temperature}
-This difference has no counterpart in the encoder discussion and it is, empirically, the one
-that matters most. A transformer's query and key are unconstrained vectors whose scale is held
-near a constant by layer normalisation, which is why a single temperature $1/\sqrt{d_{\text{head}}}$
-serves at every point of training. Here the query $\QZ{i}$ and the key source $\qbar{j}$ are
-\emph{probability vectors}, and a distribution on $\nlab$ labels has Euclidean norm anywhere in
-$[\nlab^{-1/2}, 1]$: a $\sqrt{\nlab}$ dynamic range, from uniform to one-hot, and the model
-traverses it during training. Since the head logit is $\langle \QZ{i}, \Bfac{c}_{j,\cdot}\rangle$
-and $\Bfac{c}_{j,\cdot}$ inherits the same range from the key side, the logit scale moves by up
-to a factor $\nlab$ between the two extremes.
+Layer normalisation holds a transformer's queries and keys at a roughly constant scale, so one
+temperature $1/\sqrt{d_{\text{head}}}$ serves throughout training. Here the query
+$\QZ{i}$ and the key source $\qbar{j}$ are probability vectors, whose Euclidean norm ranges over
+$[\nlab^{-1/2}, 1]$ from uniform to one-hot, so the scale of the head logit
+$\langle \QZ{i}, \Bfac{c}_{j,\cdot}\rangle$ can change by a factor of up to $\nlab$ during
+training. Wu and Tu set $\lamH = 1/\nlab$ (the \emph{original temperature}). With arc scores of
+scale $\sigma_T$, this gives a scaled head logit of $O(\sigma_T)$ at the near-uniform beliefs of
+initialisation but $O(\nlab\,\sigma_T)$ once the beliefs sharpen, an error that grows linearly
+with the width. We therefore predict a
+positive feedback loop $\qbar{j} \to \Bfac{c}_{j,\cdot} \to \mathcal{G} \to \qbar{j}$ whose gain
+grows with $\nlab$, so that any damping of the label update must get stronger as the model gets
+wider.
 
-\citet{wu2023probabilistic} set $\lamH = 1/\nlab$. At initialisation both beliefs are near
-uniform, so $\mathcal{F}^{(c)} \sim \sigma_T/\nlab$ and dividing by $1/\nlab$ leaves an
-$O(\sigma_T)$ logit: the choice is exactly right \emph{there}. Once training sharpens the
-beliefs, $\mathcal{F}^{(c)} \sim \sigma_T$ and the same division leaves $O(\nlab\,\sigma_T)$. The
-temperature is calibrated for a limit the model leaves within a few hundred steps, and the
-error grows linearly in the width. This predicts a specific pathology --- a positive feedback
-loop $\qbar{j} \to \Bfac{c}_{j,\cdot} \to \mathcal{G} \to \qbar{j}$ whose gain increases with $\nlab$ --- and
-therefore that any damping of the label update must be strengthened as the model is widened.
-\Cref{sec:exp-width} tests this. The collapse it predicts is
-found, and found with its signature rather than only its symptom; the accompanying claim about
-$\alpha^\star(\nlab)$ is bounded there rather than measured, for a reason given at that point.
-The same section tests the repair the argument suggests: a temperature
-$\lamH \| \QZ{i}\|_2 \sqrt{\nlab}$, which equals
-$\lamH$ exactly at the uniform belief --- so it agrees with the source's choice at
-initialisation and differs only where the source's calibration does not reach.
+We test two repairs. The \emph{belief-norm temperature} $\lamH\|\QZ{i}\|_2\sqrt{\nlab}$ equals
+$\lamH$ at the uniform belief and stays inside the model. The \emph{standardised temperature}
+centres the head logits over $\Dep{i}$, scales them to unit root mean square and multiplies them
+by a gain $g$ (default $1$). It makes attention invariant to the scale of the arc scores, but it
+is a normalisation outside the update equations.
 
 \subsection{The readout vs.\ a language-model head}
 \label{sec:cmp-readout}
 
-The encoder has no output layer, so this comparison is new. Fix a set of contexts and let $A$
-be the matrix whose rows are the log-conditionals $\log p(\cdot \mid \text{context})$ over the
-vocabulary.
+The encoder has no output layer. Let $L$ be the matrix whose rows
+are the log-conditionals $\log p(\cdot \mid \text{context})$ over the vocabulary for a fixed
+set of contexts.
 
 \begin{proposition}[Readout expressivity]
 \label{prop:readout}
 \emph{(i)} Under the mean-field readout $\ell = \bfac + \Sfac\QZ{t}$ with
-$\QZ{t}\in\Delta^{\nlab-1}$, the rows of $A$ lie in an affine subspace of dimension at most
-$\nlab$. \emph{(ii)} Under a linear--softmax head of width $m$ they lie in an affine subspace of
-dimension at most $m+1$. \emph{(iii)} The exact readout of \Cref{eq:exact-readout} is not an
+$\QZ{t}\in\Delta^{\nlab-1}$, the rows of $L$ lie in an affine subspace of dimension at most
+$\nlab$. \emph{(ii)} Under a linear--softmax head of width $\dmodel$ they lie in an affine
+subspace of dimension at most $\dmodel+1$. \emph{(iii)} The exact readout of \Cref{eq:exact-readout} is not an
 affine family: unless the component distributions $p(\cdot\mid a)\propto e^{\bfac + \Sfac_{\cdot,a}}$
 are all identical, $\readout{} \mapsto \log\hat p(\cdot)$ is nonlinear in its parameters and its
 image is a curved $(\nlab{-}1)$-dimensional manifold not contained in the subspace of (i).
 \end{proposition}
 
-The consequence should be stated bluntly, because it corrects a natural first reading of the
-model. \textbf{The mean-field readout's bottleneck is the classical softmax bottleneck}
-\citep{yang2018breaking}, \emph{in identical kind and degree} to a baseline transformer's own
-output head at $\nlab = d_{\text{model}}$. The comparison unit is $\nlab \leftrightarrow
-d_{\text{model}}$, not $\nlab \leftrightarrow$ anything smaller, and parity of the readout
-requires only $\nlab \approx d_{\text{model}}$. The exact readout is a different family
-altogether: a mixture over $\nlab$ fixed component softmaxes with context-dependent weights ---
-weaker than a full mixture-of-softmaxes head, whose components are themselves
-context-dependent, but strictly outside the linear family at zero parameter cost.
-
-Two further bottlenecks are often conflated with this one and are worth separating.
-The \emph{chain} bottleneck: $\Wv{t} \perp w_{\prefix{t}} \mid z_{\prefix{t}}$ compresses the
-prefix into one point of $\Delta^{\nlab-1}$ per position, consumed linearly by the future
-through \Cref{eq:contract}. A transformer's KV cache is one point of $\R^{d_{\text{model}}}$ per
-position, consumed linearly through $W^K$ and $W^V$: the same structure, with the per-position
-width $\nlab{-}1$ against $d_{\text{model}}$, and the genuine difference being the simplex
-geometry --- bounded, non-negative, summing to one. And the \emph{dynamics} bottleneck: with the
-pipe width matched, the risk is not the pipe but the pump, that is, whether attention-only
-iterations with tied parameters and simplex-constrained states can deposit as much usable
-information into those $\nlab$ numbers as a transformer stack deposits into
-$d_{\text{model}}$. We regard the third as the real one, and \Cref{sec:exp-switches} is designed
-to separate the three empirically rather than argue about them.
+The mean-field readout therefore has the softmax bottleneck of \citet{yang2018breaking}, the
+same as a transformer's output head at $\nlab = \dmodel$. The exact readout is weaker than a full
+mixture of softmaxes, but it lies outside the linear family at no parameter cost. The prefix
+reaches the future as one point of $\Delta^{\nlab-1}$ per position, where a transformer's cache
+holds one point of $\R^{\dmodel}$.
 
 \subsection{Full model comparison}
 \label{sec:full-comparison}
 
 \begin{figure*}[t]
-\centering
-% The three panels are laid out at fixed millimetre offsets, which is a little wider than
-% \textwidth; scaled to fit rather than re-spaced, so that the panels keep the alignment that
-% lets (a), (b) and (c) be read across.
-\resizebox{\textwidth}{!}{\input{figures/fig2_computation_graphs}}
-\caption{One layer of each model, same notation. \textbf{(a)} a causal transformer block;
-\textbf{(b)} a Looped transformer, the same block applied $\niter$ times with shared weights;
-\textbf{(c)} one MFVI iteration of the causal PT. Shaded boxes are learned maps with no factor
-behind them, which is what (c) has none of. Reading (a)$\to$(c), the differences are: parameters
-shared across depth, no feed-forward block, no output projection, keys tied to values, no query
-projection, no residual stream and no layer normalisation, a simplex-constrained state, relative
-rather than absolute positions, and a mixture readout in place of a linear head.}
+\begin{minipage}[c]{0.7\textwidth}
+\resizebox{\linewidth}{!}{\input{figures/fig2_computation_graphs}}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.27\textwidth}
+\caption{One layer of (a) a causal transformer, (b) a looped transformer, which applies the
+same block $\niter$ times with shared weights, and (c) one MFVI iteration of the causal PT.
+Shaded boxes are learned maps with no factor behind them; (c) has none. In (a) and (b), $d$
+denotes $\dmodel$. \Cref{sec:full-comparison} lists the ten differences.}
 \label{fig:computation-graphs}
+\end{minipage}
 \end{figure*}
 
-\Cref{fig:computation-graphs} places one layer of each model side by side. Reading it from the
-transformer to the causal PT gives ten independent differences, and this decomposition is not
-merely expository: \Cref{sec:exp-switches} implements each as a switch and measures what it
-costs, so that ``the causal PT is worse than a transformer'' becomes a statement about
-identified components rather than about architectures as wholes.
+\Cref{fig:computation-graphs} shows one layer of each model. The causal PT differs from the
+transformer in ten ways, each of which can be switched separately in the \emph{switch ladder}
+(\Cref{sec:exp-switches}): parameters
+shared across iterations (\texttt{weight\_sharing}), no feed-forward block (\texttt{ffn}), no
+output projection (\texttt{attn\_out\_proj}), keys tied to values (\texttt{attn\_value}), no
+query projection (\texttt{attn\_query\_proj}), no residual stream (\texttt{residual}), no layer
+normalisation (\texttt{norm}), a simplex-constrained state (\texttt{state}), relative clipped
+positions (\texttt{position}), and a mixture readout over labels in place of a linear head
+(\texttt{readout}).
 
-Each is named here as \Cref{sec:exp-switches} names it, so that the list and the ladder can be
-read against each other.
-
-\begin{itemize}\itemsep0pt
-  \item \textbf{Parameters shared across iterations} (\texttt{weight\_sharing}). The property a
-        Looped transformer \citep{dehghani2019universal,giannou2023looped,yang2024looped} also
-        has, and the reason a comparison against a standard decoder alone cannot attribute any
-        difference to structure.
-  \item \textbf{No feed-forward structure} (\texttt{ffn}). Inherited from the encoder model. The
-        in-graph substitute --- the global variables of \Cref{sec:variants} --- is measured
-        rather than assumed in \Cref{sec:exp-ablations}.
-  \item \textbf{No output projection} (\texttt{attn\_out\_proj}) \textbf{and keys tied to
-        values} (\texttt{attn\_value}), both in \Cref{sec:vs-attention}.
-  \item \textbf{No query projection} (\texttt{attn\_query\_proj}): the query is the evolving
-        belief itself.
-  \item \textbf{No residual stream} (\texttt{residual}) \textbf{and no layer normalisation}
-        (\texttt{norm}); the unary is re-injected instead, and the state is confined to the
-        simplex (\texttt{state}) rather than bounded by a normalisation.
-  \item \textbf{Relative, clipped positions} (\texttt{position}) rather than a learned absolute
-        embedding.
-  \item \textbf{The output is a posterior, not a projection} (\texttt{readout}): no parameter
-        exists outside the factor graph (\Cref{sec:output}), and the readout is a mixture rather
-        than a linear map (\Cref{sec:cmp-readout}).
-\end{itemize}
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lcc}
-\toprule
-Model & \makecell{Weight\\sharing} & \makecell{Syntactic\\structure} \\
-\midrule
-Causal transformer & no  & no  \\
-Looped transformer & yes & no  \\
-Causal PT          & yes & yes \\
-\bottomrule
-\end{tabular}
-\caption{The three models of \Cref{sec:experiments}. Looped vs.\ transformer isolates weight
-sharing; causal PT vs.\ Looped isolates structure, which is the comparison this paper is about.}
-\label{tab:three-point}
-\end{table}
-
-\Cref{tab:three-point} is what the experimental design follows from: the causal PT differs from
-a standard decoder in two ways at once, so a two-model comparison cannot attribute a difference
-to either. \NOTE{putting this table in Section 3 rather than Section 4 is deliberate --- it
-makes the Looped baseline a consequence of the model comparison instead of an experimental
-choice that a reviewer could read as cherry-picked.}
+A looped transformer \citep{dehghani2019universal,giannou2023looped,yang2024looped} shares
+weights across depth, as the causal PT does, but has no syntactic structure. Comparing it with the transformer isolates
+weight sharing, and comparing the causal PT with it isolates structure.

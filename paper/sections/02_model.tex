@@ -1,88 +1,59 @@
 \section{Causal Probabilistic Transformers}
 \label{sec:model}
 
-% Mirrors Wu & Tu Section 2 ("Probabilistic Transformers"): the model first, then inference,
-% then variants. Their Section 2 runs about 2.3 pages of a two-column ACL page; budget the
-% same here. Figure 1 (the factor graph) belongs in 2.2, early, exactly as theirs does.
-
-We first recall the model of \citet{wu2023probabilistic} only as far as we need it
-(\Cref{sec:recap}), then state the obstruction that prevents a direct causal version
-(\Cref{sec:obstruction}), then give the model (\Cref{sec:chain}), its output mechanism
-(\Cref{sec:output}), its inference procedure (\Cref{sec:inference}), and finally some variants.
+We recall the model of \citet{wu2023probabilistic}, show why masking it is not enough, and build
+the causal model.
 
 \subsection{Background}
 \label{sec:recap}
 
-A probabilistic transformer is a conditional random field over two families of discrete latent
-variables. Each position $i$ of a sentence carries a \emph{label} variable $\Zv{i}$ over $\nlab$
-values, read as a syntactic category, and $\nchan$ \emph{head} variables $\Hv{i}{1..\nchan}$, one
-per \emph{channel}, each over the candidate heads of $i$. A unary factor
-$\exp(\Sfac_{w_i, \Zv{i}})$ ties the label at $i$ to the word observed there through a single
-matrix $\Sfac \in \R^{|\Vocab| \times \nlab}$, and a ternary factor
-$\exp\big(\ind{\Hv{i}{c}{=}j}\, \Tfac{c}_{\Zv{i},\Zv{j}}\big)$ scores the compatibility of the
-labels at $i$ and at its head $j$ in channel $c$.
+A probabilistic transformer is a CRF over two families of discrete latent variables. Each
+position $i$ of a sentence has a \emph{label} variable $\Zv{i}$ over $\nlab$ values (the
+model's \emph{width}), read as a syntactic category, and $\nchan$ \emph{head} variables $\Hv{i}{1..\nchan}$, one per
+\emph{channel}, each over the candidate heads of $i$. A unary factor
+$\exp(\Sfac_{w_i, \Zv{i}})$ ties the label at $i$ to the observed word through one matrix
+$\Sfac \in \R^{|\Vocab| \times \nlab}$, and a ternary factor
+$\exp\big(\ind{\Hv{i}{c}{=}j}\, \Tfac{c}_{\Zv{i},\Zv{j}}\big)$ scores the labels at $i$ and at
+its head $j$ in channel $c$.
 
-Running mean-field inference for $\niter$ iterations produces a computation graph in which the
-head posteriors are softmaxes of bilinear forms in the label beliefs and the label beliefs are
-softmaxes of the messages those posteriors weight: scaled dot-product attention followed by a
-re-injected unary, with the same parameters at every iteration --- a $\niter$-layer transformer
-encoder with shared weights and no feed-forward block. Self-attention is not a component that
-was chosen; it is the posterior over syntactic heads.
-
-The fact \Cref{sec:output} turns on is this: \textbf{the word $w_i$ enters the model in exactly
-one place}, the unary factor $\Sfac_{w_i,\cdot}$. Nothing else in the energy mentions the words.
+Unrolled for $\niter$ iterations, mean-field inference is scaled dot-product attention (the head
+update) followed by a re-injected unary (the label update): a $\niter$-layer transformer encoder
+with shared weights and no feed-forward block. The word $w_i$ enters the model in one place
+only: the unary factor $\Sfac_{w_i,\cdot}$.
 
 \subsection{Why a causal mask is not enough}
 \label{sec:obstruction}
 
-The obvious route to a causal model is to mask the ternary factors so that $\Hv{i}{c}$ may only
-point to positions $j < i$. This does not give a causal model. Three properties one would want
-cannot hold together:
-
-\begin{itemize}\itemsep0pt
-  \item \textbf{Single global energy (SE):} the updates are
-        $\Q_x \propto \exp(-\nabla_x E / \lambda_x)$ for one energy $E$, with the words entering
-        only through terms local to a single position;
-  \item \textbf{Causality (C2):} for every schedule and every node, the update at position $i$
-        does not read the state of any node at a position $j > i$;
-  \item \textbf{Contextuality (X):} some belief at some position genuinely changes when a word
-        at another position changes.
-\end{itemize}
+Masking the ternary factors so that $\Hv{i}{c}$ can only point to positions $j < i$ does not
+give a causal model, because three properties cannot hold together. \emph{Single global energy}
+(SE): the updates are $\Q_x \propto \exp(-\nabla_x E / \lambda_x)$ for one twice continuously
+differentiable energy $E$, with the
+words entering only through terms local to a single position. \emph{Causality} (C2): for every
+schedule and every node, the update at position $i$ does not read the state of any node at a
+position $j > i$. \emph{Contextuality} (X): some belief at some position changes when a word at
+another position changes.
 
 \begin{theorem}[Trilemma]
 \label{thm:trilemma}
 No scheme satisfies SE, C2 and X simultaneously. Any two of the three are realisable.
 \end{theorem}
 
-The mechanism is Schwarz's theorem, not the partition function. If $E$ is twice continuously
-differentiable then the mixed partial $\partial^2 E / \partial \Q_i \partial \Q_j$ is symmetric,
-so \emph{every coupling in a single smooth energy is two-sided}: the term by which the label at
-$j$ reaches the update at $i$ and the term by which the label at $i$ reaches the update at $j$
-are two faces of one Hessian entry. Causality deletes one face and symmetry then deletes the
-other, leaving an energy whose centred gradient at $i$ reads nothing outside position $i$ ---
-which is the denial of contextuality. Masking the factors changes which configurations score
-highly; it does not make the surviving coupling one-sided. The proof is in \Cref{app:proof}.
+If $E$ is twice continuously differentiable, $\partial^2 E / \partial \Q_i \partial \Q_j$ is
+symmetric, so the term by which the label at $j$ reaches the update at $i$ and the reverse term
+are one Hessian entry. Causality deletes one of them and symmetry then deletes the other. The
+proof is in \Cref{app:proof}. The theorem needs the architectural form of causality, C2, which
+masked attention satisfies; under a weaker trajectory form, C1, it fails
+(\Cref{app:prop-sharp}). It also covers only context that passes through inference: an energy
+with terms that read words at other positions could condition on the prefix directly. We
+therefore give up the single global energy.
 
-Two remarks, because both are places a reader will press. First, the theorem needs causality in
-its \emph{architectural} form (C2 above); with the literal trajectory form --- ``$\Q_i^{(t)}$,
-as a function of the words, does not depend on $w_j$ for $j>i$'' --- it is false, and
-\Cref{app:proof} gives the counterexample: a polynomial energy on two binary positions whose
-acausal coefficient is tuned to vanish at every state the dynamics can reach. C2 is what masked
-attention satisfies for all parameters and all inputs, and it is what anyone means by a causal
-architecture. Second, the theorem is about context \emph{mediated by inference}. An energy
-allowed to contain word-nonlocal terms can be causal and contextual at once, by conditioning on
-the prefix directly and bypassing inference altogether; excluding that is exactly the scope of
-the word-locality assumption.
-
-Causality and contextuality are what the model is for, so the single global energy is what we
-give up.
-
-\begin{remark}[Never formed, not deleted]
+\begin{remark}[The anti-causal term]
 \label{rmk:never-formed}
-Building the symmetric model and then deleting the anti-causal contribution by hand gives a
-different object from building a model in which that contribution never exists: the first is not
-the gradient field of any energy, and \Cref{thm:trilemma} says no repair of it can be. This
-distinction is what \Cref{sec:chain} implements and what \Cref{sec:exp-correctness} tests.
+Deleting the anti-causal contribution from the symmetric model gives a field that is not the
+gradient of any energy, and by \Cref{thm:trilemma} no repair of it can be. In the chain below,
+the factor in which position $i$ heads a later word $j$ lives inside
+$p(\Zv{j}, \Hvar{j} \mid z_{\prefix{j}})$, where $z_i$ is a conditioning value, so that
+contribution never exists.
 \end{remark}
 
 \subsection{A directed chain of conditional CRFs}
@@ -90,15 +61,12 @@ distinction is what \Cref{sec:chain} implements and what \Cref{sec:exp-correctne
 
 \begin{figure}[t]
 \centering
-% Laid out at fixed millimetre offsets; scaled to the column so that adjusting the panels can
-% never push it into the margin again.
-\resizebox{\columnwidth}{!}{\input{figures/fig1_factor_graph}}
-\caption{The same factor graph in its two conditioning patterns, $\seqlen=3$. Shaded nodes are
-observed. \textbf{(a)} Encoder: every word variable is clamped, arcs are undirected, and the
-model is that of \citet{wu2023probabilistic}. \textbf{(b)} Decoder at slot $t=3$: the prefix
-labels are frozen conditions (boxed), arcs reach backwards only, and the word variable $\Wv{3}$
-is \emph{unclamped} --- its posterior is the next-token distribution. The factors and their
-parameters are identical in the two panels; only what is conditioned on differs.}
+\resizebox{0.76\columnwidth}{!}{\input{figures/fig1_factor_graph}}
+\caption{The same factor graph in its two conditioning patterns ($\seqlen=3$); shaded nodes are
+observed. (a) Encoder: every word is clamped and arcs are undirected, as in
+\citet{wu2023probabilistic}. (b) Decoder at slot $t=3$: prefix labels are frozen conditions
+(boxed), arcs point backwards, and the unclamped word $\Wv{3}$ carries the next-token
+distribution. Factors and parameters are the same in both panels.}
 \label{fig:factor-graph}
 \end{figure}
 
@@ -119,23 +87,17 @@ the realised prefix labels $z_{\prefix{i}}$:
 %
 with head domain $\Dep{i} = \{\textsc{root}, 1, \dots, i-1\}$, arc score
 $\tau^{(c)}_a(j) = \Tfac{c}_{a, z_j}$ for $j<i$, and $\tau^{(c)}_a(\textsc{root}) = \rfac{c}_a$ a
-learned root column. The joint over the sentence is the chain-rule product
+learned root column. The joint is the chain-rule product
 $p(z, h \mid w) = \prod_i p(z_i, h_i \mid z_{\prefix{i}}, w_{1:i})$, a valid probability model by
-construction. The root column makes $i=1$ well posed --- the first word attends to \textsc{root}
-with probability one --- so the attention sink is part of the model rather than bolted on.
-
-\paragraph{The anti-causal term is not born.}
-In a directed model the factor in which position $i$ serves as the head of a later word $j$
-lives inside $p(\Zv{j}, \Hvar{j} \mid z_{\prefix{j}})$, a conditional in which $z_i$ is a
-conditioning value and not an inference variable. The local normaliser runs over
-$(\Zv{j}, \Hvar{j})$ only, so no backward coupling arises from it either. \Cref{thm:trilemma} is
-respected rather than contradicted: there is no single global energy here, and by the theorem
-there cannot be.
+construction, and, as \Cref{thm:trilemma} requires, there is no single global energy. The root
+column gives the first word something to attend to, much as a beginning-of-sequence token does
+in a transformer.
 
 \paragraph{Inference is variational filtering.}
-Process $i = 1,\dots,\seqlen$, maintaining frozen filtering marginals
+We process $i = 1,\dots,\seqlen$ and keep frozen filtering marginals
 $\qbar{j} \approx p(\Zv{j} \mid w_{1:j})$ for $j<i$. Because the log-potential is linear in the
-one-hot encoding of $z_j$, the expected log-conditional is exact at the potential level:
+one-hot encoding of $z_j$, its expectation under $\qbar{j}$ is obtained by substituting
+$\qbar{j}$ for that encoding:
 %
 \begin{equation}
 \label{eq:contract}
@@ -143,7 +105,7 @@ one-hot encoding of $z_j$, the expected log-conditional is exact at the potentia
     = \textstyle\sum_b \qbar{j}(b)\, \Tfac{c}_{a,b} =: \Bfac{c}_{j,a}.
 \end{equation}
 %
-Step $i$ is therefore exact mean-field inference on a small CRF with unary $\Sfac_{w_i,\cdot}$
+Step $i$ is therefore mean-field inference on a small CRF with unary $\Sfac_{w_i,\cdot}$
 and binary factors $\exp(\Bfac{c}_{j,a})$, with updates
 %
 \begin{align}
@@ -155,44 +117,28 @@ and binary factors $\exp(\Bfac{c}_{j,a})$, with updates
   \mathcal{G}_i(a) &= \textstyle\sum_c\sum_{j\in\Dep{i}} \QH{i}{c}(j)\, \Bfac{c}_{j,a}.
 \end{align}
 %
-Once $\Tfac{c}$ is decomposed as $\Ufac{c}\Vfac{c}{}^{\top}$ this is masked scaled dot-product
-attention verbatim: the query $\QZ{i}\Ufac{c}$ comes from the current token's evolving state,
-and the keys $\qbar{j}\Vfac{c}$ come from frozen prefix states. \emph{Keys and values are the
-same object.} The KV cache is a consequence of freezing the prefix rather than an engineering
-trick, and three properties of the encoder's correspondence improve: the factor of two from
-symmetrisation disappears; no symmetry assumption on $\Tfac{c}$ is needed, so this is a
-genuinely directed dependency model rather than a link-grammar-style undirected one; and the
-excluded diagonal is unproblematic because the re-injected unary plays the residual role.
-
-\paragraph{Frozen forward, not frozen backward.}
-\emph{Frozen} means constant with respect to step $i$'s inference problem, not detached in
-autodiff. Training gradients flow backwards through $\Bfac{c}_{j,\cdot}$ into $\qbar{j}$ and
-through the whole prefix computation, exactly as they do through cached activations in a causal
-transformer. Forward causality is what defines a decoder; backward gradient flow is what trains
-it, and it is how $\Sfac$ is trained in both of the roles \Cref{sec:output} gives it.
+With $\Tfac{c}=\Ufac{c}\Vfac{c}{}^{\top}$ this is masked scaled dot-product attention: the query
+$\QZ{i}\Ufac{c}$ comes from the current position and the keys $\qbar{j}\Vfac{c}$ from frozen
+prefix states, so the key--value cache follows from freezing the prefix. Frozen means constant
+for step $i$'s inference problem, not detached in automatic differentiation: training gradients
+flow through $\Bfac{c}_{j,\cdot}$ into the prefix computation, as through cached activations in
+a causal transformer, and this is how $\Sfac$ is trained in both of its roles. This affects only
+parameter learning: in the forward pass no belief at a position depends on a later word
+(\Cref{app:validation}).
 
 \subsection{The output mechanism}
 \label{sec:output}
 
-This is the part of the construction we most want checked, and we present it as such.
-
-\paragraph{The design we rejected.}
-The obvious way to obtain next-token logits is to project $\QZ{t}$ through a fresh
-$\nlab \times |\Vocab|$ matrix and train with shifted targets. Three objections, all fatal. Such
-a matrix corresponds to no factor in the graph, so the prediction would leave the model without
-traversing it. $\QZ{t}$ is the posterior over the label of an \emph{already-known} word,
-conditioned on $w_t$ through its own unary, so it answers ``what is the category of this known
-word'', not ``what comes next''. And the arc factor connects the label of a word to the label of
-its \emph{head}, never to the label of the next position, so no path in the graph leads from
-$\Zv{t}$ to the identity of $w_{t+1}$. We report the rejected design because rejecting it is
-what forced the mechanism below.
-
 \paragraph{Unclamping the word variable.}
-The repair is strongly constrained by the graph: the only factor touching a word variable is the
-word--label factor, and the only factors touching a label are that one and its arcs, so any
-graph-faithful route from prefix to vocabulary must be
-$\qbar{\prefix{t}} \xrightarrow{\ \text{arcs}\ } \Zv{t} \xrightarrow{\ \Sfac\ } \Wv{t}$. Promote
-each word to a variable and the chain becomes a joint over words,
+We call the position whose word is being predicted the \emph{slot}. A new
+$\nlab\times|\Vocab|$ projection of $\QZ{t}$ would give next-token logits, but it would
+correspond to no factor, $\QZ{t}$ describes the word already observed at $t$, and no factor
+links $\Zv{t}$ to the next word, since arcs connect a label only to its head's label. The only
+factor touching a word variable is the word--label factor, and the only factors
+touching a label are that one and its arcs, so any route from prefix to vocabulary that stays in
+the graph must be
+$\qbar{\prefix{t}} \xrightarrow{\ \text{arcs}\ } \Zv{t} \xrightarrow{\ \Sfac\ } \Wv{t}$. Making
+each word a variable turns the chain into a joint over words,
 $p(w,z,h) = \prod_t p(\Wv{t}, \Zv{t}, \Hvar{t} \mid z_{\prefix{t}})$, with step conditional
 %
 \begin{equation}
@@ -207,42 +153,34 @@ $p(w,z,h) = \prod_t p(\Wv{t}, \Zv{t}, \Hvar{t} \mid z_{\prefix{t}})$, with step 
 \end{aligned}
 \end{equation}
 %
-No factor is added and no parameter is created. The unary $\exp(\Sfac_{w_t,\Zv{t}})$ of
-\Cref{sec:recap} \emph{always was} the binary factor $\exp(\Sfac_{\Wv{t},\Zv{t}})$ with $\Wv{t}$
-clamped to the observed word; making it latent unclamps a factor rather than adding one.
-Next-token prediction is the posterior over a variable the model already had.
+No factor or parameter is added: the unary $\exp(\Sfac_{w_t,\Zv{t}})$ of \Cref{sec:recap} is
+the binary factor $\exp(\Sfac_{\Wv{t},\Zv{t}})$ with $\Wv{t}$ clamped to the observed word.
 
 \paragraph{Consequences.}
-Three properties follow, and they are consequences rather than design choices.
-\textbf{(i) Tying is forced.} The step conditional contains exactly one word--label factor, and
-the same $\Sfac$ mediates whether one conditions on $\Wv{t}{=}w_t$ or predicts it. Two matrices
-for the two roles would be two factors on the same pair, and
-$\exp(\Sfac_{w,a})\exp(\Sfac'_{w,a}) = \exp((\Sfac{+}\Sfac')_{w,a})$ collapses back to one.
-Untying is not a hyperparameter; it is a different model.
-\textbf{(ii) The output bias is the word unary.} $\bfac$ is a learned unigram potential on
-$\Wv{t}$ and enters the logits as an additive per-word constant --- the bias of a language-model
-head, as a factor. Setting $\bfac \equiv 0$ drops it.
-\textbf{(iii) One model, two conditioning patterns.} The observed-mode energy is the
-predictive-mode energy with $\QW{t}$ clamped to $\delta_{w_t}$; encoding and decoding are not two
-models (\Cref{fig:factor-graph}).
+\textit{(i) Tying is forced.} The step conditional has one word--label factor, used both to
+condition on $\Wv{t}{=}w_t$ and to predict it. Separate matrices for the two roles would be two
+factors on the same pair of variables, and
+$\exp(\Sfac_{w,a})\exp(\Sfac'_{w,a}) = \exp((\Sfac{+}\Sfac')_{w,a})$ collapses them into one.
+Untying gives a different model.
+\textit{(ii) The output bias is the word unary} $\bfac$, a per-word constant; in our
+experiments it is fixed to the log unigram frequency of the training split.
+\textit{(iii) One model, two conditioning patterns.} We call the pattern in which $\Wv{t}$ is
+clamped the \emph{observed mode} and the one in which it is latent the \emph{predictive mode}.
+The observed-mode energy is the predictive-mode energy with $\QW{t}$ clamped to $\delta_{w_t}$
+(\Cref{fig:factor-graph}).
 
 \subsection{Inference at a slot, and the exact readout}
 \label{sec:inference}
 
-Fix slot $t$ with the prefix frozen and contracted into $\Bfac{c}_{j,a}$ by \Cref{eq:contract}.
-The live variables are $\QW{t}$, $\QZ{t}$ and $\{\QH{t}{c}\}$; the updates of
+At slot $t$, with the prefix frozen and contracted by \Cref{eq:contract}, the updates of
 \Cref{eq:update-H,eq:update-Z} gain a word update
 $\QW{t}(w) \propto \exp\big(\tfrac{1}{\lamW}[\bfac_w + \sum_a \QZ{t}(a)\Sfac_{w,a}]\big)$, whose
-softmax \emph{is} the language-model output layer. Initialisation follows the same rule as every
-other variable --- each starts from its own unary-type factors --- giving
-$\QW{t}^{(0)} \propto \exp(\bfac)$ and hence a fixed learned query
-$\tilde{s}_a = \sum_w \QW{t}^{(0)}(w)\,\Sfac_{w,a}$, the prior-frequency-weighted mean embedding.
-That is the \textsc{[mask]} token of masked language modelling, or the learned query embedding of
-two-stream attention, derived rather than invented.
+softmax is the language-model output layer. The word variable starts from its unary, so the
+initial query is a prior-weighted mean embedding that plays the role of a \textsc{[mask]} token
+(\Cref{app:full-updates}).
 
-We do not use that readout as the mainline. The slot's factor graph is a star centred on
-$\Zv{t}$ --- edges $\Wv{t}\!-\!\Zv{t}$ and $\Hv{t}{c}\!-\!\Zv{t}$ --- hence a tree, so
-sum--product is exact and available in closed form.
+The slot's factor graph is a star centred on $\Zv{t}$, with edges $\Wv{t}\!-\!\Zv{t}$ and
+$\Hv{t}{c}\!-\!\Zv{t}$, hence a tree, so sum--product is exact and has a closed form.
 
 \begin{proposition}
 \label{prop:exact-readout}
@@ -254,62 +192,33 @@ For the slot conditional of \Cref{eq:unclamp} with the prefix frozen,
   \log \readout{t}(a) &= \textstyle\sum_{c=1}^{\nchan} \LSE_{j \in \Dep{t}} \Bfac{c}_{j,a},
 \end{aligned}
 \end{equation}
-with the log-sum-exp seeded at $j=\textsc{root}$ by $\rfac{c}_a$.
+with the log-sum-exp seeded at $j=\textup{\textsc{root}}$ by $\rfac{c}_a$.
 \end{proposition}
 
-Two things about this form matter. It is a \emph{mixture of softmaxes} with $\nlab$ fixed
-components and context-dependent weights, so it escapes the rank-$\nlab$ constraint that the
-mean-field readout $\exp\E_{\QZ{t}}[\Sfac_{w,\cdot}]$ suffers by Jensen's inequality
-(\Cref{sec:cmp-readout}). And along the sequence $\Dep{t}$ grows by one position per step, so
-\Cref{eq:exact-readout} is a causal prefix log-sum-exp: one \texttt{logcumsumexp} scan,
-$O(\seqlen\nlab\nchan)$, fully parallel over positions, leaving the layer-parallel training
-schedule intact and removing the predictive inner loop entirely. Two costs are real and we state
-them rather than bury them: the $|\Vocab|\times\nlab$ readout is a log-sum-exp rather than a
-matmul --- the same FLOPs with worse hardware constants, chunked over the vocabulary like a fused
-cross-entropy --- and the optimisation behaviour of log-sum-exp pooling gradients at
-language-model scale is untested. \Cref{sec:exp3} is where we test it.
+This is a mixture of $\nlab$ fixed softmax components with context-dependent weights, so it
+escapes the rank constraint of the mean-field readout $\exp\E_{\QZ{t}}[\Sfac_{w,\cdot}]$
+(\Cref{sec:cmp-readout}). Since $\Dep{t}$ grows by one position per step, one
+\texttt{logcumsumexp} scan computes it in $O(\seqlen\nlab\nchan)$, with no predictive inner loop
+(\Cref{app:exact-derivation}). Every step is then valid inference in the declared model: mean
+field on the chain, where exact inference is intractable, and exact sum--product on the slot.
 
-\paragraph{Every step is valid inference.}
-Adopting \Cref{eq:exact-readout} changes what we claim in letter though not in substance: from
-``every update is a softmax of a gradient of a per-step energy'' to \emph{every step is valid
-inference in the declared model} --- mean field where exactness is impossible (the chain), exact
-sum--product where the subgraph is a tree (the slot). No operation between corpus and loss fails
-to be a message through a declared factor.
-
-\subsection{Extensions and variants}
+\subsection{Variants}
 \label{sec:variants}
 
-\paragraph{Distance.}
-The clipped distance-sensitive arc score of \citet{wu2023probabilistic} carries over with only
-its $i-j>0$ half, so there are $\clip+1$ buckets rather than $2\clip+1$ --- half the parameters.
-\Cref{sec:exp-ablations} measures what the buckets buy.
+The clipped distance-sensitive arc score of Wu and Tu keeps only its $i-j>0$ half, with
+$\clip+1$ buckets. All reported numbers use a layer-parallel schedule, which updates every
+position from the previous iteration under a strictly lower-triangular mask: a depth-$\niter$
+causal transformer with shared parameters (\Cref{app:serial}).
 
-\paragraph{Update schedule.}
-Serial left-to-right with an inner loop per slot gives the clean filtering story; layer-parallel
---- iteration $t$ computes all $\QZ{i}^{(t)}$ from $\{\QZ{j}^{(t-1)}\}_{j<i}$ under one strict
-lower-triangular mask --- has the computation graph of a depth-$\niter$, parameter-shared causal
-transformer. Both are causal, and all reported numbers use the layer-parallel schedule.
+Two variants add variables. Wu and Tu propose global variables as an in-graph substitute for
+the feed-forward block but report no results for them. A single-split global variable $\Gv{t}$, added as a leaf
+off $\Zv{t}$, keeps the slot a tree and the model causal; its mean-field update is the
+feed-forward-like operator $\sigma(q\Bglob^{\!\top}\!)\Bglob$ (\Cref{app:globals}).
+\emph{Factored labels} replace the label variable by $\ncomp$ variables of width $\nlab/\ncomp$
+that share $\Wv{t}$; the arc parameters fall with $\ncomp$ (\Cref{app:factored}). The slot is
+still a tree, and the exact readout becomes a product of $\ncomp$ mixtures. Under the mean-field
+readout the logits stay affine in the concatenated beliefs, so at a fixed total label width we
+predict that factoring helps only through the exact readout.
 
-\paragraph{Global variables.}
-\citet{wu2023probabilistic} propose global variables in their Appendix B.3 as an in-graph
-substitute for the missing feed-forward structure, and never test them. Adding a single-split
-global variable $\Gv{t}$ as one more leaf off $\Zv{t}$ keeps the slot a tree, keeps causality,
-and contributes a multiplicative term to $\readout{t}$; its mean-field update is exactly the
-feed-forward-like operator $\sigma(q\Bglob^{\!\top}\!)\Bglob$. We treat it as a measured
-variable (\Cref{sec:exp-ablations}), not an assumption.
-
-\paragraph{Factored labels.}
-The strongest graph-faithful widening replaces one label variable of width $\nlab$ by $K$ label
-variables of width $\nlab/K$ sharing $\Wv{t}$, with each channel assigned a child and a head
-component. The parameter count is unchanged, the slot is still a tree, and the exact readout
-becomes a \emph{product} of $K$ mixtures --- a strictly richer family at the same width. Under
-the mean-field readout it buys nothing, since the logits stay affine in the concatenated
-beliefs; the gain, if any, exists only through \Cref{eq:exact-readout}. That is a sharp
-prediction and \Cref{sec:exp-factored} tests it.
-
-\paragraph{What is not allowed.}
-Expressivity in this model class is bought by adding variables and factors, never by adding
-maps. A multilayer perceptron from $\QZ{t}$ to the logits, a context-dependent $\Sfac$, a
-nonlinearity applied to $\qbar{}$ between steps, or untied per-iteration parameters would each
-reintroduce a neural head in probabilistic clothing. Further variants are in
-\Cref{app:variants}.
+Other extensions must also add variables: a multilayer perceptron on $\QZ{t}$ or untied
+per-iteration parameters would add a map with no factor behind it.

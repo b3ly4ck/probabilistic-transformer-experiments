@@ -74,6 +74,40 @@ Figures, mirroring their three:
 
 ## Recent changes
 
+- **2026-10-01** — **condensed to submission length and copy-edited.** The PDF went from 44 pages
+  (main body to p. 22) to **28 pages**: main body (Introduction to Conclusion) ends on the last
+  line of **p. 8**, Limitations and References start on p. 9, appendices A–H run p. 11–28.
+  Main-body words (`make words`) went from 13,440 to about 5,000. Done by a multi-agent pass:
+  plan with a claims inventory → four writers → integrator → three reviewers (fidelity,
+  language, hostile ACL reviewer; 112 findings) → final editor (88 applied, rejections logged).
+  - Every §4 result stays, as a headline in §4 with the grid and caveats in Appendix H
+    ("Additional Results", formerly G "Full Experimental Grids"). The reproducibility, mechanism,
+    ladder and width figures, the total-parameter scaling panel and the trio exponent table moved
+    to H. The main body keeps Figures 1–3 and Table 1.
+  - Number audit (`numaudit.py`, workflow scratchpad): every `numbers.tex` macro from the
+    original is still used. The 18 literals that disappeared are duplicates, project history or
+    section numbers of the internal note. None of the 6 new literals is invented. No generated
+    file (`figures/numbers.tex`, `figures/table_*.tex`, PNGs) was edited.
+  - Project-history narrative removed ("our earlier work", "the note", withdrawn figures,
+    registered predictions). The drafting `\NOTE`s and comments are gone, `\draftfalse` is set,
+    and the `\thanks` keeps only "Corresponding author."
+  - **Corrections checked against the run records in `/public/home/belyack/work/pt`:**
+    - `b` is fixed to the log unigram of the training split, not learned
+      (`experiments/sweep.py:237`, `freeze_b=True`).
+    - Model configurations are now stated (baselines 4 layers / 4 heads; PT h=2, T=3, γ=3, ρ=2).
+    - The named grids ran 6,000 steps; the reproducibility runs were on an A40 vs a TITAN RTX.
+    - The third d=64 no-global seed is 215.1. The prefix-ablation KL is "below 1e-8" instead of
+      "exactly 0". The root-mass figure is now the raw pair 0.0001 vs 0.125.
+    - The entropy floor is 0.93 (table minimum 0.929); the draft also said 0.94.
+    - WikiText-2's vocabulary is "about three times" PTB's; the draft said both twice and three
+      times.
+    - The `yang2022tensor` venue is corrected to NeurIPS 2021.
+    - Six verified bib entries were added: Press & Wolf 2017, Chelba & Jelinek 1998, Dyer et al.
+      2016, Sartran et al. 2022, Shen et al. 2019, Mikolov et al. 2012.
+  - Total length is 28 pages, not the parent's 22. The overrun is entirely Appendix H, which
+    holds results; cutting further means dropping results.
+  - Open for the author: co-author consent; code/data availability and compute statements.
+
 - **2026-08-09** — restructured to the Wu & Tu skeleton: ACL style file, 7 sections plus
   Limitations, appendices A–F, one results table, new §3. The nine sections of the first
   scaffold were folded into §2 and §3; `02_background`, `03_impossibility`, `04_construction`,

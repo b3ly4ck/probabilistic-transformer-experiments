@@ -1,20 +1,14 @@
-% Wu & Tu's abstract is a single paragraph of about 150 words and ends on the framing rather
-% than on a number. Match both. Written to the measured result; revise it, do not extend it.
-
-The probabilistic transformer of \citet{wu2023probabilistic} models contextual word
-representation as posterior inference in a conditional random field over dependency structure,
-and its mean-field inference procedure turns out to resemble a transformer encoder. That model is
-an encoder only. We derive its autoregressive counterpart. Causality, a single global energy and
-contextuality cannot hold together, so we replace the single field by a directed chain of
-conditional random fields in which the prefix enters each step as a frozen condition and the
-anti-causal term is never formed. Promoting the word from an observed constant to a latent
-variable then yields a language-model head with no parameter outside the factor graph; tied
-embeddings, the output bias and a mixture-of-softmaxes readout follow as consequences, the last
-in closed form because the per-position subgraph is a tree. Empirically, the model's sensitivity to its own width is not
-diffuse but has a mechanism in the calibration of a single attention temperature; correcting it
-roughly doubles the label-set sizes at which the model trains at all, and the correction carries
-to a second corpus with no retuning. On the one parameter
-range where all three are measured, the fitted scaling exponents are $\ExpTriTf$ for a causal
-transformer, $\ExpTriLp$ for a looped one and $\ExpTriLow$ for the causal PT, which puts most of
-the
-model's shallow slope on weight sharing and the rest on the syntactic structure itself.
+The probabilistic transformer of \citet{wu2023probabilistic} derives a transformer encoder from
+mean-field inference in a conditional random field over latent syntactic labels and dependency
+heads. We derive its autoregressive counterpart. Because causality, a single global energy and
+contextual dependence cannot hold together, we use a directed chain of conditional random fields
+in which the prefix enters each step as a frozen condition. Treating the next word as a latent
+variable of the same graph gives a language-model head with no parameter outside the graph, with
+tied embeddings and a closed-form mixture-of-softmaxes readout. At matched non-embedding budget
+on the Penn Treebank, its perplexity is $\MBMinRatioGpt$ to $\MBMaxRatioGpt$ times that of a
+causal transformer. Much of its sensitivity to width comes from a miscalibrated attention
+temperature; correcting it with a normalisation outside the factor graph roughly doubles the
+usable label-set size and transfers to a second corpus without retuning. On the range where all
+three models are measured, the scaling exponents are $\ExpTriTf$ for a causal transformer,
+$\ExpTriLp$ for a looped transformer and $\ExpTriLow$ for our model, so most of its shallower
+slope already appears with weight sharing alone.

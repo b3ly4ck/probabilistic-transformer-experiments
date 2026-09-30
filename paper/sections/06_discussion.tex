@@ -1,156 +1,24 @@
 \section{Discussion}
 \label{sec:discussion}
 
-% Wu & Tu have a Discussion separate from their Conclusion, and it is where the honest
-% statements live. We inherit both the framing and the section: it gives the concessions a
-% place of their own, so they read as scope rather than as apology buried in a results
-% paragraph.
+\paragraph{What limits the model.}
+At matched width the causal PT's readout has a transformer's bottleneck and its state has the
+same width, so what remains is the dynamics. The
+richer exact readout trains worse (\Cref{sec:exp3}), and in a one-seed sweep more iterations did
+not help (\Cref{sec:exp-depth}). This suggests that optimisation, not expressivity, is the
+limit at this scale. The exact readout's penalty falls as the label variable is split
+(\Cref{sec:exp-factored}): with one label variable it may have had little extra to express.
 
-\paragraph{What this paper claims.}
-The construction is the contribution we are most confident of: a causal probabilistic
-transformer exists, it is forced rather than chosen at every step where a choice looked
-available, and next-token prediction in it is inference over a variable the model already had.
-Weight tying, the language-model bias, the \textsc{[mask]}-style query and a
-mixture-of-softmaxes readout are consequences of that, not additions to it. What we do not
-claim is a perplexity win. Across the budgets we measure, the model is a factor of $\MBMinRatioGpt$ to
-$\MBMaxRatioGpt$ behind a causal transformer on this corpus, and per parameter it gains less
-than either baseline on every range where the comparison can be made. Where the exponents put
-the cause is worth being exact about: on the one range where all three are measured, sharing
-parameters across depth accounts for most of the shallow slope --- $\ExpTriTf$ against
-$\ExpTriLp$ --- and the syntactic structure for the rest, $\ExpTriLp$ against $\ExpTriLow$. The structure costs something beyond the sharing,
-and it is the part this model class is answerable for. That is a smaller gap than we reported
-before and it is arrived at honestly; it is not a win, and we have tried not to write it as one.
-
-\paragraph{The bottleneck is not where it looks.}
-It is tempting to read the model as bottlenecked by its $\nlab$ discrete labels, and to expect a
-gap that no amount of tuning removes. \Cref{prop:readout} says otherwise: the mean-field
-readout's constraint is the ordinary softmax bottleneck \citep{yang2018breaking} at
-$\nlab = d_{\text{model}}$, no worse in kind or degree than a transformer's own head at matched
-width, and the exact readout escapes even that at zero parameter cost. The per-position state
-is one point of $\Delta^{\nlab-1}$ against a transformer's $\R^{d_{\text{model}}}$ --- the same
-width, with the simplex geometry as the genuine difference. What is left is the \emph{dynamics}:
-whether attention-only iterations with tied parameters and bounded states can put as much usable
-information into those $\nlab$ numbers as a transformer stack puts into $d_{\text{model}}$. Our
-switch ladder is built to answer exactly that question rather than argue about it, and it puts
-the cost squarely there: every difference in the \emph{static} description of the model --- tied
-key and value, no query or output projection, relative positions --- is free, while the two that
-concern what the state \emph{is} and how it moves are not.
-
-Pricing each difference twice, rather than once, turns out to be what makes the ladder say
-anything. The properties that are free to \emph{adopt} are not free to \emph{remove}: inside the
-all-PT rung, restoring nine of the ten transformer properties makes the model worse, three of
-them by more than two hundred perplexity, and the tenth is neutral
-(\Cref{sec:exp-switches}). A construction whose parts are individually cheap and jointly
-load-bearing is not a transformer with substitutions, and the two columns together are the only
-way we found to see that.
-
-Two of our results sharpen that into something a successor should take seriously. The exact
-readout is a strictly richer family than the mean-field one at zero parameter cost, and training
-under it is a hundred perplexity \emph{worse} (\Cref{sec:exp3}); and more mean-field iterations
-make the model worse, so at this scale the best version of it runs one
-(\Cref{sec:exp-depth}). Both say the same thing from different directions --- that the limit
-here is not what the family can express but what this objective and this optimiser can reach
-inside it --- and both point away from expressiveness arguments and towards the optimisation of
-the inference loop as the thing to fix next.
-
-The factored-label experiment adds the one piece of evidence that cuts the other way, and it is
-worth taking seriously for that reason. The exact readout's penalty is not a constant: it falls
-from $52$ perplexity at $K=1$ to nothing at $K=4$ (\Cref{sec:exp-factored}). Read with the
-paragraph above, that suggests the readout was not being punished for being richer but for
-having nothing extra to be rich \emph{about} --- with one label variable the product of mixtures
-is a single mixture, and splitting the variable is what gives it something to express. If that
-is right, the two most promising directions in this paper are the same direction: factor the
-label variable, and use the readout the graph actually prescribes.
-
-\paragraph{Hyperparameters are the practical obstacle, and they are analysable.}
-The most useful thing we can report to anyone who wants to build on this is that the causal
-model's sensitivity to width is not diffuse. It has a mechanism --- a head temperature
-calibrated for a belief distribution the model leaves in the first few hundred steps
-(\Cref{sec:temperature}) --- and correcting it revives label-set sizes at which the source
-parameterisation sits exactly on the unigram baseline. \citet{kuang2026scaling} reach a
-comparable conclusion for the encoder by a different route, transporting maximal update
-parametrisation \citep{yang2022tensor} to it and scaling to 0.4B parameters, where they report
-the probabilistic transformer \emph{ahead} of a standard one at matched budget. Read together,
-the two results say that the small-scale gaps reported for this model class have been at least
-partly artefacts of tuning, and that the interesting question is which parameterisation makes
-each variant transfer.
-
-It is also worth saying which of this model's knobs turned out to matter, since a reader
-inheriting seven of them where a transformer has one will want to know where to spend a budget.
-\textbf{Four are decisive}: the head temperature (\Cref{sec:exp-width} --- the difference
-between training and sitting on the unigram), the learning rate (twenty times the source's
-value, and interacting with width), the Kruskal rank of the arc scores (better perplexity at an
-eighth of the parameters), and the label-set size itself. \textbf{One is decisive in the wrong
-direction}: the iteration count, where fewer is better (\Cref{sec:exp-depth}). \textbf{The
-remaining two are unalike, and the difference is the useful part.} The $L_2$ coefficient on the
-arc scores behaves like an ordinary regulariser: a genuine interior optimum at the value the
-source already uses, gentle degradation below it, catastrophe two orders above. The
-relative-position clip does not: it is a \emph{window}, with the model dead at $\clip = 0$ and
-dead again at $\clip = 7$, and only two of the four values we ran inside it
-(\Cref{sec:exp-knobs}). Both walls of that window, and the collapse at large $L_2$, are the same
-failure as the head temperature --- the message-to-unary balance leaving the range in which the
-label update is stable. That is the generalisation we would offer a successor: the quantity to
-monitor while tuning this model is not perplexity but that balance, because perplexity is flat
-right up to the point where it is $600$. These were measured at different budgets
-and are an ordering rather than a ranking, but the ordering is the practical content of
-\citet{kuang2026scaling}'s observation restated from the decoder side: what matters are the two
-knobs that set the \emph{scale} of the messages and the one that sets their \emph{rank}, and
-those are exactly the ones the source fixes by a rule that does not transfer.
-
-\paragraph{The missing feed-forward block is missing, and the in-graph substitute does not
-substitute.} Two of our experiments meet here and neither says this alone. The switch ladder
-prices the feed-forward block at $15.1$ perplexity in an otherwise ordinary decoder --- the
-largest cost of any single difference that is not a cliff. The global variables of
-\citet{wu2023probabilistic}'s Appendix B.3 are the in-graph replacement for exactly that block,
-and what they buy is not capacity: at a width where the model trains without them they are worth
-nothing, and at a width where it barely does they change which parameterisations are stable
-without making the model stable. In every cell of both grids the head posterior stays within
-$7\,\%$ of uniform, including where its message exceeds the word unary. The one thing in that
-experiment worth carrying forward is not about the head at all: a semi-orthogonal draw for
-$\Bglob$ gives a seed standard deviation of $0.6$ where a Gaussian one gives $10.2$
-(\Cref{sec:exp-ablations}). Maximal update parametrisation
-\citep{yang2022tensor} assumes a Gaussian draw, so the draw is a place where the transfer
-results this model class now rests on may not be neutral; what we can add is that on this
-evidence its effect is on variance rather than on the mean, which is the axis that has cost this
-project the most.
-A variable whose posterior is uniform is sending a constant, and a constant is not a
-feed-forward block. The mechanism behind the uniformity is a symmetry --- rows that begin close
-together receive identical gradients and a shared $L_2$ keeps them there --- which is a
-statement about the parameterisation and not about the construction, so we do not read it as a
-proof that no in-graph feed-forward substitute can work. What we can say is that the one the
-source proposes does not close the gap it was proposed for, that the gap is real and now
-priced, and that closing it is the most concrete piece of unfinished business this model class
-has.
-
-\paragraph{A repair that leaves the graph.}
-We report one uncomfortable thing plainly. The temperature correction that works best is a
-standardisation of the head logits, and that is not a message through a factor: it is a
-normalisation applied outside the update equations, and it forfeits the property that every
-update is the centred gradient of a fixed per-slot free energy. The version that stays inside
-the construction --- a temperature that tracks the belief norm, and so equals the source's
-choice exactly at the uniform belief --- helps, but less. We take this as informative rather
-than embarrassing. It prices one specific consequence of the discipline this model class
-imposes, and it is the same price a transformer pays knowingly when it puts a layer
-normalisation in front of its attention.
-
-\paragraph{The interpretation is real and it is parameterisation-dependent.}
-Probing trained models directly (\Cref{app:interpretability}) gives the clearest statement of
-what this construction buys, and the clearest warning about how to read such statements. In the
-configuration \Cref{sec:exp-width} selects, the head posterior attaches at a mean distance of
-$11.1$ positions against $17.0$ for uniform attention --- a genuine preference for nearby heads
---- and the prior-to-posterior divergence at a slot correlates with the surprisal of the word
-observed there at $r = 0.47$, which is the qualitative content of the construction's own
-contraction bound. In the configuration our earlier work selected, the same probe finds the
-attention collapsed onto the previous word and the correlation at $r = 0.16$. Same model class,
-same corpus, opposite readings. Interpretability results from this family should be quoted with
-the parameterisation that produced them, and we would not have known that without running the
-probe twice.
-
-\paragraph{Extensions.}
-Three directions follow from what we measured rather than from what we hoped: factored labels
-with the exact readout, which is the strongest graph-faithful head available and whose gain is
-predicted to exist only there (\Cref{sec:exp-factored}); continuous or vector-valued label
-variables, which dissolve the scale tension at the cost of the discrete interpretability that
-is the point; and fixed-lag smoothing, a graded in-graph repair of the one evidence term the
-frozen prefix drops. Whether any of them is worth its complexity is decided by measurement, and
-we have tried to leave the measurements rather than the conclusions.
+\paragraph{Tuning and the feed-forward block.}
+Much of the width sensitivity has one mechanism, the head temperature; the ceiling that remains
+after correcting it is unexplained (see Limitations). The failures at a large $L_2$
+coefficient, at $\clip=7$ and under the original temperature share one cause: the ratio of the
+arc message to the word unary leaves the range in which the label update is stable
+(\Cref{app:res-knobs}); at $\clip=0$ the model cannot see distance. This ratio is worth
+monitoring while tuning, because perplexity stays flat until it jumps. The head temperature,
+learning rate, rank and label-set size matter most, and fewer iterations are better (an ordering
+from different budgets, not a ranking).
+The feed-forward block is the costliest single
+difference on the switch ladder that still trains, and the global variables proposed as its
+in-graph substitute do not close the gap because their posterior stays near uniform, a symmetry
+of the parameterisation that does not rule out other substitutes (\Cref{app:grid-globalhead}).

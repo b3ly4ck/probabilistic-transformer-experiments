@@ -1,86 +1,66 @@
 \section{Implementation Validation}
 \label{app:validation}
 
-% No counterpart in Wu & Tu. It exists because two of these checks test the derivation rather
-% than the code, and because a causal model that is silently non-causal produces entirely
-% plausible numbers. Every figure below is produced by running the checks
-% (`python -m experiments.validation_report`), not retyped from a test file: an appendix and a
-% test suite that drift apart is worse than no appendix.
+Two of the checks below, the brute-force comparison and the free-energy test, test the
+derivation; the rest test the software. All of them run the
+real code path on small tensors, in double precision wherever a precision claim is made.
 
-Two of the checks below test the derivation; the rest test the software. All of them execute the
-real code path on small tensors, in double precision wherever a precision claim is made, and
-none inspects source text. The figures are emitted by a single script so that this appendix
-cannot drift away from what the suite actually asserts.
-
-\paragraph{The exact readout against brute force.}
+\paragraph{Exact readout against brute force.}
 On one slot the graph is a star centred on $\Zv{t}$, hence a tree, so \Cref{eq:exact-readout}
-must equal the marginal of the slot joint computed by explicit enumeration. Enumerating
-$p(\Wv{t}, \Zv{t}, \Hv{t}{1..\nchan} \mid z_{\prefix{t}})$ over every configuration --- written
-from the raw parameters with loops, calling no method of the model --- and marginalising to
-$p(\Wv{t})$ agrees with the closed form to $\mathbf{6.7\times10^{-16}}$ in log-probability
-($|\Vocab|=6$, $\nlab=4$, $\nchan=2$, $|\Dep{t}|=5$, float64). This is the strongest correctness
-statement available here: it validates the factorisation, not an implementation detail of it.
-The factored-label variant is checked the same way at $K=2$, against an enumeration over
-$(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$, and agrees to $10^{-10}$; a second
-reference rebuilds the contracted arc scores by hand, which is what pins the assignment of
-channels to components --- the enumeration alone cannot see it.
+must equal the marginal of the slot joint computed by enumeration. We enumerate
+$p(\Wv{t}, \Zv{t}, \Hv{t}{1..\nchan} \mid z_{\prefix{t}})$ over every configuration, written
+from the raw parameters with loops and calling no method of the model, and marginalise to
+$p(\Wv{t})$. The result agrees with the closed form to $6.7\times10^{-16}$ in log-probability
+($|\Vocab|=6$, $\nlab=4$, $\nchan=2$, $|\Dep{t}|=5$, float64). This checks the factorisation
+itself, not only its implementation. The factored variant at $K=2$ agrees with an enumeration
+over $(\Wv{t}, \Zv{t}^{(1)}, \Zv{t}^{(2)}, \Hv{t}{1..4})$ to $10^{-10}$. A second reference
+rebuilds the contracted arc scores by hand; it pins the assignment of channels to components,
+which the enumeration alone cannot see.
 
-\paragraph{The free energy, with a mutation test.}
+\paragraph{Global variable and readout scan.}
+The same enumeration with a global variable folded in as one more leaf off $\Zv{t}$ agrees with
+\Cref{eq:global-readout}, and the \texttt{logcumsumexp} scan of \Cref{eq:mu-scan} agrees with
+slot-by-slot assembly for $\clip\in\{0,1,2,4,9\}$; both are asserted at $10^{-12}$.
+
+\paragraph{Free energy, with a mutation test.}
 The per-slot free energy $\Free_t$ of \Cref{eq:slot-free-energy} must not increase along the
-inner loop, since each update is its centred gradient step. Over eleven block updates it
-decreases monotonically: $\mathbf{0}$ increases, total decrease $5.68\times10^{-3}$. This is the
-one check that tests the update \emph{equations} --- a sign error in the head update leaves every
-shape, normalisation and causality check passing --- so we exercise it against exactly that
-mutation. With the head message negated, the same eleven updates produce $\mathbf{11}$
-increases, the largest $6.5\times10^{-2}$, and the functional rises overall. The check has teeth.
+inner loop, since each update is its centred gradient step. Over eleven block updates it shows
+$0$ increases and a total decrease of $5.68\times10^{-3}$. This is the check that tests the
+update equations: a sign error in the head update would pass every shape, normalisation and
+causality check. With the head message negated, the same eleven updates give $11$ increases, the
+largest $6.5\times10^{-2}$, and the free energy rises overall.
 
 \paragraph{Causality.}
-Changing the token at position $t{+}1$ must leave the logits at every slot $\le t$
-\emph{bitwise} unchanged. It does, under both readouts and all three attention temperatures ---
-six combinations, maximum absolute difference exactly $0$, verified with an equality test rather
-than a tolerance. The check runs on CPU with a fixed seed, because on a GPU non-deterministic
-reduction order can perturb the last bit of entirely correct code and a tolerance would then be
-hiding the very thing being tested.
+Changing the token at position $t{+}1$ leaves the logits at every slot $\le t$ bitwise
+unchanged, under both readouts and all three head temperatures. Over the six combinations the
+maximum absolute difference is $0$, checked by equality and not by a tolerance. The check runs on
+CPU with a fixed seed, because non-deterministic reductions on a GPU can change the last bit of
+correct code.
 
-\paragraph{Frozen prefix, in the gradient.}
-The prefix is frozen forward and \emph{not} detached backward (\Cref{sec:chain}). Testing this
-on a detached tensor would pass unconditionally and is therefore no test at all, so the prefix
-beliefs are kept as attached leaves and the assertion is on the gradient: after
-backpropagating the loss at slot $t$, $\partial \mathcal{L}_t / \partial \qbar{j}$ is exactly
-zero for $j \ge t$ and non-zero for $j < t$.
+\paragraph{Frozen prefix in the gradient.}
+The prefix is frozen in the forward pass but not detached in the backward pass
+(\Cref{sec:chain}). A test on a detached tensor would pass trivially, so the prefix beliefs are
+kept as attached leaves. After backpropagating the loss at slot $t$,
+$\partial \mathcal{L}_t / \partial \qbar{j}$ is exactly zero for $j \ge t$ and non-zero for
+$j < t$.
 
 \paragraph{Tying.}
-$\Sfac$ appears once in the parameter list and the same tensor \emph{object} serves as the unary
-and as the output factor --- identity, not equality, since two tensors initialised alike and
-updated by the same gradient would pass an equality test while being a different model
-(\Cref{sec:output}).
+$\Sfac$ appears once in the parameter list, and the same tensor object serves as the unary and
+as the output factor (\Cref{sec:output}). The test checks identity, not equality: two tensors
+initialised alike and updated by the same gradient would be equal but would form a different
+model.
 
 \paragraph{Factored labels reduce to the flat model.}
-$K=1$ must be the model of \Cref{sec:chain} exactly. A flat state dict loads into the factored
-decoder without a missing or unexpected key, and the logits agree to
-$\mathbf{6.9\times10^{-18}}$ across both readouts and both arc-score parameterisations in
-float64. The residual is floating-point reassociation from the extra component axis, not a
-difference of layout.
+With $K=1$ the factored decoder must be the model of \Cref{sec:chain}. A flat state dict loads
+into it with no missing or unexpected key, and the logits agree to $6.9\times10^{-18}$ across
+both readouts and both arc-score parameterisations in float64. The residual is floating-point
+reassociation from the extra component axis.
 
-\paragraph{Normalisation, and the worked example.}
+\paragraph{Normalisation and the worked example.}
 Every posterior sums to one along its variable axis at every iteration (maximum deviation
 $1.2\times10^{-7}$ in float32), the logits are finite, and a single batch can be overfitted to
-near-zero loss. The numeric worked example of \Cref{app:worked-example} reproduces an
-independently derived reference digit for digit.
+near-zero loss. The worked example of \Cref{app:worked-example} matches an independently derived
+reference digit for digit.
 
-\paragraph{Reproducing these numbers.}
-Every figure and every table in this paper is generated from committed run records by one
-script, and no number in either is typed by hand; the same script regenerates them from the
-repository at any commit. Each record carries the full configuration of its cell, its validation
-and diagnostic traces, the machine it ran on and the commit that produced it. That last field is
-not bookkeeping: it is what identified the device on which our earlier result reproduces exactly
-(\Cref{sec:exp-repro}), and without it we would have concluded that a refactor had changed the
-mathematics.
-
-Two warnings for anyone comparing against these numbers. Perplexities from the undamped
-configurations of this model are not stable to the last bit --- across seeds they move by up to
-$130$, and across GPU models by $215$ --- so a difference of tens of perplexity in that region is
-not evidence of anything; we report a seed count and a device for every result and recommend the
-same. And a causal PT number is meaningless without its parameterisation: the same probe of the
-same trained model class gives opposite answers about whether it learns dependency structure
-depending on the head temperature and the arc-score rank (\Cref{app:interpretability}).
+All tables and figures are generated by one script from the run records, which store each run's
+configuration, validation and diagnostic traces, device and code version.

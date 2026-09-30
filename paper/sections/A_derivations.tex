@@ -1,18 +1,14 @@
 \section{Derivations}
 \label{app:derivations}
 
-% Mirrors Wu & Tu Appendix A, which carries the inference details the main text compresses
-% (their A.5 is where the message weights \lambda_Z, \lambda_H are justified).
-
 \subsection{Full mean-field updates}
 \label{app:full-updates}
 
-Fix a slot $t$. The prefix is frozen as $\qbar{1},\dots,\qbar{t-1}$ and contracted into the
-arc--label scores $\Bfac{c}_{j,a}$ of \Cref{eq:contract}, with
-$\Bfac{c}_{\textsc{root},a} = \rfac{c}_a$; the live variables are $\QW{t}$ on $\Vocab$,
-$\QZ{t}$ on the $\nlab$ labels, and one $\QH{t}{c}$ on $\Dep{t}$ per channel. Taking the
-negative log of the step conditional \Cref{eq:unclamp} in expectation under the product
-$\QW{t}\,\QZ{t}\prod_c \QH{t}{c}$ gives the per-slot energy
+Fix a slot $t$. The prefix is frozen and contracted into the scores $\Bfac{c}_{j,a}$ of
+\Cref{eq:contract}, with $\Bfac{c}_{\textsc{root},a} = \rfac{c}_a$. The live variables are
+$\QW{t}$ on $\Vocab$, $\QZ{t}$ on the $\nlab$ labels, and one $\QH{t}{c}$ on $\Dep{t}$ per
+channel. The expected negative log of \Cref{eq:unclamp} under their product gives, up to a
+constant, the per-slot energy
 %
 \begin{equation}
 \label{eq:slot-energy}
@@ -20,21 +16,15 @@ $\QW{t}\,\QZ{t}\prod_c \QH{t}{c}$ gives the per-slot energy
 E_t &= -\textstyle\sum_w \QW{t}(w)\,\bfac_w\\
     &\quad - \textstyle\sum_{w,a} \QW{t}(w)\,\QZ{t}(a)\,\Sfac_{w,a}\\
     &\quad - \textstyle\sum_c \sum_{j\in\Dep{t}} \sum_a
-             \QH{t}{c}(j)\,\QZ{t}(a)\,\Bfac{c}_{j,a},
+             \QH{t}{c}(j)\,\QZ{t}(a)\,\Bfac{c}_{j,a}.
 \end{aligned}
 \end{equation}
 %
-the local normaliser having contributed a constant that no derivative sees. Two features of
-\Cref{eq:slot-energy} do the work below. It is multilinear, so the partial derivative with
-respect to any one variable does not contain that variable and the coordinate step is available
-in closed form. And it is one energy per slot rather than one energy for the sentence, which is
-how \Cref{thm:trilemma} is respected rather than contradicted: the prefix enters $E_t$ only as
-the constants $\Bfac{c}_{j,a}$, while the factors in which slot $t$ serves a later slot $u>t$
-belong to $E_u$, where $\qbar{t}$ is in turn a constant and not a variable of the problem. No
-term is deleted from $E_t$ by hand; the anti-causal one is never formed, which is the
-distinction \Cref{rmk:never-formed} draws.
-
-The three gradients are, with nothing removed,
+$E_t$ is multilinear, so each coordinate step has a closed form. It is also one energy per slot.
+The prefix enters only through the constants $\Bfac{c}_{j,a}$, and the factors in which slot $t$
+serves a later slot $u$ belong to $E_u$, where $\qbar{t}$ is a constant. No term is deleted, and
+the anti-causal term is never formed (\Cref{rmk:never-formed}); this is how the construction
+respects \Cref{thm:trilemma}. The gradients are
 %
 \begin{align}
 \label{eq:grad-W}
@@ -49,8 +39,7 @@ The three gradients are, with nothing removed,
     &\quad - \textstyle\sum_c \sum_{j\in\Dep{t}} \QH{t}{c}(j)\,\Bfac{c}_{j,a}.\nonumber
 \end{align}
 %
-What inference minimises is not $E_t$ itself but $E_t$ regularised by the entropies of its three
-variables, each of them carrying its own weight,
+Inference minimises the free energy
 %
 \begin{equation}
 \label{eq:slot-free-energy}
@@ -60,12 +49,10 @@ variables, each of them carrying its own weight,
 \end{aligned}
 \end{equation}
 %
-which is the extended entropic Frank--Wolfe objective of \citet{wu2023probabilistic}, their
-Appendix~A.2, and is the ordinary mean-field free energy when all three weights equal one. Their
-Appendix~A.3 solves the resulting subproblem in closed form:
-$\min_{z\in\Delta}\langle c,z\rangle + \lambda\sum_s z_s\log z_s$ is attained at
-$z = \softmax(-c/\lambda)$. Applying it coordinate by coordinate to
-\Cref{eq:grad-W,eq:grad-H,eq:grad-Z} gives the three updates
+the extended entropic Frank--Wolfe objective of \citet{wu2023probabilistic} (their
+Appendix~A.2), which is the ordinary mean-field free energy when all three weights are one.
+Each coordinate subproblem $\min_{z\in\Delta}\langle c,z\rangle + \lambda\sum_s z_s\log z_s$ is
+solved by $z = \softmax(-c/\lambda)$ (their Appendix~A.3), which gives the updates
 %
 \begin{align}
 \label{eq:full-update-H}
@@ -81,31 +68,24 @@ $z = \softmax(-c/\lambda)$. Applying it coordinate by coordinate to
       \bfac_w + \textstyle\sum_a \QZ{t}(a)\,\Sfac_{w,a}\Big]\Big).
 \end{align}
 %
-Because $\softmax$ is unchanged by adding a constant to every coordinate, only the centred
-gradient --- its projection onto the tangent space of the simplex --- is ever read, which is why
-the constant discarded from \Cref{eq:slot-energy} is immaterial.
-\Cref{eq:full-update-H,eq:full-update-Z} are \Cref{eq:update-H,eq:update-Z} of the main text with
-the word message $\sum_w \QW{t}(w)\Sfac_{w,a}$ in place of the observed unary;
-\Cref{eq:full-update-W} is the word update, and its softmax over $\Vocab$ is the language-model
-output layer.
+A softmax ignores a constant shift, so only the centred gradient is read and the dropped
+constant has no effect. \Cref{eq:full-update-H,eq:full-update-Z} are
+\Cref{eq:update-H,eq:update-Z} with the word message $\sum_w \QW{t}(w)\Sfac_{w,a}$ in place of
+the observed unary. The softmax of \Cref{eq:full-update-W} over $\Vocab$ is the output layer.
 
 \paragraph{Schedule.}
-Each variable is initialised from its own unary-type factors, the rule stated in Equation~7 of
-\citet{wu2023probabilistic}: $\QW{t}^{(0)} \propto \exp(\bfac)$ and
-$\QZ{t}^{(0)} \propto \exp(\tilde{s}/\lamZ)$ with
-$\tilde{s}_a = \sum_w \QW{t}^{(0)}(w)\Sfac_{w,a}$. The asynchronous order of their \S2.3.2 then
-applies verbatim --- update $\{\QH{t}{c}\}$, then $\QZ{t}$ --- for $\tau$ rounds, finishing with
-one application of \Cref{eq:full-update-W} as the readout. Taking $\tau \ge 2$ is what makes the
-attention query context-dependent; at $\tau=1$ it is the fixed learned probe
-$\softmax(\tilde{s}/\lamZ)$, which is legal but weaker. Iterating the
-$W\!\leftrightarrow\!Z$ loop beyond the readout is also legitimate mean field, but it feeds the
-model's own word guess back into the label belief, so we take the readout before feedback as the
-default and treat extra word rounds as an ablation.
+Each variable is initialised from its own unary-type factors (Equation~7 of Wu and Tu):
+$\QW{t}^{(0)} \propto \exp(\bfac)$ and $\QZ{t}^{(0)} \propto \exp(\tilde{s}/\lamZ)$ with
+$\tilde{s}_a = \sum_w \QW{t}^{(0)}(w)\Sfac_{w,a}$, the prior-weighted mean embedding that plays
+the role of a \textsc{[mask]} token (\Cref{sec:inference}). We then update $\{\QH{t}{c}\}$ and $\QZ{t}$ for $\rho$ rounds in their
+asynchronous order (their \S2.3.2) and read out with \Cref{eq:full-update-W}. At $\rho=1$ the
+attention query is the fixed learned probe $\softmax(\tilde{s}/\lamZ)$; with $\rho \ge 2$ it
+depends on the context. Further $W\!\leftrightarrow\!Z$ rounds are valid mean field but feed the
+model's own word guess back into the label belief, so we treat them as an ablation.
 
 \paragraph{The observed mode is the same energy.}
-Clamping $\QW{t}$ to the point mass $\delta_{w_t}$ turns the word message
-$\sum_w \QW{t}(w)\Sfac_{w,a}$ into $\Sfac_{w_t,a}$, makes \Cref{eq:full-update-W} idle, and
-reduces \Cref{eq:slot-energy} to
+Clamping $\QW{t}$ to the point mass $\delta_{w_t}$ makes \Cref{eq:full-update-W} idle and
+reduces \Cref{eq:slot-energy}, up to the constant $-\bfac_{w_t}$, to
 %
 \begin{equation}
 \label{eq:obs-energy}
@@ -116,29 +96,21 @@ reduces \Cref{eq:slot-energy} to
 \end{aligned}
 \end{equation}
 %
-up to the additive constant $-\bfac_{w_t}$, which no gradient sees. \Cref{eq:obs-energy} is
-exactly the per-position energy of the conditional chain of \Cref{sec:chain}, and the two
-updates it generates are exactly \Cref{eq:update-H,eq:update-Z}. Encoding and decoding are therefore one
-energy family under two conditioning patterns, which is the formal content of
-\Cref{fig:factor-graph} and the reason $\Sfac$ is a single factor trained in both of its roles.
-A second consequence is visible in \Cref{eq:grad-H}: the head gradient contains no word message
-at all, so the attention update is the same functional in both modes and the two runs differ
-only through the belief at which it is evaluated. Sharing one attention pattern between the
-predictive and the observed pass at a slot is therefore not an approximation imposed from
-outside but a choice of initialisation, which mean field leaves free.
+the per-position energy of the chain in \Cref{sec:chain}, whose updates are
+\Cref{eq:update-H,eq:update-Z}. Encoding and decoding are thus one energy family under two
+conditioning patterns (\Cref{fig:factor-graph}), with $\Sfac$ trained in both roles. By
+\Cref{eq:grad-H} the head gradient contains no word message, so the attention update is the same
+function in both modes. Sharing one attention pattern between the predictive and the observed
+mode at a slot is therefore a choice of initialisation, which mean field leaves free.
 
 \subsection{Derivation of the exact readout}
 \label{app:exact-derivation}
 
-With the prefix frozen, the factors of \Cref{eq:unclamp} that remain live at slot $t$ are the
-word unary $\bfac$, the word--label factor $\Sfac$, and one contracted arc factor per channel.
-Their graph is a star centred on $\Zv{t}$, with leaves $\Wv{t}$ and
-$\Hv{t}{1},\dots,\Hv{t}{\nchan}$; a star is a tree, so sum--product terminates after one sweep
-and returns the exact marginal. We eliminate the leaves in turn.
-
-Each head variable appears in exactly one term of the exponent and carries no unary of its own,
-so its elimination is a plain sum over $\Dep{t}$ under counting measure, and the sums over
-distinct channels separate:
+With the prefix frozen, the live factors at slot $t$ are the word unary $\bfac$, the word--label
+factor $\Sfac$ and one contracted arc factor per channel. They form a star centred on $\Zv{t}$,
+with leaves $\Wv{t}$ and $\Hv{t}{1},\dots,\Hv{t}{\nchan}$. A star is a tree, so one sweep of
+sum--product gives the exact marginal. Each head variable appears in one term and has no unary,
+so eliminating it is a plain sum over $\Dep{t}$, and the channels separate:
 %
 \begin{equation}
 \label{eq:elim-H}
@@ -150,10 +122,8 @@ distinct channels separate:
 \end{aligned}
 \end{equation}
 %
-The message from channel $c$ into $\Zv{t}$ is thus $\sum_{j\in\Dep{t}} e^{\Bfac{c}_{j,a}}$, in
-logarithms $\LSE_{j\in\Dep{t}} \Bfac{c}_{j,a}$, seeded at $j = \textsc{root}$ by $\rfac{c}_a$,
-and $\log\readout{t}(a)$ is the sum of these $\nchan$ messages. Eliminating $\Zv{t}$ against the
-word--label factor then leaves
+In logarithms, channel $c$ sends $\LSE_{j\in\Dep{t}} \Bfac{c}_{j,a}$ to $\Zv{t}$, seeded at
+$j = \textsc{root}$ by $\rfac{c}_a$. Eliminating $\Zv{t}$ leaves
 %
 \begin{equation}
 \label{eq:elim-Z}
@@ -164,32 +134,24 @@ word--label factor then leaves
 \end{aligned}
 \end{equation}
 %
-which is \Cref{eq:exact-readout}. The slot normaliser cancels in the softmax over $\Vocab$, so
-the implementation works in logits, $\bfac_w + \LSE_a\,(\Sfac_{w,a} + \log\readout{t}(a))$, and
-never forms $\readout{t}$ itself.
-
-Writing $\Znorm_a = \sum_{w} e^{\bfac_{w} + \Sfac_{w,a}}$ and
-$p(w \mid a) = e^{\bfac_w + \Sfac_{w,a}}/\Znorm_a$ puts \Cref{eq:elim-Z} in the form
+which is \Cref{eq:exact-readout}. The implementation works with the logits
+$\bfac_w + \LSE_a\,(\Sfac_{w,a} + \log\readout{t}(a))$ and never forms $\readout{t}$ itself.
+With $\Znorm_a = \sum_{w} e^{\bfac_{w} + \Sfac_{w,a}}$ and
+$p(w \mid a) = e^{\bfac_w + \Sfac_{w,a}}/\Znorm_a$, \Cref{eq:elim-Z} reads
 $\hat p(\cdot) = \sum_a \pi_t(a)\, p(\cdot \mid a)$ with mixture weights
-$\pi_t(a) \propto \readout{t}(a)\,\Znorm_a$. The $\nlab$ components are fixed by the parameters
-and only the weights depend on the context, which is the precise sense in which
-\Cref{sec:cmp-readout} calls this a mixture of softmaxes, and the precise sense in which it
-is a weaker family than one whose components are themselves context-dependent.
+$\pi_t(a) \propto \readout{t}(a)\,\Znorm_a$. The $\nlab$ components are fixed and only the
+weights depend on the context. This makes the readout a mixture of softmaxes
+(\Cref{sec:cmp-readout}), weaker than one whose components also depend on the context.
 
 \paragraph{The sequence form.}
-Along the sequence the head domain grows by exactly one position per step,
-$\Dep{t+1} = \Dep{t}\cup\{t\}$, so the channel message of \Cref{eq:elim-H} is a causal prefix
-log-sum-exp in $t$. Evaluated slot by slot it would cost $O(\seqlen^2\nlab\nchan)$; evaluated as
-a prefix reduction it is one \texttt{logcumsumexp} scan along the position axis,
-$O(\seqlen\nlab\nchan)$, for all $t$ at once.
-
-The clipped distance table refines this without changing it. The arc score of an arc spanning
-distance $t-j$ is drawn from bucket $f(t-j)$ of the clip function of
-\citet{wu2023probabilistic}, of which the causal model keeps only the $t-j>0$ half: distances
-$1,\dots,\clip$ each own a bucket and every distance beyond $\clip$ shares the last, giving
-$\clip+1$ buckets. Writing
-$\Bfac{c,k}_{j,a} = \sum_b \qbar{j}(b)\,\Tfac{c,k}_{a,b}$ for the contraction against bucket
-$k$'s own arc matrix,
+Since $\Dep{t+1} = \Dep{t}\cup\{t\}$, the channel message of \Cref{eq:elim-H} is a causal prefix
+log-sum-exp in $t$. One \texttt{logcumsumexp} scan along the positions computes it for all $t$
+in $O(\seqlen\nlab\nchan)$, against $O(\seqlen^2\nlab\nchan)$ slot by slot. Clipped distances
+keep this form. The causal model keeps the half $t-j>0$ of the clip function of
+\citet{wu2023probabilistic}: distances $1,\dots,\clip$ each have a bucket and longer distances
+share the last, so there are $\clip+1$ buckets. Writing
+$\Bfac{c,k}_{j,a} = \sum_b \qbar{j}(b)\,\Tfac{c,k}_{a,b}$ for the contraction against the arc
+matrix of bucket $k$,
 %
 \begin{equation}
 \label{eq:mu-scan}
@@ -200,96 +162,56 @@ $k$'s own arc matrix,
 \end{aligned}
 \end{equation}
 %
-where $\log\readout{t}(a) = \sum_c \log\readout{t}^{(c)}(a)$ and any term whose position index
-falls below $1$ is $-\infty$. Only the far bucket accumulates: its positions form a contiguous
-prefix, and it is the one \texttt{logcumsumexp}, offset by $\clip+1$. Each of the $\clip$ near
-buckets contains exactly one position at every slot, so it is a plain shift of that bucket's
-table by its own distance, and the readout is one log-sum-exp over $\clip+2$ aligned tensors.
-The global variable of \Cref{app:globals}, being one more leaf off $\Zv{t}$, contributes one
-further term $\LSE_k \Bglob_{k,a}$ to $\log \readout{t}(a)$ and leaves this argument untouched.
+where $\log\readout{t}(a) = \sum_c \log\readout{t}^{(c)}(a)$ and a term whose position index
+falls below $1$ is $-\infty$. Only the far bucket accumulates, as one \texttt{logcumsumexp}
+offset by $\clip+1$. Each near bucket holds one position per slot and is its own table shifted
+by its distance, so the readout is one log-sum-exp over $\clip+2$ aligned tensors. The global
+variable of \Cref{app:globals}, one more leaf off $\Zv{t}$, adds the term
+$\LSE_k \Bglob_{k,a}$ to $\log \readout{t}(a)$.
 
 \paragraph{The layer-parallel schedule.}
-Three things have to hold for it to survive, and all three do. The readout is closed-form on top
-of the final prefix beliefs, so it does not enter the iteration and cannot serialise it. The
-scan reads only $j<t$ and is a prefix reduction, hence associative and computable for all slots
-in one pass rather than by a loop over $t$. And the query stream disappears entirely: with
-\Cref{eq:exact-readout} as the readout there is no predictive inner loop and no second set of
-attention problems, so a layer remains one triangular-masked pass exactly as in
-\Cref{sec:variants}. At generation time the same structure gives the readout a cache of its own
-beside the content stream's, namely a running $\nlab \times \nchan$ table of channel messages,
-extended by a single \texttt{logaddexp} for each token that is generated.
+The exact readout keeps this schedule. The readout is computed in closed form from the final
+prefix beliefs, the scan is an associative prefix reduction over $j<t$, and there is no
+predictive inner loop, so a layer stays one triangular-masked pass (\Cref{sec:variants}). At
+generation time the readout caches a running $\nlab \times \nchan$ table of channel messages,
+extended by one \texttt{logaddexp} per generated token.
 
 \subsection{Message weights}
 \label{app:message-weights}
 
-The weights $\lamZ,\lamH,\lamW$ are the per-variable regularisation weights of
-\Cref{eq:slot-free-energy}, and $\lamG$ is the one the global variable of \Cref{app:globals}
-adds to it. They are not free rescalings of a fixed objective: each is the
-entropy weight of its own variable, so changing one changes which quantity is being minimised,
-and a sweep over $\lamH$ is a sweep over a family of objectives rather than over a temperature
-within one.
+The weights $\lamZ,\lamH,\lamW$ of \Cref{eq:slot-free-energy}, and $\lamG$ for the global
+variable of \Cref{app:globals}, each weight the entropy of one variable. Changing one changes
+the objective, so a sweep over $\lamH$ is a sweep over objectives, not over a temperature within
+one objective.
 
 \paragraph{$\lamZ$ and $\lamH$.}
-\citet{wu2023probabilistic} fix $\lamZ = 1$ and $\lamH = 1/\nlab$, and their Appendix~A.5
-derives the second from a variance argument in the manner of \citet{vaswani2017attention}.
-Assume the arc scores are independent with mean zero and variance $\sigma^2$. The head logit of
-\Cref{eq:full-update-H} is the double contraction
-$\sum_{a,b} \QZ{t}(a)\,\qbar{j}(b)\,\Tfac{c}_{a,b}$; at uniform beliefs each of its $\nlab^2$
-terms carries weight $\nlab^{-2}$, so the logit has variance $\sigma^2/\nlab^2$, and dividing by
-$\lamH = 1/\nlab$ restores $\sigma^2$. Nothing in that computation is specific to the encoder:
-the causal head logit has the same shape, with one of the two beliefs frozen rather than live,
-so $\lamH = 1/\nlab$ transfers unchanged. Their argument for $\lamZ$ is negative --- the
-corresponding variance for the label message depends on the sentence length, which varies, so no
-fixed $\lamZ$ recovers $\sigma^2$, and they set it to one for simplicity. Two things change in
-the causal model and neither rescues it. The label message here sums over $\Dep{t}$, whose size
-is $t$, so the quantity that obstructed a fixed $\lamZ$ now varies from position to position
-within a sentence and not only between sentences; and the factor of two carried by the encoder's
-label message, which comes from symmetrising over head--child order, is absent, since the
-directed model traverses each arc once. We make the same choice and set $\lamZ = 1$.
-\NOTE{the position-dependence of $|\Dep{t}|$ is our transposition of their variance argument to
-the causal head domain; it is not something \citet{wu2023probabilistic} state.}
+\citet{wu2023probabilistic} fix $\lamZ = 1$ and derive $\lamH = 1/\nlab$ from a variance
+argument (their Appendix~A.5) in the manner of \citet{vaswani2017attention}. If the arc scores
+are independent with mean zero and variance $\sigma^2$, the head logit
+$\sum_{a,b} \QZ{t}(a)\,\qbar{j}(b)\,\Tfac{c}_{a,b}$ of \Cref{eq:full-update-H} has variance
+$\sigma^2/\nlab^2$ at uniform beliefs, and dividing by $\lamH = 1/\nlab$ restores $\sigma^2$.
+The causal head logit has the same form, with one belief frozen, so $\lamH = 1/\nlab$ carries
+over. For $\lamZ$ their argument gives no value: the variance of the label message depends on the
+sentence length, so they set $\lamZ=1$. In the causal model the label message sums over
+$\Dep{t}$, whose size is $t$ (our extension of their argument), so no fixed $\lamZ$ can restore
+the variance; we set $\lamZ=1$. The encoder's factor of two from symmetrising over head--child
+order is absent, since the directed model traverses each arc once.
 
 \paragraph{$\lamW$.}
-The word weight has no counterpart in \citet{wu2023probabilistic}, whose encoder has no output
-layer, and it has none in the mainline readout either: \Cref{eq:elim-Z} is untempered
-sum--product, in which $\Wv{t}$ is eliminated exactly rather than variationally, so no variable
-is left to carry a weight. The question arises only in the mean-field ablation, and there two
-arguments pull against each other; both are worth stating. The first fixes $\lamW = 1$ so that
-the readout is an untempered conditional, on the ground that with $\bfac$ and $\Sfac$ learned,
-any other value is absorbed into them. The second reopens the choice, and is the sounder of the
-two: absorption is available only if $\Sfac$ serves one role, whereas weight tying makes
-the scale of $\Sfac$ the output logit range \emph{and} the strength of the unary at once, so
-rescaling $\Sfac$ to absorb $\lamW$ rescales the unary with it. A weight $\lamW<1$ is then the
-one in-model lever that decouples output sharpness from unary scale, and it is a legitimate
-per-variable message weight in exactly the sense $\lamH$ already is. The trade is worth stating
-rather than hiding: at $\lamW \ne 1$ the readout is a tempered conditional, and the claim that
-the model is calibrated by construction weakens to calibrated up to one declared temperature. We
-report $\lamW = 1$ throughout: the mainline readout has no such parameter, and in the mean-field
-ablation we did not sweep it.
-\NOTE{ours, and drawn nowhere else --- a consequence for \Cref{sec:exp3}: the evaluation-time swap
-between the two readouts is only meaningful at $\lamW = 1$, since at any other value the
-mean-field readout is tempered and the exact one is not, so the swap would measure the
-temperature along with the approximation.}
+The word weight has no counterpart in Wu and Tu's encoder, and none in the exact readout, which
+eliminates $\Wv{t}$ exactly. Under the mean-field readout, tying lets the scale of $\Sfac$ set
+both the output logits and the unary, so a value $\lamW \ne 1$ cannot be absorbed into $\Sfac$
+and would temper the readout. We use $\lamW=1$ throughout; at any other value the
+evaluation-time swap of \Cref{sec:exp3} would measure a temperature as well as the
+approximation.
 
 \paragraph{$\lamG$.}
-Nothing fixes the weight of the global variable. \citet{wu2023probabilistic} write its update
-in their Appendix~B.3 without a message weight, and the construction that carries it into the
-causal model (\Cref{app:globals}) gives its update but not its temperature. We set
-$\lamG = \lamZ = 1$.
-This is a declared choice and not a derivation: $\Gv{t}$ is a leaf off $\Zv{t}$ whose update is
-a softmax over the $\nglob$ global components, no variance argument of the kind that fixes
-$\lamH$ is available for it, and we had no reason to prefer another value. It is not swept in
-any run reported here. \NOTE{ours, and untuned --- worth a line in \Cref{sec:exp-ablations} if
-the global-variable arm turns out to be sensitive to it.}
+No argument fixes the weight of the global variable, and Wu and Tu write its update (their
+Appendix~B.3) without one. We set $\lamG = 1$ without derivation and did not sweep it.
 
-\paragraph{Calibration and the uniform-belief limit.}
-All of the above calibrates $\lamH$ at one point of the model's trajectory. The variance
-argument evaluates the head logit at uniform beliefs, which is where the model starts and not
-where it stays; \Cref{sec:temperature} works out what that costs, why the error grows with the
-label width, and what the belief-normalised repair is. We do not repeat that analysis here and
-only record the connection: $\lamH = 1/\nlab$ is the right constant for the uniform limit of the
-derivation above, and the repair of \Cref{sec:temperature} is built to reduce to it exactly at
-that limit.
+\paragraph{Calibration.}
+The variance argument holds at uniform beliefs, where the model starts but does not stay.
+\Cref{sec:temperature} analyses the consequence.
 
 \subsection{Complexity}
 \label{app:complexity}
@@ -302,56 +224,30 @@ that limit.
 Layer & Width term & Length term \\
 \midrule
 Transformer layer          & $12\dmodel^2$ & $2\seqlen\dmodel$ \\
-PT content layer           & $3\nlab^2$    & $2\seqlen\nlab$   \\
-PT, mean-field two-stream  & $5\nlab^2$    & $4\seqlen\nlab$   \\
-PT, exact-readout mainline & $3\nlab^2$    & $2\seqlen\nlab$   \\
+PT layer, observed mode    & $3\nlab^2$    & $2\seqlen\nlab$   \\
+PT, mean-field, both modes & $5\nlab^2$    & $4\seqlen\nlab$   \\
+PT, exact readout          & $3\nlab^2$    & $2\seqlen\nlab$   \\
 \bottomrule
 \end{tabular}
-\caption{Approximate FLOPs per token and per layer, under the calibration
-$\krank\nchan \approx \nlab$ for the arc-score decomposition and at the matched width
-$\nlab = \dmodel$ that \Cref{sec:cmp-readout} argues is the right comparison unit. The
-transformer's $12\dmodel^2$ is $4\dmodel^2$ of query, key, value and output projections plus
-$8\dmodel^2$ of feed-forward block; the causal PT's $3\nlab^2$ is $3\nlab\krank\nchan$ --- the
-prefix keys formed once, since keys are values, plus the query contraction and the output
-contraction --- and it has no feed-forward term at all. The two-stream row shares its keys
-between the streams. The exact-readout mainline runs the content layer alone and adds, per token
-rather than per layer, $O(\nlab\nchan)$ for the $\readout{t}$ scan and $O(|\Vocab|\nlab)$ for
-the vocabulary readout.}
+\caption{Approximate FLOPs per token and per layer, with $\krank\nchan\approx\nlab$ and
+$\nlab=\dmodel$. A transformer's $12\dmodel^2$ is $4\dmodel^2$ for the query, key, value and
+output projections plus $8\dmodel^2$ for the feed-forward block. The causal PT's $3\nlab^2$ is
+$3\nlab\krank\nchan$ (prefix keys, which are also values, the query contraction and the output
+contraction). The exact-readout row adds, per token, $O(\nlab\nchan)$ for the scan and
+$O(|\Vocab|\nlab)$ for the vocabulary readout.}
 \label{tab:complexity}
 \end{table}
 
-\Cref{tab:complexity} accounts for one layer at one position. The headline is not the one the
-construction invites: the causal PT is not twice a transformer layer but roughly half of one,
-because the feed-forward block that dominates a transformer layer is absent, while the two
-attention terms differ only by the projections the causal PT does not have. Even the mean-field
-two-stream variant, which does pay for a second set of inference problems, sits at roughly
-$0.4$--$0.6\times$ a transformer layer, and the
-exact-readout mainline removes the second stream altogether. Adding the global variables of
-\Cref{app:globals} costs a further $\approx 2\nglob\nlab$ per token, which narrows the gap
-without closing it.
+\Cref{tab:complexity} counts one layer at one position. A causal PT layer costs roughly half a
+transformer layer, because it has no feed-forward block and no projections. Running the
+mean-field readout, which solves a second inference problem in predictive mode at every slot,
+costs about $0.4$--$0.6\times$ a transformer layer. Global variables add about $2\nglob\nlab$
+per token. The vocabulary readout is an $O(|\Vocab|\nlab)$ log-sum-exp instead of a matrix
+product, with the same FLOPs and worse hardware constants. The implementation chunks it over the vocabulary,
+as a fused cross-entropy does, so the $|\Vocab|\times\nlab$ intermediate is never held in full.
 
-Two costs sit outside the table because they are per token rather than per layer. Generation
-extends the readout's $\nlab\times\nchan$ cache by one \texttt{logaddexp}, $O(\nlab\nchan)$,
-which is cheaper than any attention pass and is the whole of what the readout adds to the
-incremental step. The vocabulary readout itself is $O(|\Vocab|\nlab)$, the cost every language
-model pays for its output layer, but it is a log-sum-exp rather than a matrix product: the same
-arithmetic with worse hardware constants, the exponentials being element-wise. The materialised
-$|\Vocab|\times\nlab$ intermediate is the real hazard, and the implementation chunks the
-reduction over the vocabulary in the manner of a fused cross-entropy, accumulating logits
-blockwise so that the intermediate never exists in full.
-
-Two qualifications keep the table honest. The first is that a per-layer FLOP count is half a
-comparison when one of the models shares its parameters across iterations: at a matched
-parameter budget the causal PT can afford more iterations per parameter than a transformer can
-afford layers, so depth and parameters cannot both be matched and which one is matched has to be
-declared rather than inferred. \Cref{sec:settings} declines to choose between the two axes and
-reports both the total and the non-embedding parameter count, stating which of them any given
-claim is made on; tying puts almost all of the causal PT's parameters into $\Sfac$, so either
-axis read alone misstates the comparison. The second qualification is that none of this predicts
-wall-clock. \citet{wu2023probabilistic} measure their encoder at about three times slower than a
-transformer despite its having far fewer parameters, and attribute the gap to the way relative
-positions are encoded: the arc matrices are gathered from the clipped distance table per
-position pair, which their Appendix~C calls parameter-inefficient and reports as making training
-much slower than a transformer's. That axis is orthogonal to how many streams a model runs and
-to everything in \Cref{tab:complexity}, so a timing is not derivable from the table in either
-direction, and neither substitutes for the other.
+Because the causal PT shares its parameters across iterations, depth and parameters cannot both
+be matched against a transformer. FLOPs also do not predict wall-clock time. \citet{wu2023probabilistic}
+measure their encoder at about three times slower than a transformer despite far fewer
+parameters, and attribute this to gathering the arc matrices from the clipped distance table for
+every position pair (their Appendix~C).

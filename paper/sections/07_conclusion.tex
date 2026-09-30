@@ -1,26 +1,10 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-% Wu & Tu's Conclusion is one short paragraph restating model and headline result, with no new
-% material. Match that -- roughly 0.2 of a column. Written last, to the measured result.
-
-We have derived the autoregressive counterpart of the probabilistic transformer. Causality, a
-single global energy and contextual dependence cannot hold together, so we replace the single
-field by a directed chain of conditional random fields in which the prefix enters each step as a
-frozen condition and the anti-causal term is never formed; and we obtain a language-model head
-by unclamping a variable the model already had, which makes tied embeddings, the output bias
-and a mixture-of-softmaxes readout consequences of the construction rather than additions to it.
-Empirically the model trains, reaches between $\MBMinRatioGpt$ and $\MBMaxRatioGpt$ times a
-causal transformer's perplexity at its own parameter count --- the gap smallest at the smallest
-budgets, and shallower in slope than either baseline on every range where the two can be
-compared --- and learns label variables that carry recognisable syntactic categories
-without supervision --- though whether its head variables learn attachment or collapse onto the
-previous word turns out to depend on the same temperature the scaling does. Two things we did
-not expect are the ones we would most want a successor to know: the readout the construction
-itself distinguishes trains a hundred perplexity worse than the mean-field approximation to it,
-and additional mean-field iterations only cost, so the best version of the model here runs one.
-Both say that what limits it is not what the family can express but what this objective reaches
-inside it --- and the one result that qualifies them says where to look, since the readout's
-penalty falls to nothing once the label variable is split into four. We hope this extends the probabilistic account of contextual representation
-from analysis to generation, and that saying where it fails is as useful as saying where it
-holds.
+We derived a causal probabilistic transformer: a directed chain of conditional random fields with
+a frozen prefix, whose language-model head comes from unclamping the word variable. Its
+perplexity is $\MBMinRatioGpt$ to $\MBMaxRatioGpt$ times a causal transformer's at the same
+non-embedding budget, and most of the difference in scaling slope already appears with weight
+sharing alone. Correcting the head temperature roughly doubles the usable label-set size, while
+the exact readout and extra iterations did not help at this scale. Factored labels with the exact
+readout and fixed-lag smoothing are natural next steps.

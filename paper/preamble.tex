@@ -1,7 +1,4 @@
-% Extra packages only. The ACL style file (acl.sty) already sets the page geometry, the
-% two-column layout, the font sizes, the bibliography style and hyperref — do not re-set any
-% of those here, and do not add \usepackage{geometry}: it silently breaks the ACL layout and
-% is one of the things desk-rejection checks look for.
+% Extra packages (acl.sty sets geometry, fonts, bibliography style and hyperref).
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -18,11 +15,7 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 
-% --- theorem environments -------------------------------------------------------------
-% Wu & Tu's paper contains no theorem environments at all: it is entirely constructive prose.
-% We need exactly one formal statement (the trilemma of Section 2.1) and one proposition (the
-% exact readout). Keep it to that — a paper in this format with six numbered theorems does not
-% look like the paper it is modelled on. Everything else goes in the appendix.
+% --- theorem environments ---
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}[theorem]{Proposition}
@@ -33,25 +26,16 @@
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
 
-% --- drafting aids -------------------------------------------------------------
-% \TODO renders visibly in the draft. \draftfalse is for the finished paper only: it does not
-% hide outstanding items, it refuses to build while any exist (see the \else branch). That is
-% deliberate. The earlier version of this comment said to set \draftfalse before circulating the
-% PDF, which is precisely how a draft comes to be circulated looking finished.
+% --- drafting guard: a non-draft build fails if any \TODO or \FROMPDF remains ---
+\usepackage{xcolor}
 \newif\ifdraft
-\drafttrue
+\draftfalse
 
 \ifdraft
-  \usepackage{xcolor}
   \newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
   \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{[note: #1]}}}
-  % Marks a claim taken from a reference PDF that has not been re-read while writing.
-  \newcommand{\FROMPDF}[1]{\textcolor{orange}{\textbf{[verify against PDF: #1]}}}
+  \newcommand{\FROMPDF}[1]{\textcolor{orange}{\textbf{[verify: #1]}}}
 \else
-  % Non-draft mode does NOT silently swallow outstanding items. Hiding them is exactly how a
-  % build comes to look finished while claims in it are still unbacked, so each one is counted
-  % and the build fails at \end{document} if any remain. Clearing a TODO means deleting it from
-  % the source, not switching a flag.
   \newcounter{todocount}
   \newcommand{\TODO}[1]{\stepcounter{todocount}}
   \newcommand{\NOTE}[1]{}
@@ -59,8 +43,6 @@
   \AtEndDocument{%
     \ifnum\value{todocount}>0
       \PackageError{preamble}{%
-        \the\value{todocount}\space TODO/FROMPDF marker(s) remain while \string\draftfalse\space
-        is set. Non-draft builds must not hide outstanding items: either delete them from the
-        source or build with \string\drafttrue}{}%
+        \the\value{todocount}\space TODO/FROMPDF marker(s) remain}{}%
     \fi}
 \fi
