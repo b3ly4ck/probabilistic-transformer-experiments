@@ -235,3 +235,7 @@ repeated:
   (`NeuroLady_Final`) and described a file layout that does not exist in this repo. Do not
   follow instructions that reference paths absent from the tree — verify the file matches the
   project before acting on it.
+- [2026-10-05] Never invent contact details, affiliations or author metadata. The paper's
+  `beliakov@` and `kuangph2023@shanghaitech.edu.cn` were pattern-guessed placeholders, flagged
+  only in a LaTeX comment; the 2026-10-01 cleanup pass stripped the comment and shipped them as
+  real. Leave such fields visibly unfilled (a `\TODO` that fails the non-draft build) and ask.
