@@ -74,6 +74,16 @@ Figures, mirroring their three:
 
 ## Recent changes
 
+- **2026-10-05** — **author block corrected; `paper/main.pdf` tracked as a milestone artifact.**
+  The block of 2026-09-08 had two pattern-guessed addresses (`beliakov@`, `kuangph2023@`
+  `shanghaitech.edu.cn`) whose only warning was a LaTeX comment, removed in the 2026-10-01 pass.
+  Addresses now confirmed by the first author: `beliakov.viktor@phystech.edu`,
+  `kuangph2023@shanghaitech.edu.cn`, `tukw@shanghaitech.edu.cn` (the last from Wu & Tu). Two
+  affiliations: 1 Moscow Institute of Physics and Technology (inferred from the phystech.edu
+  address), 2 ShanghaiTech. `make release` copied the build to `paper/main.pdf` (28 pages, main
+  body pp. 1-8) so the preprint has a stable link on branch `article`. The path stays in
+  `.gitignore`, so a future milestone needs `git add -f paper/main.pdf`.
+
 - **2026-10-01** — **condensed to submission length and copy-edited.** The PDF went from 44 pages
   (main body to p. 22) to **28 pages**: main body (Introduction to Conclusion) ends on the last
   line of **p. 8**, Limitations and References start on p. 9, appendices A–H run p. 11–28.
